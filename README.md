@@ -46,3 +46,7 @@ DELETE /project/project-name
 
 ### Headers 
 HTTP Basic Authorization header is mandatory
+
+# CLI
+
+sfmanager --help

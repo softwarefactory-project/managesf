@@ -34,5 +34,8 @@ setup(
     test_suite='managesf',
     zip_safe=False,
     include_package_data=True,
-    packages=find_packages(exclude=['ez_setup'])
+    packages=find_packages(exclude=['ez_setup']),
+    entry_points = {
+        "console_scripts": ['sfmanager = managesf.cli:main']
+        },
 )

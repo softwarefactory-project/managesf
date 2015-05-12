@@ -371,8 +371,7 @@ def replication_action(args, base_url, headers):
 
     response(resp)
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description="Tool to manage software"
                                      " factory projects")
     default_arguments(parser)
@@ -393,3 +392,6 @@ if __name__ == '__main__':
            backup_action(args, base_url, headers) or
            replication_action(args, base_url, headers)):
         print "ManageSF failed to execute your command"
+
+if __name__ == '__main__':
+    main()
