@@ -371,6 +371,7 @@ def replication_action(args, base_url, headers):
 
     response(resp)
 
+
 def main():
     parser = argparse.ArgumentParser(description="Tool to manage software"
                                      " factory projects")
