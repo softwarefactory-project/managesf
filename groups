@@ -1,0 +1,5 @@
+# UUID          Group Name
+%(non-interactive-users)s 	Non-Interactive Users
+%(core-group-uuid)s       	%(core-group)s
+%(ptl-group-uuid)s        	%(ptl-group)s
+global:Registered-Users		Registered Users
