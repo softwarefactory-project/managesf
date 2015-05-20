@@ -12,7 +12,7 @@ Update config.py and execute the following commands, to use it for development p
 
 To deploy in production
 
-* Refer pecan [dox](http://pecan.readthedocs.org/en/latest/deployment.html#deployment)
+* Refer to pecan [dox](http://pecan.readthedocs.org/en/latest/deployment.html#deployment)
 
 # URLs
 
