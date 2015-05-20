@@ -20,7 +20,7 @@ echo "FLAKE8 tests"
 echo "~~~~~~~~~~~~"
 find . -iname "*.py" | grep -v .tox | xargs flake8
 FLAKE8_ERRORS=$?
-echo
+[ $FLAKE8_ERRORS = 0 ] && echo "Success. Well done !"; echo || echo
 
 echo "ManageSF tests"
 echo "~~~~~~~~~~~~~"

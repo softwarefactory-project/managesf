@@ -21,6 +21,8 @@ from pecan import load_app
 from contextlib import nested
 from mock import patch
 
+from basicauth import encode
+
 from managesf.tests import dummy_conf
 
 
@@ -31,18 +33,128 @@ def raiseexc(*args, **kwargs):
 class FunctionalTest(TestCase):
     def setUp(self):
         c = dummy_conf()
-        config = {'gerrit': c.gerrit,
-                  'redmine': c.redmine,
-                  'app': c.app,
-                  'admin': c.admin,
-                  'auth': c.auth}
+        self.config = {'gerrit': c.gerrit,
+                       'redmine': c.redmine,
+                       'app': c.app,
+                       'admin': c.admin,
+                       'sqlalchemy': c.sqlalchemy,
+                       'auth': c.auth}
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}
-        self.app = TestApp(load_app(config))
+        self.app = TestApp(load_app(self.config))
 
     def tearDown(self):
-        pass
+        # Remove the sqlite db
+        os.unlink(self.config['sqlalchemy']['url'][len('sqlite:///'):])
+
+
+class TestManageSFAppLocaluserController(FunctionalTest):
+
+    def test_add_or_update_user(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos = {'email': 'john@tests.dom', 'sshkey': 'sshkey',
+                 'fullname': 'John Doe', 'password': 'secret'}
+        response = self.app.post_json('/user/john', infos,
+                                      extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 201)
+        infos = {'email': 'john2@tests.dom', 'sshkey': 'sshkey',
+                 'fullname': 'John Doe', 'password': 'bigsecret'}
+        response = self.app.post_json('/user/john', infos,
+                                      extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 200)
+        infos = {'wrongkey': 'heyhey'}
+        response = self.app.post_json('/user/john', infos,
+                                      extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 400)
+
+        # Only admin can add user to that database
+        environ = {'REMOTE_USER': 'boss'}
+        infos = {'email': 'john2@tests.dom', 'sshkey': 'sshkey',
+                 'fullname': 'John Doe 2', 'password': 'secret'}
+        response = self.app.post_json('/user/john2', infos,
+                                      extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 403)
+
+    def test_get_user(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos = {'email': 'john@tests.dom', 'sshkey': 'sshkey',
+                 'fullname': 'John Doe', 'password': 'secret'}
+        response = self.app.post_json('/user/john', infos,
+                                      extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 201)
+
+        response = self.app.get('/user/john',
+                                extra_environ=environ, status="*")
+        expected = {u'sshkey': u'sshkey',
+                    u'username': u'john',
+                    u'email': u'john@tests.dom',
+                    u'fullname': u'John Doe'}
+        self.assertEqual(response.status_int, 200)
+        self.assertDictEqual(response.json, expected)
+
+        response = self.app.get('/user/notexists',
+                                extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 404)
+
+        environ = {'REMOTE_USER': 'john'}
+        response = self.app.get('/user/john',
+                                extra_environ=environ, status="*")
+        expected = {u'sshkey': u'sshkey',
+                    u'username': u'john',
+                    u'email': u'john@tests.dom',
+                    u'fullname': u'John Doe'}
+        self.assertEqual(response.status_int, 200)
+        self.assertDictEqual(response.json, expected)
+
+        environ = {'REMOTE_USER': 'boss'}
+        response = self.app.get('/user/john',
+                                extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 403)
+
+    def test_delete_user(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos = {'email': 'john@tests.dom', 'sshkey': 'sshkey',
+                 'fullname': 'John Doe', 'password': 'secret'}
+        response = self.app.post_json('/user/john', infos,
+                                      extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 201)
+
+        environ = {'REMOTE_USER': 'boss'}
+        response = self.app.delete('/user/john',
+                                   extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 403)
+
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        response = self.app.delete('/user/john',
+                                   extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 200)
+        response = self.app.get('/user/john',
+                                extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 404)
+
+    def test_bind_user(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos = {'email': 'john@tests.dom', 'sshkey': 'sshkey',
+                 'fullname': 'John Doe', 'password': 'secret'}
+        response = self.app.post_json('/user/john', infos,
+                                      extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 201)
+
+        headers = {"Authorization": encode("john", "secret")}
+        response = self.app.get('/bind', headers=headers,
+                                status="*")
+        self.assertEqual(response.status_int, 200)
+
+        headers = {"Authorization": encode("john", "badsecret")}
+        response = self.app.get('/bind', headers=headers,
+                                status="*")
+        self.assertEqual(response.status_int, 401)
+
+        headers = {"Authorization": encode("boss", "secret")}
+        response = self.app.get('/bind', headers=headers,
+                                status="*")
+        self.assertEqual(response.status_int, 401)
 
 
 class TestManageSFAppProjectController(FunctionalTest):

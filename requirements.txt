@@ -3,5 +3,8 @@ pecan
 gerritlib
 python-ldap
 requests>=2.2.1
+passlib
+basicauth
+sqlalchemy
 nose
 mock

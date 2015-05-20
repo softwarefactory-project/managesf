@@ -60,6 +60,10 @@ class dummy_conf():
         'modules': ['managesf'],
         'debug': True,
     }
+    sqlalchemy = {
+        'url': 'sqlite:///%s' % tempfile.mkstemp()[1],
+        'encoding': 'utf-8',
+    }
     logging = {
         'loggers':
             {'root': {'level': 'INFO', 'handlers': ['console']},
