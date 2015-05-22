@@ -8,3 +8,4 @@ basicauth
 sqlalchemy
 nose
 mock
+urllib3

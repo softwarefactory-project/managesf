@@ -60,7 +60,7 @@ def restore_command(sp):
                      required=True, help='Tarball used to restore SF')
 
 
-def user_command(sp):
+def project_user_command(sp):
     dup = sp.add_parser('delete_user')
     dup.add_argument('--name', '-n', nargs='?', metavar='project-name',
                      required=True)
@@ -79,6 +79,38 @@ def user_command(sp):
                      required=True)
 
     sp.add_parser('list_active_users', help='Print a list of active users')
+
+
+def user_management_command(sp):
+    cump = sp.add_parser('create')
+    cump.add_argument('--username', '-u', nargs='?', metavar='username',
+                      required=True, help='A unique username/login')
+    cump.add_argument('--password', '-p', nargs='?', metavar='password',
+                      required=False,
+                      help='The user password, can be provided later')
+    cump.add_argument('--email', '-e', nargs='?', metavar='email',
+                      required=True, help='The user email')
+    cump.add_argument('--fullname', '-f', nargs='?', metavar='John Doe',
+                      required=False,
+                      help="The user's full name, defaults to username")
+    cump.add_argument('--ssh-key', '-s', nargs='?', metavar='/path/to/pub_key',
+                      required=False, help="The user's ssh public key file")
+    uump = sp.add_parser('update')
+    uump.add_argument('--username', '-u', nargs='?', metavar='username',
+                      required=False,
+                      help='the user to update, defaults to current user')
+    uump.add_argument('--password', '-p', action='store_false',
+                      help='Set this flag to change the user password')
+    uump.add_argument('--email', '-e', nargs='?', metavar='email',
+                      required=False, help='The user email')
+    uump.add_argument('--fullname', '-f', nargs='?', metavar='John Doe',
+                      required=False,
+                      help="The user's full name")
+    uump.add_argument('--ssh-key', '-s', nargs='?', metavar='/path/to/pub_key',
+                      required=False, help="The user's ssh public key file")
+    dump = sp.add_parser('delete', help='Delete user. Admin rights required')
+    dump.add_argument('--username', '-u', nargs='?', metavar='username',
+                      required=True, help='the user to delete')
 
 
 def project_command(sp):
@@ -164,9 +196,19 @@ def trigger_command(sp):
 
 def command_options(parser):
     sp = parser.add_subparsers(dest="command")
+    project_commands = sp.add_parser('project',
+                                     help='project-related commands')
+    spc = project_commands.add_subparsers(dest="subcommand")
+    user_commands = sp.add_parser('user',
+                                  help='project users-related commands')
+    suc = user_commands.add_subparsers(dest="subcommand")
     backup_command(sp)
     restore_command(sp)
-    user_command(sp)
+    project_user_command(spc)
+    project_command(spc)
+    user_management_command(suc)
+    # for compatibility purpose, until calls in SF are modified
+    project_user_command(sp)
     project_command(sp)
     section_command(sp)
     trigger_command(sp)
@@ -201,22 +243,27 @@ def response(resp):
         die(resp.text)
 
 
-def user_action(args, base_url, headers):
-    if args.command in ['add_user', 'delete_user']:
-        url = "{}/project/membership/{}/{}/".format(base_url, args.name,
-                                                    args.user)
-    elif args.command == 'list_active_users':
-        url = base_url + '/project/membership/'
+def project_user_action(args, base_url, headers):
+    if args.command in ['add_user', 'delete_user', 'list_active_users']:
+        subcommand = args.command
+        print "Deprecated syntax, please use project %s ..." % subcommand
+    elif args.command == 'project':
+        subcommand = args.subcommand
     else:
         return False
 
-    if args.command == 'add_user':
+    if subcommand in ['add_user', 'delete_user']:
+        url = "{}/project/membership/{}/{}/".format(base_url, args.name,
+                                                    args.user)
+    elif subcommand == 'list_active_users':
+        url = base_url + '/project/membership/'
+    if subcommand == 'add_user':
         groups = split_and_strip(args.groups)
         data = json.dumps({'groups': groups})
         resp = requests.put(url, headers=headers, data=data,
                             cookies=dict(auth_pubtkt=get_cookie(args)))
 
-    elif args.command == 'delete_user':
+    elif subcommand == 'delete_user':
         # if a group name is provided, delete user from that group,
         # otherwise delete user from all groups
         if args.group:
@@ -224,7 +271,7 @@ def user_action(args, base_url, headers):
         resp = requests.delete(url, headers=headers,
                                cookies=dict(auth_pubtkt=get_cookie(args)))
 
-    elif args.command == 'list_active_users':
+    elif subcommand == 'list_active_users':
         resp = requests.get(url, headers=headers,
                             cookies=dict(auth_pubtkt=get_cookie(args)))
 
@@ -233,11 +280,15 @@ def user_action(args, base_url, headers):
 
 def project_action(args, base_url, headers):
     if args.command in ['delete', 'create']:
-        url = base_url + "/project/%s" % args.name
+        subcommand = args.command
+        print "Deprecated syntax, please use project %s ..." % subcommand
+    elif args.command == 'project':
+        subcommand = args.subcommand
     else:
         return False
 
-    if args.command == 'create':
+    url = base_url + "/project/%s" % args.name
+    if subcommand == 'create':
         if getattr(args, 'core_group'):
             args.core_group = split_and_strip(args.core_group)
         if getattr(args, 'ptl_group'):
@@ -266,7 +317,7 @@ def project_action(args, base_url, headers):
         resp = requests.put(url, headers=headers, data=data,
                             cookies=dict(auth_pubtkt=get_cookie(args)))
 
-    elif args.command == 'delete':
+    elif subcommand == 'delete':
         resp = requests.delete(url, headers=headers,
                                cookies=dict(auth_pubtkt=get_cookie(args)))
 
@@ -377,6 +428,36 @@ def replication_action(args, base_url, headers):
     response(resp)
 
 
+def user_management_action(args, base_url, headers):
+    if args.command != 'user':
+        return False
+    if args.subcommand not in ['create', 'update', 'delete']:
+        return False
+    url = '%s/user/%s' % (base_url, args.username)
+    if args.subcommand in ['create', 'update']:
+        password = None
+        if not getattr(args, 'password', False):
+            password = getpass.getpass("Enter password: ")
+        elif args.password is not True:
+            password = args.password
+        info = {}
+        if getattr(args, 'email'):
+            info['email'] = args.email
+        if getattr(args, 'ssh_key'):
+            with open(args.ssh_key, 'r') as f:
+                info['sshkey'] = f.read()
+        if getattr(args, 'fullname'):
+            info['fullname'] = args.fullname
+        if password:
+            info['password'] = password
+        resp = requests.post(url, headers=headers, data=json.dumps(info),
+                             cookies=dict(auth_pubtkt=get_cookie(args)))
+    if args.subcommand == 'delete':
+        resp = requests.delete(url, headers=headers,
+                               cookies=dict(auth_pubtkt=get_cookie(args)))
+    response(resp)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Tool to manage software"
                                      " factory projects")
@@ -393,10 +474,14 @@ def main():
         args.auth = "%s:%s" % (args.auth, password)
 
     headers = {'Authorization': 'Basic ' + base64.b64encode(args.auth)}
-    if not(user_action(args, base_url, headers) or
+    if args.insecure:
+        import urllib3
+        urllib3.disable_warnings()
+    if not(project_user_action(args, base_url, headers) or
            project_action(args, base_url, headers) or
            backup_action(args, base_url, headers) or
-           replication_action(args, base_url, headers)):
+           replication_action(args, base_url, headers) or
+           user_management_action(args, base_url, headers)):
         print "ManageSF failed to execute your command"
 
 if __name__ == '__main__':
