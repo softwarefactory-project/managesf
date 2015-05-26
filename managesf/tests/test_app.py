@@ -135,8 +135,12 @@ class TestManageSFAppLocaluserController(FunctionalTest):
 
     def test_bind_user(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
-        infos = {'email': 'john@tests.dom', 'sshkey': 'sshkey',
-                 'fullname': 'John Doe', 'password': 'secret'}
+        base_infos = {'email': 'john@tests.dom', 'sshkey': 'sshkey',
+                      'fullname': 'John Doe', }
+        infos = {'password': 'secret'}
+        public_infos = {'username': 'john'}
+        infos.update(base_infos)
+        public_infos.update(base_infos)
         response = self.app.post_json('/user/john', infos,
                                       extra_environ=environ, status="*")
         self.assertEqual(response.status_int, 201)
@@ -145,6 +149,9 @@ class TestManageSFAppLocaluserController(FunctionalTest):
         response = self.app.get('/bind', headers=headers,
                                 status="*")
         self.assertEqual(response.status_int, 200)
+        self.assertEqual(public_infos,
+                         response.json,
+                         response.json)
 
         headers = {"Authorization": encode("john", "badsecret")}
         response = self.app.get('/bind', headers=headers,

@@ -187,12 +187,17 @@ class TestLocaluserController(TestCase):
     @patch('managesf.controllers.localuser.request')
     def test_bind_user(self, request_mock):
         request_mock.remote_user = self.conf.admin['name']
-        infos = {'fullname': 'John Doe',
-                 'email': 'john@tests.dom',
-                 'password': "abc"}
+        base_infos = {'fullname': 'John Doe',
+                      'email': 'john@tests.dom', }
+        infos = {'password': "abc"}
+        public_infos = {'username': 'john', 'sshkey': 'None'}
+        infos.update(base_infos)
+        public_infos.update(base_infos)
         localuser.update_user('john', infos)
         authorization = encode('john', "abc")
-        self.assertTrue(localuser.bind_user(authorization), True)
+        self.assertEqual(public_infos,
+                         localuser.bind_user(authorization),
+                         localuser.bind_user(authorization))
         authorization = encode('john', "abc123")
         self.assertRaises(localuser.BindForbidden,
                           lambda: localuser.bind_user(authorization))

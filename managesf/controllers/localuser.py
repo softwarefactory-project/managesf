@@ -143,6 +143,7 @@ def bind_user(authorization):
     if not ret:
         raise UserNotFound("%s not found" % username)
     if pbkdf2_sha256.verify(password, ret['hashed_password']):
-        return True
+        del ret['hashed_password']
+        return ret
     else:
         raise BindForbidden("Authentication failed")
