@@ -44,6 +44,9 @@ def default_arguments(parser):
                         help='URL of the central auth server')
     parser.add_argument('--cookie', metavar='Authentication cookie',
                         help='cookie of the user if known')
+    parser.add_argument('--insecure', default=False, action='store_true',
+                        help='disable SSL certificate verification, '
+                        'verification is enabled by default')
 
 
 def backup_command(sp):
@@ -172,13 +175,15 @@ def command_options(parser):
 def get_cookie(args):
     if args.cookie is not None:
         return args.cookie
+    # TODO the exact same method exists in pysflib, it should be refactored
     (username, password) = args.auth.split(':')
     url = '%s/auth/login' % args.auth_server_url.rstrip('/')
     r = requests.post(url,
                       params={'username': username,
                               'password': password,
                               'back': '/'},
-                      allow_redirects=False)
+                      allow_redirects=False,
+                      verify=not args.insecure)
     if r.status_code == 401:
         die("Access denied, wrong login or password")
     elif r.status_code != 303:
