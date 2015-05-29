@@ -236,7 +236,7 @@ def get_cookie(args):
 
 
 def response(resp):
-    if resp.status_code >= 200 and resp.status_code < 206:
+    if resp.status_code >= 200 and resp.status_code < 400:
         print resp.text
         return True
     else:
@@ -425,7 +425,7 @@ def replication_action(args, base_url, headers):
         resp = requests.post(url, headers=headers, data=json.dumps(info),
                              cookies=dict(auth_pubtkt=get_cookie(args)))
 
-    response(resp)
+    return response(resp)
 
 
 def user_management_action(args, base_url, headers):
@@ -435,6 +435,7 @@ def user_management_action(args, base_url, headers):
         return False
     url = '%s/user/%s' % (base_url, args.username)
     if args.subcommand in ['create', 'update']:
+        headers['Content-Type'] = 'application/json'
         password = None
         if not getattr(args, 'password', False):
             password = getpass.getpass("Enter password: ")
@@ -455,7 +456,7 @@ def user_management_action(args, base_url, headers):
     if args.subcommand == 'delete':
         resp = requests.delete(url, headers=headers,
                                cookies=dict(auth_pubtkt=get_cookie(args)))
-    response(resp)
+    return response(resp)
 
 
 def main():
