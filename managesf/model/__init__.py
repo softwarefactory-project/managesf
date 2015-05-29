@@ -63,9 +63,9 @@ def add_user(user):
     session.add(u)
     try:
         session.commit()
-        return True
-    except exc.IntegrityError:
-        return False
+        return True, None
+    except exc.IntegrityError as e:
+        return False, e.message
 
 
 def get_user(username):

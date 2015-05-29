@@ -83,6 +83,7 @@ def hash_password(infos):
 
 
 def update_user(username, infos):
+    reason = ''
     if not model.get_user(username):
         if request.remote_user != conf.admin['name']:
             raise AddUserForbidden('Only %s can create a new user' %
@@ -92,7 +93,7 @@ def update_user(username, infos):
         infos['username'] = username
         verify_input(infos)
         hash_password(infos)
-        ret = model.add_user(infos)
+        ret, reason = model.add_user(infos)
         if ret:
             del infos['hashed_password']
             ret = infos
@@ -107,7 +108,7 @@ def update_user(username, infos):
         ret = model.update_user(username, infos)
     if not ret:
         raise BadUserInfos(
-            'Something goes wrong with infos input. Not updated.')
+            'Bad infos input%s.' % (': %s' % reason))
     else:
         return ret
 
