@@ -10,3 +10,4 @@ nose
 mock
 urllib3
 pycrypto
+htpasswd

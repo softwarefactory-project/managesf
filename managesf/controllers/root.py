@@ -12,8 +12,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import random
+import string
 import time
 
+from pecan import conf
 from pecan import expose
 from pecan import abort
 from pecan.rest import RestController
@@ -22,6 +25,7 @@ from managesf.controllers import gerrit, redminec, backup, localuser
 import logging
 import os.path
 
+import htpasswd
 
 logger = logging.getLogger(__name__)
 
@@ -351,6 +355,58 @@ class LocalUserBindController(RestController):
         return ret
 
 
+class HtpasswdController(RestController):
+    def __init__(self):
+        self.filename = None
+        if getattr(conf, "htpasswd", None):
+            self.filename = conf.htpasswd.get('filename')
+            # Ensure file exists
+            open(self.filename, "a").close()
+
+    @expose()
+    def put(self):
+        if request.remote_user is None:
+            abort(403)
+        password = ''.join(
+            random.SystemRandom().choice(string.letters + string.digits)
+            for _ in range(12))
+        try:
+            with htpasswd.Basic(self.filename) as userdb:
+                try:
+                    userdb.add(request.remote_user, password)
+                except htpasswd.basic.UserExists:
+                    pass
+                userdb.change_password(request.remote_user, password)
+        except IOError:
+            abort(406)
+        response.status = 201
+        return password
+
+    @expose()
+    def get(self):
+        if request.remote_user is None:
+            abort(403)
+        response.status = 404
+        try:
+            with htpasswd.Basic(self.filename) as userdb:
+                exists = request.remote_user in userdb.users
+                if exists:
+                    response.status = 200
+        except IOError:
+            abort(406)
+        return
+
+    @expose()
+    def delete(self):
+        if request.remote_user is None:
+            abort(403)
+        try:
+            with htpasswd.Basic(self.filename) as userdb:
+                userdb.pop(request.remote_user)
+        except IOError:
+            abort(406)
+
+
 class RootController(object):
     project = ProjectController()
     replication = ReplicationController()
@@ -358,3 +414,4 @@ class RootController(object):
     restore = RestoreController()
     user = LocalUserController()
     bind = LocalUserBindController()
+    htpasswd = HtpasswdController()

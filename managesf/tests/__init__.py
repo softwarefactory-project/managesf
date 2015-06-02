@@ -80,3 +80,6 @@ class dummy_conf():
                             '%(asctime)s %(levelname)-5.5s [%(name)s]'
                             '[%(threadName)s] %(message)s')}}
     }
+    htpasswd = {
+        'filename': tempfile.mkstemp()[1]
+    }
