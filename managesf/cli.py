@@ -17,11 +17,17 @@
 import argparse
 import base64
 import getpass
+import glob
 import json
 import logging
 import os
 import requests
+import sqlite3
 import sys
+import time
+import urlparse
+from Crypto.Cipher import AES
+from Crypto.Protocol.KDF import PBKDF2
 
 
 try:
@@ -52,6 +58,88 @@ logger.addHandler(fh_debug)
 requests_log.addHandler(fh_debug)
 
 
+def _build_path(old_path):
+    path = old_path
+    if not os.path.isabs(path):
+        homebase = os.path.expanduser('~')
+        path = os.path.join(homebase, path)
+    return path
+
+
+def _is_cookie_valid(cookie):
+    if not cookie:
+        return False
+    try:
+        valid_until = float(cookie.split('%3B')[1].split('%3D')[1])
+    except:
+        return False
+    if valid_until < time.time():
+        return False
+    return True
+
+
+def get_chromium_cookie(path='', host='softwarefactory'):
+    jar_path = _build_path(path)
+    logger.debug('looking for chrome cookies at %s' % jar_path)
+    # chrome hardcoded values
+    salt = b'saltysalt'
+    iv = b' ' * 16
+    length = 16
+    chrome_password = 'peanuts'.encode('utf8')
+    iterations = 1
+    key = PBKDF2(chrome_password, salt, length, iterations)
+    try:
+        c = sqlite3.connect(jar_path)
+        cur = c.cursor()
+        cur.execute('select value, encrypted_value, host_key from cookies '
+                    'where host_key like ? and name = "auth_pubtkt" '
+                    'order by expires_utc desc',
+                    ('%' + host + '%',))
+        cypher = AES.new(key, AES.MODE_CBC, IV=iv)
+        # Strip padding by taking off number indicated by padding
+        # eg if last is '\x0e' then ord('\x0e') == 14, so take off 14.
+
+        def clean(x):
+            return x[:-ord(x[-1])].decode('utf8')
+
+        for clear, encrypted, host_key in cur.fetchall():
+            if clear:
+                cookie = clear
+            else:
+                # buffer starts with 'v10'
+                encrypted = encrypted[3:]
+                try:
+                    cookie = clean(cypher.decrypt(encrypted))
+                except UnicodeDecodeError:
+                    logger.debug("could not decode cookie %s" % encrypted)
+                    cookie = None
+            if _is_cookie_valid(cookie):
+                return cookie
+    except sqlite3.OperationalError as e:
+        logger.debug("Could not read cookies: %s" % e)
+    return None
+
+
+def get_firefox_cookie(path='', host='softwarefactory'):
+    """Fetch the auth cookie stored by Firefox at %path% for the
+    %host% instance of Software Factory."""
+    jar_path = _build_path(path)
+    logger.debug('looking for firefox cookies at %s' % jar_path)
+    try:
+        c = sqlite3.connect(jar_path)
+        cur = c.cursor()
+        cur.execute('select value from moz_cookies where host '
+                    'like ? and name = "auth_pubtkt" '
+                    'order by expiry desc', ('%' + host + '%',))
+        for cookie_info in cur.fetchall():
+            if cookie_info:
+                if _is_cookie_valid(cookie_info[0]):
+                    return cookie_info[0]
+    except sqlite3.OperationalError as e:
+        logger.debug("Could not read cookies: %s" % e)
+    return None
+
+
 def die(msg):
     logger.error(msg)
     sys.exit(1)
@@ -67,12 +155,14 @@ def default_arguments(parser):
                         help='Softwarefactory public gateway URL',
                         required=True)
     parser.add_argument('--auth', metavar='username[:password]',
-                        help='Authentication information', required=True)
+                        help='Authentication information', required=False,
+                        default=None)
     parser.add_argument('--auth-server-url', metavar='central-auth-server',
                         default=None,
                         help='URL of the central auth server')
     parser.add_argument('--cookie', metavar='Authentication cookie',
-                        help='cookie of the user if known')
+                        help='cookie of the user if known',
+                        default=None)
     parser.add_argument('--insecure', default=False, action='store_true',
                         help='disable SSL certificate verification, '
                         'verification is enabled by default')
@@ -517,11 +607,45 @@ def main():
     if args.auth_server_url is None:
         args.auth_server_url = args.url
 
-    if ":" not in args.auth:
+    # check that the cookie is still valid
+    if args.cookie is not None:
+        if not _is_cookie_valid(args.cookie):
+            die("Invalid cookie")
+
+    if args.auth is None and args.cookie is None:
+        host = urlparse.urlsplit(args.url).hostname
+        logger.info("No authentication provided, looking for an existing "
+                    "cookie for host %s... " % host),
+        # try Chrome
+        CHROME_COOKIES_PATH = _build_path('.config/chromium/Default/Cookies')
+        cookie = get_chromium_cookie(CHROME_COOKIES_PATH,
+                                     host)
+        if _is_cookie_valid(cookie):
+            args.cookie = cookie
+        if args.cookie is None:
+            # try Firefox
+            FIREFOX_COOKIES_PATH = _build_path(
+                '.mozilla/firefox/*.default/cookies.sqlite')
+            paths = glob.glob(FIREFOX_COOKIES_PATH)
+            # FF can have several profiles, let's cycle through
+            # them until we find a cookie
+            for p in paths:
+                cookie = get_firefox_cookie(p, host)
+                if _is_cookie_valid(cookie):
+                    args.cookie = cookie
+                    break
+        if args.cookie is None:
+            logger.error("No cookie found.")
+            die("Please provide valid credentials.")
+        userid = args.cookie.split('%3B')[0].split('%3D')[1]
+        logger.info("Authenticating as %s" % userid)
+
+    headers = {}
+    if args.auth is not None and ":" not in args.auth:
         password = getpass.getpass("%s's password: " % args.auth)
         args.auth = "%s:%s" % (args.auth, password)
+        headers = {'Authorization': 'Basic ' + base64.b64encode(args.auth)}
 
-    headers = {'Authorization': 'Basic ' + base64.b64encode(args.auth)}
     if args.insecure:
         import urllib3
         urllib3.disable_warnings()
