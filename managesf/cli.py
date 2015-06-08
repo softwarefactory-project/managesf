@@ -18,13 +18,42 @@ import argparse
 import base64
 import getpass
 import json
+import logging
 import os
 import requests
 import sys
 
 
+try:
+    import http.client as http_client
+except ImportError:
+    # Python 2
+    import httplib as http_client
+
+
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
+
+
+logger = logging.getLogger('sfmanager')
+ch = logging.StreamHandler()
+fh_debug = logging.FileHandler('sfmanager.log')
+fh_debug.setLevel(logging.DEBUG)
+info_formatter = '%(levelname)-8s - %(message)s'
+debug_formatter = '%(asctime)s - %(name)-16s - ' + info_formatter
+info_formatter = logging.Formatter(info_formatter)
+debug_formatter = logging.Formatter(debug_formatter)
+fh_debug.setFormatter(debug_formatter)
+
+
+logger.addHandler(ch)
+logger.addHandler(fh_debug)
+requests_log.addHandler(fh_debug)
+
+
 def die(msg):
-    print "Error: %s" % msg
+    logger.error(msg)
     sys.exit(1)
 
 
@@ -47,6 +76,9 @@ def default_arguments(parser):
     parser.add_argument('--insecure', default=False, action='store_true',
                         help='disable SSL certificate verification, '
                         'verification is enabled by default')
+    parser.add_argument('--debug', default=False, action='store_true',
+                        help='enable debug messages in console, '
+                        'disabled by default')
 
 
 def backup_command(sp):
@@ -231,6 +263,7 @@ def get_cookie(args):
                               'back': '/'},
                       allow_redirects=False,
                       verify=not args.insecure)
+
     if r.status_code == 401:
         die("Access denied, wrong login or password")
     elif r.status_code != 303:
@@ -251,7 +284,8 @@ def response(resp):
 def project_user_action(args, base_url, headers):
     if args.command in ['add_user', 'delete_user', 'list_active_users']:
         subcommand = args.command
-        print "Deprecated syntax, please use project %s ..." % subcommand
+        logger.info("Deprecated syntax, "
+                    "please use project %s ..." % subcommand)
     elif args.command == 'project':
         subcommand = args.subcommand
     else:
@@ -286,7 +320,8 @@ def project_user_action(args, base_url, headers):
 def project_action(args, base_url, headers):
     if args.command in ['delete', 'create']:
         subcommand = args.command
-        print "Deprecated syntax, please use project %s ..." % subcommand
+        logger.info("Deprecated syntax, "
+                    "please use project %s ..." % subcommand)
     elif args.command == 'project':
         subcommand = args.subcommand
     else:
@@ -339,8 +374,7 @@ def backup_action(args, base_url, headers):
         resp = requests.get(url, headers=headers,
                             cookies=dict(auth_pubtkt=get_cookie(args)))
         if resp.status_code != 200:
-            print "backup_get failed with status_code " + str(resp.status_code)
-            sys.exit("error")
+            die("backup_get failed with status_code " + str(resp.status_code))
         chunk_size = 1024
         with open('sf_backup.tar.gz', 'wb') as fd:
             for chunk in resp.iter_content(chunk_size):
@@ -365,8 +399,7 @@ def replication_action(args, base_url, headers):
         url = base_url + '/restore'
         filename = args.filename
         if not os.path.isfile(filename):
-            print "file %s not exist" % filename
-            sys.exit("error")
+            die("file %s does not exist" % filename)
         files = {'file': open(filename, 'rb')}
         resp = requests.post(url, headers=headers, files=files,
                              cookies=dict(auth_pubtkt=get_cookie(args)))
@@ -381,21 +414,21 @@ def replication_action(args, base_url, headers):
             if getattr(args, 'section'):
                 url = url + '/%s' % args.section
             else:
-                sys.exit(0)
+                die("No section provided")
         if args.rep_command not in {'list', 'rename-section',
                                     'remove-section'}:
             if getattr(args, 'name') and (args.name not in settings):
-                print "Invalid setting %s" % args.name
-                print "Valid settings are " + " , ".join(settings)
-                sys.exit(0)
+                logger.error("Invalid setting %s" % args.name)
+                die("Valid settings are " + " , ".join(settings))
             url = url + '/%s' % args.name
         else:
+            # TODO replace with die() but what is this case ??
             sys.exit(0)
         if args.rep_command in {'add', 'replace-all', 'rename-section'}:
             if getattr(args, 'value'):
                 data = {'value': args.value}
             else:
-                sys.exit(0)
+                die("No value provided")
 
         if args.rep_command in {'unset-all', 'replace-all', 'remove-section'}:
             meth = requests.delete
@@ -412,7 +445,7 @@ def replication_action(args, base_url, headers):
             # if server has no valid json it will send {}
             # for other commands print status
             if args.rep_command in {'get-all', 'list'}:
-                print resp.json()
+                logger.info(resp.json())
                 return True
 
     elif args.command == 'trigger_replication':
@@ -473,6 +506,14 @@ def main():
     args = parser.parse_args()
     base_url = "%s/manage" % args.url.rstrip('/')
 
+    if not args.debug:
+        ch.setLevel(logging.ERROR)
+        ch.setFormatter(info_formatter)
+    else:
+        http_client.HTTPConnection.debuglevel = 1
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(debug_formatter)
+
     if args.auth_server_url is None:
         args.auth_server_url = args.url
 
@@ -489,7 +530,7 @@ def main():
            backup_action(args, base_url, headers) or
            replication_action(args, base_url, headers) or
            user_management_action(args, base_url, headers)):
-        print "ManageSF failed to execute your command"
+        die("ManageSF failed to execute your command")
 
 if __name__ == '__main__':
     main()
