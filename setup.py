@@ -25,12 +25,17 @@ try:
 except:
     pass
 
+
+VERSION = '0.3.0'
+
+
 setup(
     name='managesf',
-    version='0.2.0',
-    description='',
-    author='',
-    author_email='',
+    version=VERSION,
+    description=('A python client/server used to centralize management '
+                 'of services deployed under Software Factory'),
+    author='Software Factory',
+    author_email='softwarefactory@enovance.com',
     test_suite='managesf',
     zip_safe=False,
     include_package_data=True,
@@ -38,4 +43,8 @@ setup(
     entry_points={
         "console_scripts": ['sfmanager = managesf.cli:main']
         },
+    url=('http://softwarefactory.enovance.com/'
+         'r/gitweb?p=managesf.git;a=summary'),
+    download_url='https://github.com/enovance/managesf/tarball/%s' % VERSION,
+    keywords=['software factory', 'CI', 'continuous integration'],
 )
