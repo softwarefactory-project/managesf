@@ -182,6 +182,11 @@ def restore_command(sp):
                      required=True, help='Tarball used to restore SF')
 
 
+def gerrit_api_htpasswd(sp):
+    sp.add_parser('generate_password')
+    sp.add_parser('delete_password')
+
+
 def project_user_command(sp):
     dup = sp.add_parser('delete_user')
     dup.add_argument('--name', '-n', nargs='?', metavar='project-name',
@@ -329,8 +334,12 @@ def command_options(parser):
     user_commands = sp.add_parser('user',
                                   help='project users-related commands')
     suc = user_commands.add_subparsers(dest="subcommand")
+    gerrit_api_commands = sp.add_parser('gerrit_api_htpasswd',
+                                        help='Gerrit API access commands')
+    gic = gerrit_api_commands.add_subparsers(dest="subcommand")
     backup_command(sp)
     restore_command(sp)
+    gerrit_api_htpasswd(gic)
     project_user_command(spc)
     project_command(spc)
     user_management_command(suc)
@@ -475,6 +484,28 @@ def backup_action(args, base_url, headers):
         resp = requests.post(url, headers=headers,
                              cookies=dict(auth_pubtkt=get_cookie(args)))
 
+    return response(resp)
+
+
+def gerrit_api_htpasswd_action(args, base_url, headers):
+    url = base_url + '/htpasswd'
+    if not getattr(args, 'subcommand', None):
+        return False
+    if args.subcommand not in ['generate_password', 'delete_password']:
+        return False
+
+    if args.subcommand == 'generate_password':
+        resp = requests.put(url, headers=headers,
+                            cookies=dict(auth_pubtkt=get_cookie(args)))
+        if resp.status_code != 201:
+            die("generate_password failed with status_code " +
+                str(resp.status_code))
+    elif args.subcommand == 'delete_password':
+        resp = requests.delete(url, headers=headers,
+                               cookies=dict(auth_pubtkt=get_cookie(args)))
+        if resp.status_code != 204:
+            die("delete_password failed with status_code " +
+                str(resp.status_code))
     return response(resp)
 
 
@@ -652,6 +683,7 @@ def main():
     if not(project_user_action(args, base_url, headers) or
            project_action(args, base_url, headers) or
            backup_action(args, base_url, headers) or
+           gerrit_api_htpasswd_action(args, base_url, headers) or
            replication_action(args, base_url, headers) or
            user_management_action(args, base_url, headers)):
         die("ManageSF failed to execute your command")
