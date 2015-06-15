@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 # -*- coding: utf-8 -*-
+
 try:
     from setuptools import setup, find_packages
 except ImportError:
@@ -47,4 +48,5 @@ setup(
          'r/gitweb?p=managesf.git;a=summary'),
     download_url='https://github.com/enovance/managesf/tarball/%s' % VERSION,
     keywords=['software factory', 'CI', 'continuous integration'],
+    data_files=[('share/man/man1', ['docs/man/sfmanager.1'])],
 )

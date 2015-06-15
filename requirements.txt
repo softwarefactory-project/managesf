@@ -13,3 +13,4 @@ pycrypto
 htpasswd
 pygerrit
 python-redmine
+sphinx

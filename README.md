@@ -1,52 +1,32 @@
-# Manage-sf
-'manage-sf' is a REST based utility to create and delete projects in gerrit as well as redmine.
+# managesf
 
-# How to use
+This is a REST-based utility to manage projects, users and other tasks in
+SoftwareFactory(http://softwarefactory.enovance.com).
+It consists of two parts: a server with a REST API interface and a command line
+interface (CLI).
 
-Update config.py and execute the following commands, to use it for development purpose
+## Documentation
 
-* virtualenv venv
-* . venv/bin/activate
-* pip install -r requirements.txt
-* pecan serve config.py
+More information is included in the documentation(docs/intro.rst).
 
-To deploy in production
+## Installation
 
-* Refer to pecan [dox](http://pecan.readthedocs.org/en/latest/deployment.html#deployment)
+### CLI sfmanager
 
-# URLs
+Run the following commands if you only want to install the commandline tool:
 
-## PUT
-Creates a project.
+ pip install -r requirements.txt
+ python setup.py
 
-### Usage
-PUT /project/project-name
+### REST API server
 
-Information related to <project-name> are uploaded as a JSON data
+Update config.py and execute the following commands if you want to run managesf in a development setup::
 
-#### Input Data
+ virtualenv venv
+ . venv/bin/activate
+ pip install -r requirements.txt
+ pecan serve config.py
 
-    {
-        "description": A breif description about the project,
-        "upstream": Upstream GIT URL from which the new project will be initialized,
-        "ptl-group-members": Project team lead members,
-        "core-group-members": Core group members
-    }
+To run it in production please refer to the Pecan documentation:
 
-If the no input data is uploaded, the new project will be created with empty description, empty repo, and the user requesting as the core and ptl group member
-
-#### Headers
-HTTP Basic Authorization header is mandatory
-
-## DELETE
-Deletes a project
-
-### Usage
-DELETE /project/project-name
-
-### Headers 
-HTTP Basic Authorization header is mandatory
-
-# CLI
-
-sfmanager --help
+* Refer to pecan [doc](http://pecan.readthedocs.org/en/latest/deployment.html#deployment)
