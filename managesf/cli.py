@@ -541,10 +541,8 @@ def replication_action(args, base_url, headers):
             if getattr(args, 'name') and (args.name not in settings):
                 logger.error("Invalid setting %s" % args.name)
                 die("Valid settings are " + " , ".join(settings))
-            url = url + '/%s' % args.name
-        else:
-            # TODO replace with die() but what is this case ??
-            sys.exit(0)
+            if args.name:  # Might be None
+                url = url + '/%s' % args.name
         if args.rep_command in {'add', 'replace-all', 'rename-section'}:
             if getattr(args, 'value'):
                 data = {'value': args.value}

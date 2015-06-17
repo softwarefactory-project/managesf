@@ -67,15 +67,23 @@ class ReplicationController(RestController):
 
     # 'get-all', 'list'
     @expose()
-    def get(self, section=None, setting=None):
-        if not section:
-            abort(400)
+    def get(self, *remainder):
+        section = None
+        setting = None
+        if len(remainder) >= 1:
+            section = remainder[0]
+        if len(remainder) >= 2:
+            setting = remainder[1]
+        config = None
         try:
             config = gerrit.replication_get_config(section, setting)
-            response.status = 200
-            return config
         except Exception as e:
             return report_unhandled_error(e)
+        if config:
+            response.status = 200
+            return str(config)
+        response.status = 404
+        return
 
     @expose()
     def post(self):

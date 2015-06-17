@@ -520,8 +520,8 @@ def replication_read_config():
     config = {}
     for line in lines:
         setting, value = line.split("=")
-        section = setting.split(".")[0]
-        setting = setting.split(".")[1]
+        section = setting.split(".")[1]
+        setting = setting.split(".")[2]
         if setting == 'projects':
             if (len(value.split()) != 1):
                 logger.info("[gerrit] Invalid Replication config file.")
@@ -600,21 +600,24 @@ def replication_get_config(section=None, setting=None):
     config = replication_read_config()
     replication_validate(projects, config, section, setting)
     userConfig = {}
-    # Return setting
+
+    # First, filter out any project the user has no access to
+    for _section in config:
+        for project in config[_section]['projects']:
+            if project in projects:
+                userConfig[_section] = config[_section]
+
+    # Limit response to section if set
+    if section:
+        userConfig = userConfig.get(section, {})
+
+    # Limit response to setting if set
     if setting:
-        logger.info("[gerrit] User GET request: %s %s" % (section, setting))
-        if (section in config) and (setting in config[section]):
-            userConfig[setting] = config[section][setting]
-    else:
-        # Return the authorized sections for the user
-        logger.info("[gerrit] User GET request for all sections")
-        for _section in config:
-            for project in config[_section]['projects']:
-                if project in projects:
-                    userConfig[_section] = config[_section]
-                    break
+        userConfig = userConfig.get(setting, {})
+
     logger.info("[gerrit] Config for user: %s" % str(userConfig))
-    return userConfig
+    if userConfig:
+        return userConfig
 
 
 def replication_trigger(json):

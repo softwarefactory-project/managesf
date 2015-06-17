@@ -25,13 +25,13 @@ import tempfile
 from managesf.controllers import gerrit
 from managesf.tests import dummy_conf
 
-repl_content = """[repl]
+repl_content = """[remote "repl"]
     projects = p1
     url = gerrit@$mysqlh:/home/gerrit/site_path/git/p1.git
     push = +refs/heads/*:refs/heads/*
 """
 
-repl_content_buggy = """[repl]
+repl_content_buggy = """[remote "repl"]
     projects = p1
     gerrit@$mysqlh:/home/gerrit/site_path/git/p1.git
     push = +refs/heads/*:refs/heads/*
@@ -419,10 +419,6 @@ class TestGerritController(TestCase):
             self.assertTrue(config)
             config = gerrit.replication_get_config('repl')
             self.assertTrue(config)
-            # TODO: is this real behaviour we want for the tests below ?
-            config = gerrit.replication_get_config('notexist')
-            self.assertTrue(config)
-            gpbu.return_value = ('p2', 'p3')
             config = gerrit.replication_get_config('notexist')
             self.assertFalse(config)
 
