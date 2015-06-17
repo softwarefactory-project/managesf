@@ -233,38 +233,81 @@ Delete user
 Remote replication mangement
 ----------------------------
 
-Add a new replication target
-''''''''''''''''''''''''''''
-Creating a new replication configuration requires several steps. These are:
+Gerrit can be configured to push merged changes to another git repository.  This
+can be used to mirror changes on a public available repository, for example on
+Github or to keep another copy as a backup.
 
-replication_config add --section sectionname project projectname
-    Creates a new configuration "sectionname" for the project "projectname"
-replication_config add --section sectionname url gerrit@$hostname:/path/git/projectname.git
-    Set the remote url to "gerrit@$hostname:/path/git/projectname.git"
-trigger_replication --project config
-    Trigger the replication
+Details about the configuration within Gerrit itself can be found online:
+https://gerrit.googlesource.com/gerrit/+/stable-2.4/Documentation/config-replication.txt
+
+
+Add a replication config setting
+''''''''''''''''''''''''''''''''
+
+The minimum requirement is to set a remote git url. Every replication target
+requires it's own section within Gerrits configuration file, thus you need to
+set a sectionname for each replication target.
+
+There are a few settings you can use in a replication configuration section:
+
+url 'gerrit@$hostname:/path/git/${name}.git'
+    Set the remote url. The variable "${name}" will be replaced by the
+    projectname and can be used if multiple projects will be replicated by this
+    configuration.
+    Can be specified multiple times to replicate to several hosts. In this case
+    the option "threads" might be used to configure Gerrit to replicate in
+    parallel.
+
+projects project1,project2
+    Limits the replication to the previously defined url to projects "project1,
+    project2". Note that there is no space between the project names.
+
+push "+refs/heads/*:refs/heads/*"
+    refspec denoting what should be replicated. Can be specified multiple times.
+
+Further valid setting names are: **receivepack**, **uploadpack**, **timeout**, **replicationDelay**, **threads**.
 
 Example:
 
 .. code-block:: bash
 
  sfmanager --url <http://sfgateway.dom> --auth user:password \
-           replication_config add --section sectionname project projectname
+           replication_config add --section sectionname url 'gerrit@$hostname:/path/git/${name}.git'
 
  sfmanager --url <http://sfgateway.dom> --auth user:password \
-           replication_config add --section sectionname url gerrit@$hostname:/path/git/projectname.git
+           replication_config add --section sectionname projects projectname
+
+
+Trigger replication manually
+''''''''''''''''''''''''''''
+
+Replication is triggered automatically by default, though Gerrit delays this a
+little bit (15 seconds by default) to batch multiple commits into a single push operation.
+
+.. code-block:: bash
 
  sfmanager --url <http://sfgateway.dom> --auth user:password \
            trigger_replication --project config
 
 
-List existing replication config
-''''''''''''''''''''''''''''''''
+List existing replication configs and settings
+''''''''''''''''''''''''''''''''''''''''''''''
+
+Existing replication configuration can be shown using the two commands **list**
+and **get-all**. The first command lists all configured replications that the user
+has access to, the second command lists only settings from a specific
+configuration section and can be filtered to a single setting too.
 
 .. code-block:: bash
 
  sfmanager --url <http://sfgateway.dom> --auth user:password \
            replication_config list
+
+ sfmanager --url <http://sfgateway.dom> --auth user:password \
+           get-all --section sectionname
+
+ sfmanager --url <http://sfgateway.dom> --auth user:password \
+           get-all --section sectionname url
 
 
 Delete replication config
@@ -277,6 +320,57 @@ does not remove data on the remote side.
 
  sfmanager --url <http://sfgateway.dom> --auth user:password \
            remove-section sectionname
+
+Modify existing settings
+''''''''''''''''''''''''
+
+.. code-block:: bash
+
+ sfmanager --url <http://sfgateway.dom> --auth user:password \
+           replication_config replace-all --section sectionname projects project1,project3
+
+
+Using SSH keys to authenticate replication
+''''''''''''''''''''''''''''''''''''''''''
+
+Gerrit reads ~/.ssh/config on startup and uses defined configuration settings
+when connecting to remote replication targets. Authentication is done using SSH
+keys, thus they need to be defined first.
+Some replication sites don't allow to re-use a single SSH key for authentication
+with different repositories, for example Github. In that case you can define
+multiple different SSH keys, and instead of directly using a hostname you only
+define an alias for the "Host" value. The SSH keys have to be created on the
+Gerrit node or need to be copied there.
+
+An example setting for an alias host might look like this:
+
+.. code-block:: none
+
+ Host alias_gh_firstrepo
+    Hostname github.com
+    IdentityFile ~/.ssh/gh_firstrepo
+    PreferredAuthentications publickey
+
+ Host alias_gh_secondrepo
+    Hostname github.com
+    IdentityFile ~/.ssh/gh_secondrepo
+    PreferredAuthentications publickey
+
+The corresponding Gerrit replication can be created using the following URLs:
+
+.. code-block:: bash
+
+ sfmanager --url <http://sfgateway.dom> --auth user:password \
+           replication_config add --section firstrepo url 'git@alias_gh_firstrepo:accountname/${name}.git'
+
+ sfmanager --url <http://sfgateway.dom> --auth user:password \
+           replication_config add --section firstrepo projects projectname1
+
+ sfmanager --url <http://sfgateway.dom> --auth user:password \
+           replication_config add --section secondrepo url 'git@alias_gh_secondrepo:accountname/${name}.git'
+
+ sfmanager --url <http://sfgateway.dom> --auth user:password \
+           replication_config add --section secondrepo projects projectname2
 
 
 Backup and restore

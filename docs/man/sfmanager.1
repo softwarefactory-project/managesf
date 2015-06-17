@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "SFMANAGER" "1" "June 16, 2015" "0.3.1" "managesf"
+.TH "SFMANAGER" "1" "June 22, 2015" "0.3.1" "managesf"
 .SH NAME
 sfmanager \- sfmanager Documentation
 .
@@ -294,20 +294,39 @@ sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
 .UNINDENT
 .UNINDENT
 .SH REMOTE REPLICATION MANGEMENT
-.SS Add a new replication target
 .sp
-Creating a new replication configuration requires several steps. These are:
+Gerrit can be configured to push merged changes to another git repository.  This
+can be used to mirror changes on a public available repository, for example on
+Github or to keep another copy as a backup.
+.sp
+Details about the configuration within Gerrit itself can be found online:
+\fI\%https://gerrit.googlesource.com/gerrit/+/stable\-2.4/Documentation/config\-replication.txt\fP
+.SS Add a replication config setting
+.sp
+The minimum requirement is to set a remote git url. Every replication target
+requires it\(aqs own section within Gerrits configuration file, thus you need to
+set a sectionname for each replication target.
+.sp
+There are a few settings you can use in a replication configuration section:
 .INDENT 0.0
 .TP
-.B replication_config add \-\-section sectionname project projectname
-Creates a new configuration "sectionname" for the project "projectname"
+.B url \fI\%\(aqgerrit@$hostname\fP:/path/git/${name}.git\(aq
+Set the remote url. The variable "${name}" will be replaced by the
+projectname and can be used if multiple projects will be replicated by this
+configuration.
+Can be specified multiple times to replicate to several hosts. In this case
+the option "threads" might be used to configure Gerrit to replicate in
+parallel.
 .TP
-.B replication_config add \-\-section sectionname url \fI\%gerrit@$hostname\fP:/path/git/projectname.git
-Set the remote url to "\fI\%gerrit@$hostname\fP:/path/git/projectname.git"
+.B projects project1,project2
+Limits the replication to the previously defined url to projects "project1,
+project2". Note that there is no space between the project names.
 .TP
-.B trigger_replication \-\-project config
-Trigger the replication
+.B push "+refs/heads/\fI:refs/heads/\fP"
+refspec denoting what should be replicated. Can be specified multiple times.
 .UNINDENT
+.sp
+Further valid setting names are: \fBreceivepack\fP, \fBuploadpack\fP, \fBtimeout\fP, \fBreplicationDelay\fP, \fBthreads\fP\&.
 .sp
 Example:
 .INDENT 0.0
@@ -316,18 +335,35 @@ Example:
 .nf
 .ft C
 sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
-          replication_config add \-\-section sectionname project projectname
+          replication_config add \-\-section sectionname url \(aqgerrit@$hostname:/path/git/${name}.git\(aq
 
 sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
-          replication_config add \-\-section sectionname url gerrit@$hostname:/path/git/projectname.git
-
+          replication_config add \-\-section sectionname projects projectname
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Trigger replication manually
+.sp
+Replication is triggered automatically by default, though Gerrit delays this a
+little bit (15 seconds by default) to batch multiple commits into a single push operation.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
 sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
           trigger_replication \-\-project config
 .ft P
 .fi
 .UNINDENT
 .UNINDENT
-.SS List existing replication config
+.SS List existing replication configs and settings
+.sp
+Existing replication configuration can be shown using the two commands \fBlist\fP
+and \fBget\-all\fP\&. The first command lists all configured replications that the user
+has access to, the second command lists only settings from a specific
+configuration section and can be filtered to a single setting too.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -335,6 +371,12 @@ sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
 .ft C
 sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
           replication_config list
+
+sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
+          get\-all \-\-section sectionname
+
+sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
+          get\-all \-\-section sectionname url
 .ft P
 .fi
 .UNINDENT
@@ -350,6 +392,72 @@ does not remove data on the remote side.
 .ft C
 sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
           remove\-section sectionname
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Modify existing settings
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
+          replication_config replace\-all \-\-section sectionname projects project1,project3
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Using SSH keys to authenticate replication
+.sp
+Gerrit reads ~/.ssh/config on startup and uses defined configuration settings
+when connecting to remote replication targets. Authentication is done using SSH
+keys, thus they need to be defined first.
+Some replication sites don\(aqt allow to re\-use a single SSH key for authentication
+with different repositories, for example Github. In that case you can define
+multiple different SSH keys, and instead of directly using a hostname you only
+define an alias for the "Host" value. The SSH keys have to be created on the
+Gerrit node or need to be copied there.
+.sp
+An example setting for an alias host might look like this:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Host alias_gh_firstrepo
+   Hostname github.com
+   User remoteuser
+   IdentityFile ~/.ssh/gh_firstrepo
+   PreferredAuthentications publickey
+
+Host alias_gh_secondrepo
+   Hostname github.com
+   User remoteuser
+   IdentityFile ~/.ssh/gh_secondrepo
+   PreferredAuthentications publickey
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The corresponding Gerrit replication can be created using the following URLs:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
+          replication_config add \-\-section firstrepo url \(aqgit@alias_gh_firstrepo:accountname/${name}.git\(aq
+
+sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
+          replication_config add \-\-section firstrepo projects projectname1
+
+sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
+          replication_config add \-\-section secondrepo url \(aqgit@alias_gh_secondrepo:accountname/${name}.git\(aq
+
+sfmanager \-\-url <http://sfgateway.dom> \-\-auth user:password \e
+          replication_config add \-\-section secondrepo projects projectname2
 .ft P
 .fi
 .UNINDENT
