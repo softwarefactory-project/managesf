@@ -11,3 +11,5 @@ mock
 urllib3
 pycrypto
 htpasswd
+pygerrit
+python-redmine
