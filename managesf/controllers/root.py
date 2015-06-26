@@ -21,7 +21,8 @@ from pecan import expose
 from pecan import abort
 from pecan.rest import RestController
 from pecan import request, response
-from managesf.controllers import gerrit, redminec, backup, localuser
+from managesf.controllers import gerrit, redminec
+from managesf.controllers import backup, localuser, introspection
 import logging
 import os.path
 
@@ -423,3 +424,4 @@ class RootController(object):
     user = LocalUserController()
     bind = LocalUserBindController()
     htpasswd = HtpasswdController()
+    about = introspection.IntrospectionController()

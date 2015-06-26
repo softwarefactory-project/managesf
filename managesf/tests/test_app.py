@@ -50,6 +50,19 @@ class FunctionalTest(TestCase):
         os.unlink(self.config['sqlalchemy']['url'][len('sqlite:///'):])
 
 
+class TestManageSFIntrospectionController(FunctionalTest):
+
+    def test_instrospection(self):
+        response = self.app.get('/about/').json
+        self.assertEqual('managesf',
+                         response['service']['name'])
+        self.assertEqual(set(['zuul', 'jenkins', 'lodgeit',
+                              'etherpad', 'managesf']),
+                         set(response['service']['services']))
+        self.assertEqual(set(['gerrit', 'redmine']),
+                         set(response['service']['auth_services']))
+
+
 class TestManageSFAppLocaluserController(FunctionalTest):
 
     def test_add_or_update_user(self):
