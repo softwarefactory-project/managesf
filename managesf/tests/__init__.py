@@ -83,3 +83,6 @@ class dummy_conf():
     htpasswd = {
         'filename': tempfile.mkstemp()[1]
     }
+    sshconfig = {
+        'confdir': '/tmp'
+    }

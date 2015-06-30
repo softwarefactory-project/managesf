@@ -547,7 +547,7 @@ def replication_validate(projects, config, section=None, setting=None):
         logger.info("[gerrit] User doesn't own any project.")
         abort(403)
     if section and (section in config):
-        for project in config[section]['projects']:
+        for project in config[section].get('projects', []):
             if project not in projects:
                 logger.info("[gerrit] User unauthorized for this section %s" %
                             section)
@@ -568,9 +568,6 @@ def replication_apply_config(section, setting=None, value=None):
             if setting == 'url':
                 # Get the remote fingerprint
                 replication_fill_knownhosts(value)
-            if setting == 'projects' and (section in config):
-                logger.info("[gerrit] Project already exist.")
-                abort(400)
             cmd = ['--add', '%s.%s' % (_section, setting), value]
         else:
             cmd = ['--rename-section', _section, 'remote.%s' % value]
@@ -603,7 +600,7 @@ def replication_get_config(section=None, setting=None):
 
     # First, filter out any project the user has no access to
     for _section in config:
-        for project in config[_section]['projects']:
+        for project in config[_section].get('projects', []):
             if project in projects:
                 userConfig[_section] = config[_section]
 

@@ -193,6 +193,16 @@ def gerrit_api_htpasswd(sp):
     sp.add_parser('delete_password')
 
 
+def gerrit_ssh_config(sp):
+    add_config = sp.add_parser('add')
+    add_config.add_argument('--alias', nargs='?', required=True)
+    add_config.add_argument('--hostname', nargs='?', required=True)
+    add_config.add_argument('--keyfile', nargs='?', required=True)
+
+    delete_config = sp.add_parser('delete')
+    delete_config.add_argument('--alias', nargs='?', required=True)
+
+
 def project_user_command(sp):
     dup = sp.add_parser('delete_user')
     dup.add_argument('--name', '-n', nargs='?', metavar='project-name',
@@ -343,9 +353,13 @@ def command_options(parser):
     gerrit_api_commands = sp.add_parser('gerrit_api_htpasswd',
                                         help='Gerrit API access commands')
     gic = gerrit_api_commands.add_subparsers(dest="subcommand")
+    gerrit_ssh_commands = sp.add_parser('gerrit_ssh_config',
+                                        help='Gerrit SSH config commands')
+    gsc = gerrit_ssh_commands.add_subparsers(dest="subcommand")
     backup_command(sp)
     restore_command(sp)
     gerrit_api_htpasswd(gic)
+    gerrit_ssh_config(gsc)
     project_user_command(spc)
     project_command(spc)
     user_management_command(suc)
@@ -528,6 +542,39 @@ def gerrit_api_htpasswd_action(args, base_url, headers):
     return response(resp)
 
 
+def gerrit_ssh_config_action(args, base_url, headers):
+    url = base_url + '/sshconfig'
+    if not getattr(args, 'subcommand', None):
+        return False
+    if args.subcommand not in ['add', 'delete']:
+        return False
+
+    url += '/' + args.alias
+
+    if args.subcommand == 'add':
+        data = {
+            "hostname": args.hostname,
+            "userknownHostsfile": "/dev/null",
+            "preferredauthentications": "publickey",
+            "stricthostkeychecking": "no",
+        }
+
+        with open(args.keyfile) as ssh_key_file:
+            data["identityfile_content"] = ssh_key_file.read()
+        resp = requests.put(url, headers=headers, data=json.dumps(data),
+                            cookies=dict(auth_pubtkt=get_cookie(args)))
+        if resp.status_code != 201:
+            die("add ssh config failed with status_code " +
+                str(resp.status_code))
+    elif args.subcommand == 'delete':
+        resp = requests.delete(url, headers=headers,
+                               cookies=dict(auth_pubtkt=get_cookie(args)))
+        if resp.status_code != 204:
+            die("remove ssh config failed with status_code " +
+                str(resp.status_code))
+    return response(resp)
+
+
 def replication_action(args, base_url, headers):
     if args.command in ['restore', 'replication_config',
                         'trigger_replication']:
@@ -704,7 +751,8 @@ def main():
            backup_action(args, base_url, headers) or
            gerrit_api_htpasswd_action(args, base_url, headers) or
            replication_action(args, base_url, headers) or
-           user_management_action(args, base_url, headers)):
+           user_management_action(args, base_url, headers) or
+           gerrit_ssh_config_action(args, base_url, headers)):
         die("ManageSF failed to execute your command")
 
 if __name__ == '__main__':

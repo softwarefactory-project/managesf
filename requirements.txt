@@ -10,6 +10,7 @@ sqlalchemy==1.0.8
 nose==1.3.7
 mock==1.3.0
 urllib3==1.11
+paramiko
 pycrypto==2.6.1
 htpasswd==2.3
 pygerrit # see dependency in pysflib

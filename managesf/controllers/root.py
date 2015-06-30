@@ -16,6 +16,7 @@ import random
 import string
 import time
 
+import paramiko
 from pecan import conf
 from pecan import expose
 from pecan import abort
@@ -416,6 +417,152 @@ class HtpasswdController(RestController):
             abort(406)
 
 
+class SSHConfigController(RestController):
+    def __init__(self):
+        self.confdir = None
+        sshconfig = getattr(conf, "sshconfig", {})
+        self.confdir = sshconfig.get('confdir', '/var/www/managesf/sshconfig')
+        if not os.path.exists(self.confdir):
+            os.makedirs(self.confdir)
+        self.filename = os.path.join(self.confdir, "config")
+        self.hostname = sshconfig.get('hostname', 'gerrit.tests.dom')
+        self.username = sshconfig.get('username', 'gerrit')
+        self.key_filename = sshconfig.get(
+            'key_filename', '/var/www/managesf/gerrit_admin_rsa')
+
+        self.mapping = {
+            'hostname': 'Hostname',
+            'identityfile': 'IdentityFile',
+            'userknownhostsfile': 'UserKnownHostsFile',
+            'preferredauthentications': 'PreferredAuthentications',
+            'stricthostkeychecking': 'StrictHostKeyChecking',
+            'username': 'Username'
+        }
+
+    def _dump_config(self, configdict):
+        """ Converts a config dict to a ssh config string """
+        content = ""
+        keyfiles = []
+
+        for alias, config in configdict.items():
+            if alias == "*":
+                continue
+
+            # Write the identityfile content to an actual identityfile
+            identityfile_content = config.get('identityfile_content')
+            if identityfile_content:
+                identityfile_content = identityfile_content
+                identityfile_name = os.path.join(
+                    self.confdir, "%s.key" % alias)
+                keyfiles.append(identityfile_name)
+                with open(identityfile_name, "w") as id_file:
+                    id_file.write(identityfile_content)
+                config['identityfile'] = "~/.ssh/%s.key" % alias
+
+            content += 'Host "%s"\n' % alias
+
+            for k in sorted(config.iterkeys()):
+                v = config[k]
+                if isinstance(v, list):
+                    v = str(v[0])
+                # Only add known settings
+                setting = self.mapping.get(k)
+                if setting:
+                    content += "    %s %s\n" % (setting, v)
+            content += "\n"
+
+        return (content, keyfiles)
+
+    def _read_sshconfig(self, filename):
+        """ Reads a ssh config file to a dict """
+        c = paramiko.config.SSHConfig()
+
+        # Open new file if not exists, but don't truncate
+        with open(self.filename, "a+") as sshfile:
+            sshfile.seek(0)
+            c.parse(sshfile)
+        ret = {}
+        for config in c._config:
+            host = config.get('host')[0].strip('"')
+            conf = config.get('config')
+            ret[host] = conf
+        return ret
+
+    def _write_config(self, conf):
+        sshconfig, keyfiles = self._dump_config(conf)
+        with open(self.filename, "w") as conffile:
+            conffile.write(sshconfig)
+        return keyfiles
+
+    def _copy2gerrit(self, filenames):
+        success = True
+
+        known_hosts = os.path.expanduser("~/.ssh/known_hosts")
+        cmd = "sudo systemctl restart gerrit.service"
+
+        ssh = paramiko.SSHClient()
+        ssh.load_host_keys(known_hosts)
+
+        ssh.connect(self.hostname,
+                    username=self.username,
+                    key_filename=self.key_filename)
+
+        sftp = ssh.open_sftp()
+        for filename in filenames:
+            remote_filename = ".ssh/%s" % os.path.basename(filename)
+            try:
+                sftp.put(filename, remote_filename)
+                sftp.chmod(remote_filename, 0600)
+            except IOError:
+                success = False
+        sftp.close()
+
+        (_, stdout, stderr) = ssh.exec_command(cmd)
+        if stdout.readlines() or stderr.readlines():
+            success = False
+        ssh.close()
+
+        return success
+
+    @expose()
+    def put(self, name):
+        if request.remote_user is None:
+            abort(403)
+
+        conf = self._read_sshconfig(self.filename)
+        conf[name] = request.json if request.content_length else {}
+
+        filenames = self._write_config(conf)
+        filenames.append(self.filename)
+        if not self._copy2gerrit(filenames):
+            response.status = 500
+
+        response.status = 201
+
+    @expose()
+    def get(self, name):
+        if request.remote_user is None:
+            abort(403)
+
+        conf = self._read_sshconfig(self.filename)
+
+        return conf
+
+    @expose()
+    def delete(self, name):
+        if request.remote_user is None:
+            abort(403)
+
+        conf = self._read_sshconfig(self.filename)
+        if name in conf:
+            id_file = conf.get(name, {}).get('IdentityFile')
+            if id_file:
+                os.remove(id_file)
+            del conf[name]
+
+        self._write_config(conf)
+
+
 class RootController(object):
     project = ProjectController()
     replication = ReplicationController()
@@ -425,3 +572,4 @@ class RootController(object):
     bind = LocalUserBindController()
     htpasswd = HtpasswdController()
     about = introspection.IntrospectionController()
+    sshconfig = SSHConfigController()
