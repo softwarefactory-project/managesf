@@ -21,6 +21,7 @@ import glob
 import json
 import logging
 import os
+import re
 import requests
 import sqlite3
 import sys
@@ -35,6 +36,8 @@ try:
 except ImportError:
     # Python 2
     import httplib as http_client
+
+from pysflib import sfauth
 
 
 requests_log = logging.getLogger("requests.packages.urllib3")
@@ -71,7 +74,7 @@ def _is_cookie_valid(cookie):
         return False
     try:
         valid_until = float(cookie.split('%3B')[1].split('%3D')[1])
-    except:
+    except Exception:
         return False
     if valid_until < time.time():
         return False
@@ -157,6 +160,9 @@ def default_arguments(parser):
     parser.add_argument('--auth', metavar='username[:password]',
                         help='Authentication information', required=False,
                         default=None)
+    parser.add_argument('--github-token', metavar='GithubPersonalAccessToken',
+                        help='Authenticate with a Github Access Token',
+                        required=False, default=None)
     parser.add_argument('--auth-server-url', metavar='central-auth-server',
                         default=None,
                         help='URL of the central auth server')
@@ -353,23 +359,31 @@ def command_options(parser):
 def get_cookie(args):
     if args.cookie is not None:
         return args.cookie
-    # TODO the exact same method exists in pysflib, it should be refactored
-    (username, password) = args.auth.split(':')
-    url = '%s/auth/login' % args.auth_server_url.rstrip('/')
-    r = requests.post(url,
-                      params={'username': username,
-                              'password': password,
-                              'back': '/'},
-                      allow_redirects=False,
-                      verify=not args.insecure)
-
-    if r.status_code == 401:
-        die("Access denied, wrong login or password")
-    elif r.status_code != 303:
-        die("Could not access url %s" % url)
-    elif len(r.cookies) < 1:
-        die("Unknown error, server didn't set any cookie")
-    return r.cookies['auth_pubtkt']
+    url_stripper = re.compile('http[s]?://(.+)')
+    use_ssl = False
+    try:
+        url = args.auth_server_url.rstrip('/')
+        m = url_stripper.match(url)
+        if m:
+            if url.lower().startswith('https'):
+                use_ssl = True
+            url = m.groups()[0]
+        if args.auth is not None:
+            (username, password) = args.auth.split(':')
+            cookie = sfauth.get_cookie(url, username=username,
+                                       password=password,
+                                       use_ssl=use_ssl,
+                                       verify=(not args.insecure))
+        elif args.github_token is not None:
+            token = args.github_token
+            cookie = sfauth.get_cookie(url, github_access_token=token,
+                                       use_ssl=use_ssl,
+                                       verify=(not args.insecure))
+        else:
+            die('Please provide credentials')
+        return cookie
+    except Exception as e:
+        die(e.message)
 
 
 def response(resp):
@@ -641,7 +655,9 @@ def main():
         if not _is_cookie_valid(args.cookie):
             die("Invalid cookie")
 
-    if args.auth is None and args.cookie is None:
+    if (args.auth is None and
+       args.cookie is None and
+       args.github_token is None):
         host = urlparse.urlsplit(args.url).hostname
         logger.info("No authentication provided, looking for an existing "
                     "cookie for host %s... " % host),
