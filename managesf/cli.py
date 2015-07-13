@@ -427,6 +427,9 @@ def project_user_action(args, base_url, headers):
         resp = requests.get(url, headers=headers,
                             cookies=dict(auth_pubtkt=get_cookie(args)))
 
+    else:
+        return False
+
     return response(resp)
 
 
@@ -473,6 +476,8 @@ def project_action(args, base_url, headers):
     elif subcommand == 'delete':
         resp = requests.delete(url, headers=headers,
                                cookies=dict(auth_pubtkt=get_cookie(args)))
+    else:
+        return False
 
     return response(resp)
 
