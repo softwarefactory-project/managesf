@@ -511,6 +511,7 @@ def replication_read_config():
     out, err, code = replication_ssh_run_cmd(cmd)
     if code:
         logger.info("[gerrit] Reading config file err %s " % err)
+        logger.info("[gerrit] --[\n%s\n]--" % out)
         abort(500)
     elif out:
         logger.info("[gerrit] Contents of replication config file ... \n%s " %
