@@ -46,7 +46,7 @@ setup(
         },
     url=('http://softwarefactory.enovance.com/'
          'r/gitweb?p=managesf.git;a=summary'),
-    download_url='https://github.com/enovance/managesf/tarball/%s' % VERSION,
+    download_url='https://github.com/redhat-cip/managesf/tarball/%s' % VERSION,
     keywords=['software factory', 'CI', 'continuous integration'],
     data_files=[('share/man/man1', ['docs/man/sfmanager.1'])],
 )
