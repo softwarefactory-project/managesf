@@ -371,8 +371,13 @@ class TestGerritController(TestCase):
             self.assertDictEqual(exp_ret, config)
             file(self.conf.gerrit['replication_config_path'], 'w').\
                 write(repl_content_buggy)
-            self.assertRaises(exc.HTTPServerError,
+            self.assertRaises(exc.WSGIHTTPException,
                               lambda: gerrit.replication_read_config())
+            # make sure we get the correct HTTP error code
+            try:
+                gerrit.replication_read_config()
+            except exc.WSGIHTTPException as e:
+                self.assertEqual(500, e.code)
 
     def test_replication_validate(self):
         with patch(

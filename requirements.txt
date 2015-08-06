@@ -1,6 +1,6 @@
 -e git+https://github.com/redhat-cip/pysflib.git#egg=pysflib
 pecan
-WebOb==1.4.1
+#WebOb==1.4.1
 gerritlib
 python-ldap
 requests>=2.2.1
