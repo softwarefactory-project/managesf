@@ -255,6 +255,10 @@ class ProjectController(RestController):
 
     @expose()
     def put(self, name=None):
+        if getattr(conf, "project_create_administrator_only", True):
+            if not gerrit.user_is_administrator():
+                abort(401)
+
         if not name:
             abort(400)
         try:

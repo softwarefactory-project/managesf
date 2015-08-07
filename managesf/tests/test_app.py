@@ -232,12 +232,19 @@ class TestManageSFAppProjectController(FunctionalTest):
 
     def test_project_put(self):
         # Create a project with no name
-        response = self.app.put('/project/', status="*")
-        self.assertEqual(response.status_int, 400)
+        with patch('managesf.controllers.gerrit.user_is_administrator') as gia:
+            response = self.app.put('/project/', status="*")
+            self.assertEqual(response.status_int, 400)
+        # Create a project with name, but without administrator status
+        with patch('managesf.controllers.gerrit.user_is_administrator') as gia:
+            gia.return_value = False
+            response = self.app.put('/project/p1', status="*")
+            self.assertEqual(response.status_int, 401)
         # Create a project with name
         ctx = [patch('managesf.controllers.gerrit.init_project'),
+               patch('managesf.controllers.gerrit.user_is_administrator'),
                patch('managesf.controllers.redminec.init_project')]
-        with nested(*ctx) as (gip, rip):
+        with nested(*ctx) as (gip, gia, rip):
             response = self.app.put('/project/p1', status="*")
             self.assertTupleEqual(('p1', {}), gip.mock_calls[0][1])
             self.assertTupleEqual(('p1', {}), rip.mock_calls[0][1])
@@ -245,9 +252,10 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(response.body, 'Project p1 has been created.')
         # Create a project with name - an error occurs
         ctx = [patch('managesf.controllers.gerrit.init_project'),
+               patch('managesf.controllers.gerrit.user_is_administrator'),
                patch('managesf.controllers.redminec.init_project',
                side_effect=raiseexc)]
-        with nested(*ctx) as (gip, rip):
+        with nested(*ctx) as (gip, gia, rip):
             response = self.app.put('/project/p1', status="*")
             self.assertEqual(response.status_int, 500)
             self.assertEqual(response.body,
