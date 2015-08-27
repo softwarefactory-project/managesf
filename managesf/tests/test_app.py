@@ -646,3 +646,26 @@ class TestManageSFSSHConfigController(FunctionalTest):
         with open(self.filename) as inf:
             content = inf.read()
         self.assertEqual("", content)
+
+
+class TestProjectTestsController(FunctionalTest):
+    def test_init_project_test(self):
+        ctx = [patch('managesf.controllers.gerrit.user_is_administrator'),
+               patch('managesf.controllers.gerrit.get_project'),
+               patch('managesf.controllers.gerrit.commit_init_tests_scripts')]
+        with nested(*ctx) as (gia, gp, cits):
+            gia.return_value = True
+            gp.return_value = 'p1'
+            resp = self.app.put_json('/tests/toto', {'project-scripts': False})
+            self.assertEqual(resp.status_int, 201)
+
+    def test_init_project_test_with_project_scripts(self):
+        ctx = [patch('managesf.controllers.gerrit.user_is_administrator'),
+               patch('managesf.controllers.gerrit.get_project'),
+               patch('managesf.controllers.gerrit.commit_init_tests_scripts'),
+               patch('managesf.controllers.gerrit.GerritRepo')]
+        with nested(*ctx) as (gia, gp, cits, gr):
+            gia.return_value = True
+            gp.return_value = 'p1'
+            resp = self.app.put_json('/tests/toto', {'project-scripts': True})
+            self.assertEqual(resp.status_int, 201)

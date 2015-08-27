@@ -55,7 +55,6 @@ class BaseFunctionalTest(TestCase):
                 params = {'headers': self.headers, 'cookies': self.cookies}
                 if expected_data is not None:
                     params['data'] = json.dumps(expected_data)
-
                 self.assertTrue(action_func(parsed, self.base_url,
                                             self.headers))
 
@@ -74,6 +73,15 @@ class TestProjectUserAction(BaseFunctionalTest):
         args += 'project delete --name proj1'.split()
         expected_url = self.base_url + '/project/proj1'
         self.assert_secure('delete', args, cli.project_action, expected_url)
+
+
+class TestTestsActions(BaseFunctionalTest):
+    def test_init_test_project(self):
+        args = self.default_args
+        args += 'tests init --project toto'.split()
+        expected_url = self.base_url + 'tests/toto/'
+        self.assert_secure('put', args, cli.tests_action, expected_url,
+                           {'project-scripts': True})
 
 
 class TestMembershipAction(BaseFunctionalTest):

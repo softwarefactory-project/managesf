@@ -29,6 +29,7 @@ import time
 import subprocess
 import logging
 import tempfile
+import yaml
 
 from pysflib.sfgerrit import GerritUtils
 from pysflib.sfauth import get_cookie
@@ -71,6 +72,11 @@ def get_projects_by_user():
 def get_projects():
     ge = get_client()
     return ge.get_projects()
+
+
+def get_project(project_name):
+    ge = get_client()
+    return ge.get_project(project_name)
 
 
 def create_group(grp_name, grp_desc):
@@ -255,6 +261,15 @@ class GerritRepo(object):
         cmd = "git push -f origin upstream/master:master"
         self._exec(cmd, cwd=self.infos['localcopy_path'])
         cmd = "git reset --hard origin/master"
+        self._exec(cmd, cwd=self.infos['localcopy_path'])
+
+    def review_changes(self, commit_msg):
+        cmd = 'git review -s'
+        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        cmd = "git commit -a --author '%s' -m'%s'" % (self.email,
+                                                      commit_msg)
+        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        cmd = 'git review'
         self._exec(cmd, cwd=self.infos['localcopy_path'])
 
 
@@ -657,3 +672,40 @@ def replication_trigger(json):
                                        conf.admin['name'],
                                        keyfile=conf.gerrit['sshkey_priv_path'])
     gerrit_client.trigger_replication(cmd)
+
+
+def commit_init_tests_scripts(project_name):
+    config_git = gerrit.GerritRepo('config')
+    config_git.clone()
+    job_file = os.path.join(config_git.infos['localcopy_path'],
+                            'jobs', 'projects.yaml')
+    zuul_file = os.path.join(config_git.infos['localcopy_path'],
+                             'zuul', 'projects.yaml')
+    unit_test = '%s-unit-tests' % project_name
+
+    with open(job_file, 'rw') as fd:
+        job_yaml = yaml.load(fd)
+        projects = [x['project']['name'] for x in job_yaml
+                    if x.get('project')]
+        if project_name not in projects:
+            project = {'project':
+                       {'name': project_name,
+                        'jobs': [unit_test, ],
+                        'node': 'sfstack-lxc-ubuntu || sfstack-lxc-centos'}}
+            job_yaml.append(project)
+            fd.seek(0)
+            fd.write(yaml.dump(job_yaml))
+
+    with open(zuul_file, 'rw') as fd:
+        zuul_yaml = yaml.load(fd)
+        projects = [x['name'] for x in zuul_yaml['projects']]
+        if project_name not in projects:
+            project = {'name': project_name,
+                       'check': unit_test,
+                       'gate': unit_test}
+            zuul_yaml['projects'].append(project)
+            fd.seek(0)
+            fd.write(yaml.dump(zuul_yaml))
+
+    config_git.review_changes('Added test scripts for project %s' %
+                              project_name)

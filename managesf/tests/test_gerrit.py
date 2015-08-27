@@ -509,6 +509,15 @@ class TestGerritRepo(TestCase):
             gr.push_master_from_git_remote('git://tests.dom/git/oldp1.git')
             self.assertEqual(5, len(ex.mock_calls))
 
+    def test_review_changes(self):
+        with patch('managesf.controllers.gerrit.GerritRepo._exec') as ex:
+            gr = gerrit.GerritRepo('p1')
+            gr.review_changes('this is a test')
+            self.assertEqual(3, len(ex.mock_calls))
+            self.assertEqual('git review -s', ex.mock_calls[0][1][0])
+            self.assertTrue(ex.mock_calls[1][1][0].startswith('git commit -a'))
+            self.assertEqual('git review', ex.mock_calls[2][1][0])
+
 
 class TestCustomGerritClient(TestCase):
     def test_reload_replication_plugin(self):

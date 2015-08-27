@@ -567,6 +567,36 @@ class SSHConfigController(RestController):
         self._write_config(conf)
 
 
+class TestsController(RestController):
+    test_script_template = '''#! /bin/bash\n
+
+echo "Modify this script to run your project's unit tests. "
+echo "Until you do this, it will exit in failure !"
+exit 1;
+    '''
+
+    @expose('json')
+    def put(self, project_name=''):
+        if not gerrit.user_is_administrator():
+            abort(403)
+
+        if not gerrit.get_project(project_name):
+            abort(404)
+
+        gerrit.commit_init_tests_scripts(project_name)
+
+        project_scripts = False
+        if request.json:
+            project_scripts = request.json.get('project-scripts', False)
+
+        if project_scripts:
+            project_git = gerrit.GerritRepo(project_name)
+            project_git.clone()
+            project_git.add_file('run_test.sh', self.test_script_template)
+            project_git.review_changes()
+        response.status = 201
+
+
 class RootController(object):
     project = ProjectController()
     replication = ReplicationController()
@@ -577,3 +607,4 @@ class RootController(object):
     htpasswd = HtpasswdController()
     about = introspection.IntrospectionController()
     sshconfig = SSHConfigController()
+    tests = TestsController()

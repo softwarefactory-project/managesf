@@ -351,6 +351,18 @@ def project_command(sp):
                     required=True)
 
 
+def tests_command(parser):
+    tp = parser.add_parser('tests')
+    subc = tp.add_subparsers(dest='subcommand')
+    init = subc.add_parser('init',
+                           help='Setup the initial tests configuration for'
+                           ' a given project')
+    init.add_argument('--no-scripts',
+                      help='Does not create the tests scripts in the project')
+    init.add_argument('--project', '--p', metavar='project-name',
+                      required=True)
+
+
 def section_command(sp):
     rp = sp.add_parser('replication_config')
     rps = rp.add_subparsers(dest="rep_command")
@@ -438,6 +450,7 @@ def command_options(parser):
     membership_command(sp)
     system_command(sp)
     replication_command(sp)
+    tests_command(sp)
 
 
 def get_cookie(args):
@@ -595,6 +608,25 @@ def project_action(args, base_url, headers):
     else:
         return False
 
+    return response(resp)
+
+
+def tests_action(args, base_url, headers):
+
+    if args.command != 'tests':
+        return False
+
+    if getattr(args, 'subcommand') != 'init':
+        return False
+    url = build_url(base_url, 'tests', args.project)
+    data = {}
+    if args.no_scripts:
+        data['project-scripts'] = False
+    else:
+        data['project-scripts'] = True
+
+    resp = requests.put(url, data=json.dumps(data), headers=headers,
+                        cookies=dict(auth_pubtkt=get_cookie(args)))
     return response(resp)
 
 
@@ -897,7 +929,8 @@ def main():
            replication_action(args, base_url, headers) or
            user_management_action(args, base_url, headers) or
            gerrit_ssh_config_action(args, base_url, headers) or
-           membership_action(args, base_url, headers)):
+           membership_action(args, base_url, headers) or
+           tests_action(args, base_url, headers)):
         die("ManageSF failed to execute your command")
 
 if __name__ == '__main__':
