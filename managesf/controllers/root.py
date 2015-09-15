@@ -22,8 +22,9 @@ from pecan import expose
 from pecan import abort
 from pecan.rest import RestController
 from pecan import request, response
-from managesf.controllers import gerrit, redminec
+from managesf.controllers import gerrit
 from managesf.controllers import backup, localuser, introspection
+from managesf.services import redmine
 import logging
 import os.path
 
@@ -37,6 +38,9 @@ CLIENTERRORMSG = "Unable to process your request, failed with "\
                  "unhandled error (server side): %s"
 
 # TODO: add detail (detail arg or abort function) for all abort calls.
+
+
+redmine_service = redmine.SoftwareFactoryRedmine(conf)
 
 
 def report_unhandled_error(exp):
@@ -135,7 +139,7 @@ class MembershipController(RestController):
     @expose('json')
     def get(self):
         try:
-            return redminec.get_active_users()
+            return redmine_service.get_active_users()
         except Exception as e:
             return report_unhandled_error(e)
 
@@ -149,10 +153,12 @@ class MembershipController(RestController):
         if '@' not in user:
             response.status = 400
             return "User must be identified by its email address"
+        requestor = request.remote_user
         try:
             # Add/update user for the project groups
             gerrit.add_user_to_projectgroups(project, user, inp['groups'])
-            redminec.add_user_to_projectgroups(project, user, inp['groups'])
+            redmine_service.membership.create(requestor, user,
+                                              project, inp['groups'])
             response.status = 201
             return "User %s has been added in group(s): %s for project %s" % \
                 (user, ", ".join(inp['groups']), project)
@@ -166,10 +172,11 @@ class MembershipController(RestController):
         if '@' not in user:
             response.status = 400
             return "User must be identified by its email address"
+        requestor = request.remote_user
         try:
             # delete user from all project groups
             gerrit.delete_user_from_projectgroups(project, user, group)
-            redminec.delete_user_from_projectgroups(project, user, group)
+            redmine_service.membership.delete(requestor, user, project, group)
             response.status = 200
             if group:
                 return ("User %s has been deleted from group %s " +
@@ -219,7 +226,7 @@ class ProjectController(RestController):
         for p in gerrit.get_projects_by_user():
             projects[p]['admin'] = 1
 
-        for issue in redminec.get_open_issues().get('issues'):
+        for issue in redmine_service.get_open_issues().get('issues'):
             prj = issue.get('project').get('name')
             if prj in projects:
                 projects[prj]['open_issues'] += 1
@@ -263,6 +270,7 @@ class ProjectController(RestController):
         try:
             # create project
             inp = request.json if request.content_length else {}
+            user = request.remote_user
             for gn in ('ptl-group-members', 'core-group-members',
                        'dev-group-members'):
                 for u in inp.get(gn, []):
@@ -270,7 +278,7 @@ class ProjectController(RestController):
                         response.status = 400
                         return "User must be identified by its email address"
             gerrit.init_project(name, inp)
-            redminec.init_project(name, inp)
+            redmine_service.project.create(name, user, inp)
             response.status = 201
             self.set_cache(None)
             return "Project %s has been created." % name
@@ -284,10 +292,11 @@ class ProjectController(RestController):
             return "Deletion of config project denied"
         if not name:
             abort(400)
+        user = request.remote_user
         try:
             # delete project
             gerrit.delete_project(name)
-            redminec.delete_project(name)
+            redmine_service.project.delete(name, user)
             response.status = 200
             self.set_cache(None)
             return "Project %s has been deleted." % name
