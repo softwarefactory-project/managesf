@@ -385,7 +385,10 @@ def get_cookie(args):
                                        verify=(not args.insecure))
         else:
             die('Please provide credentials')
-        return cookie
+        if cookie:
+            return cookie
+        else:
+            die('Authentication failed')
     except Exception as e:
         die(e.message)
 
