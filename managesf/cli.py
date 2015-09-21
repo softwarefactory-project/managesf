@@ -652,7 +652,7 @@ def backup_action(args, base_url, headers):
         with open('sf_backup.tar.gz', 'wb') as fd:
             for chunk in resp.iter_content(chunk_size):
                 fd.write(chunk)
-        return response(resp)
+        return True
 
     elif subcommand == 'backup_start':
         resp = requests.post(url, **params)
