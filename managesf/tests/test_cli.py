@@ -83,6 +83,13 @@ class TestTestsActions(BaseFunctionalTest):
         self.assert_secure('put', args, cli.tests_action, expected_url,
                            {'project-scripts': True})
 
+    def test_init_test_project_no_scripts(self):
+        args = self.default_args
+        args += 'tests init --project toto --no-scripts'.split()
+        expected_url = self.base_url + 'tests/toto/'
+        self.assert_secure('put', args, cli.tests_action, expected_url,
+                           {'project-scripts': False})
+
 
 class TestMembershipAction(BaseFunctionalTest):
     def test_project_add_user_to_groups(self):

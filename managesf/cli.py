@@ -357,7 +357,7 @@ def tests_command(parser):
     init = subc.add_parser('init',
                            help='Setup the initial tests configuration for'
                            ' a given project')
-    init.add_argument('--no-scripts',
+    init.add_argument('--no-scripts', action='store_true',
                       help='Does not create the tests scripts in the project')
     init.add_argument('--project', '--p', metavar='project-name',
                       required=True)
