@@ -41,7 +41,7 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
     """Management of users memberships in projects."""
 
     def create(self, requestor, username, project,
-               groups, user_is_owner=False):
+               groups, user_is_owner=False, **kwargs):
         """Add user to project groups"""
         rm = self.plugin.get_client()
         for g in groups:

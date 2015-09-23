@@ -179,22 +179,28 @@ class TestManageSFAppLocaluserController(FunctionalTest):
         self.assertEqual(response.status_int, 401)
 
 
+def project_get(*args, **kwargs):
+    if kwargs.get('by_user'):
+        return ['p1', ]
+    return ['p0', 'p1']
+
+
 class TestManageSFAppProjectController(FunctionalTest):
 
     def test_project_get_all(self):
         from managesf.services.redmine import SoftwareFactoryRedmine
-        ctx = [patch('managesf.controllers.gerrit.get_projects'),
-               patch('managesf.controllers.gerrit.get_projects_by_user'),
-               patch('managesf.controllers.gerrit.get_open_changes'),
+        from managesf.services.gerrit.project import SFGerritProjectManager
+        from managesf.services.gerrit.review import SFGerritReviewManager
+        ctx = [patch.object(SFGerritProjectManager, 'get'),
+               patch.object(SFGerritProjectManager, 'get_groups'),
+               patch.object(SFGerritReviewManager, 'get'),
                patch.object(SoftwareFactoryRedmine,
-                            'get_open_issues'),
-               patch('managesf.controllers.gerrit.get_project_groups')]
-        with nested(*ctx) as (gp, gpu, goc, goi, gpg):
-            gp.return_value = ['p0', 'p1', ]
-            gpu.return_value = ['p1', ]
-            goc.return_value = [{'project': 'p1'}]
+                            'get_open_issues')]
+        with nested(*ctx) as (p_get, get_groups, r_get, goi):
+            p_get.side_effect = project_get
+            r_get.return_value = [{'project': 'p1'}]
             goi.return_value = {'issues': [{'project': {'name': 'p1'}}]}
-            gpg.return_value = [{'name': 'p0-ptl'}, {'name': 'p0-dev'}]
+            get_groups.return_value = [{'name': 'p0-ptl'}, {'name': 'p0-dev'}]
             # Cookie is only required for the internal cache
             response = self.app.set_cookie('auth_pubtkt', 'something')
             response = self.app.get('/project/')
@@ -206,26 +212,29 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual({'ptl': {'name': 'p0-ptl'},
                               'dev': {'name': 'p0-dev'}},
                              body['p0']['groups'])
-            for _mock in (gp, gpu, goc, goi):
+            for _mock in (p_get, get_groups, r_get, goi):
                 self.assertTrue(_mock.called)
 
             # Second request, will be cached - no internal calls
-            for _mock in (gp, gpu, goc, goi):
+            for _mock in (p_get, get_groups, r_get, goi):
                 _mock.reset_mock()
             response = self.app.get('/project/')
-            for _mock in (gp, gpu, goc, goi):
+            for _mock in (p_get, get_groups, r_get, goi):
                 self.assertFalse(_mock.called)
             self.assertEqual(200, response.status_int)
 
     def test_project_get_one(self):
         from managesf.services.redmine import SoftwareFactoryRedmine
-        ctx = [patch('managesf.controllers.gerrit.get_projects'),
-               patch('managesf.controllers.gerrit.get_projects_by_user'),
-               patch('managesf.controllers.gerrit.get_open_changes'),
+        from managesf.services.gerrit.project import SFGerritProjectManager
+        from managesf.services.gerrit.review import SFGerritReviewManager
+        ctx = [patch.object(SFGerritProjectManager, 'get'),
+               patch.object(SFGerritProjectManager, 'get_groups'),
+               patch.object(SFGerritReviewManager, 'get'),
                patch.object(SoftwareFactoryRedmine,
                             'get_open_issues')]
-        with nested(*ctx) as (gp, gpu, goc, goi):
-            goc.return_value = [{'project': 'p1'}]
+        with nested(*ctx) as (p_get, get_groups, r_get, goi):
+            p_get.side_effect = project_get
+            r_get.return_value = [{'project': 'p1'}, ]
             goi.return_value = {'issues': [{'project': {'name': 'p1'}}]}
             response = self.app.set_cookie('auth_pubtkt', 'something')
             response = self.app.get('/project/p1')
@@ -235,32 +244,34 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertTrue('"open_reviews": 1', response.body)
 
     def test_project_put(self):
+        from managesf.services.gerrit import role
+        from managesf.services.gerrit import project
+        from managesf.services.redmine.project import SFRedmineProjectManager
         # Create a project with no name
-        with patch('managesf.controllers.gerrit.user_is_administrator') as gia:
+        with patch.object(role.SFGerritRoleManager, 'is_admin') as gia:
             response = self.app.put('/project/', status="*")
             self.assertEqual(response.status_int, 400)
         # Create a project with name, but without administrator status
-        with patch('managesf.controllers.gerrit.user_is_administrator') as gia:
+        with patch.object(role.SFGerritRoleManager, 'is_admin') as gia:
             gia.return_value = False
             response = self.app.put('/project/p1', status="*")
             self.assertEqual(response.status_int, 401)
         # Create a project with name
-        from managesf.services.redmine.project import SFRedmineProjectManager
-        ctx = [patch('managesf.controllers.gerrit.init_project'),
-               patch('managesf.controllers.gerrit.user_is_administrator'),
+        ctx = [patch.object(project.SFGerritProjectManager, 'create'),
+               patch.object(role.SFGerritRoleManager, 'is_admin'),
                patch.object(SFRedmineProjectManager,
                             'create')]
         with nested(*ctx) as (gip, gia, rip):
             response = self.app.put('/project/p1', status="*",
                                     extra_environ={'REMOTE_USER': 'bob'})
-            self.assertTupleEqual(('p1', {}), gip.mock_calls[0][1])
+            self.assertTupleEqual(('p1', 'bob', {}), gip.mock_calls[0][1])
             self.assertTupleEqual(('p1', 'bob', {}), rip.mock_calls[0][1])
             self.assertEqual(response.status_int, 201)
             self.assertEqual(json.loads(response.body),
                              'Project p1 has been created.')
         # Create a project with name - an error occurs
-        ctx = [patch('managesf.controllers.gerrit.init_project'),
-               patch('managesf.controllers.gerrit.user_is_administrator'),
+        ctx = [patch.object(project.SFGerritProjectManager, 'create'),
+               patch.object(role.SFGerritRoleManager, 'is_admin'),
                patch.object(SFRedmineProjectManager,
                             'create',
                             side_effect=raiseexc)]
@@ -273,7 +284,9 @@ class TestManageSFAppProjectController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
     def test_project_delete(self):
+        # TODO: should be done dynamically depending on what plugins we want
         from managesf.services.redmine.project import SFRedmineProjectManager
+        from managesf.services.gerrit.project import SFGerritProjectManager
         # Delete a project with no name
         response = self.app.delete('/project/', status="*")
         self.assertEqual(response.status_int, 400)
@@ -281,20 +294,20 @@ class TestManageSFAppProjectController(FunctionalTest):
         response = self.app.delete('/project/config', status="*")
         self.assertEqual(response.status_int, 400)
         # Delete a project with name
-        ctx = [patch('managesf.controllers.gerrit.delete_project'),
+        ctx = [patch.object(SFGerritProjectManager, 'delete'),
                patch.object(SFRedmineProjectManager, 'delete')]
         with nested(*ctx) as (gdp, rdp):
             response = self.app.delete('/project/p1', status="*",
                                        extra_environ={'REMOTE_USER': 'testy'})
-            self.assertTupleEqual(('p1',), gdp.mock_calls[0][1])
+            self.assertTupleEqual(('p1', 'testy'), gdp.mock_calls[0][1])
             self.assertTupleEqual(('p1', 'testy'), rdp.mock_calls[0][1])
             self.assertEqual(response.status_int, 200)
             self.assertEqual(json.loads(response.body),
                              'Project p1 has been deleted.')
         # Delete a project with name - an error occurs
-        ctx = [patch('managesf.controllers.gerrit.delete_project'),
+        ctx = [patch.object(SFGerritProjectManager, 'delete'),
                patch.object(SFRedmineProjectManager, 'delete',
-               side_effect=raiseexc)]
+                            side_effect=raiseexc)]
         with nested(*ctx) as (gip, rip):
             response = self.app.delete('/project/p1', status="*")
             self.assertEqual(response.status_int, 500)
@@ -379,9 +392,11 @@ class TestManageSFAppMembershipController(FunctionalTest):
         self.assertEqual(response.status_int, 400)
 
     def test_put(self):
-        from managesf.services.redmine import membership
-        ctx = [patch('managesf.controllers.gerrit.add_user_to_projectgroups'),
-               patch.object(membership.SFRedmineMembershipManager,
+        from managesf.services.redmine import membership as r_m
+        from managesf.services.gerrit import membership as g_m
+        ctx = [patch.object(r_m.SFRedmineMembershipManager,
+                            'create'),
+               patch.object(g_m.SFGerritMembershipManager,
                             'create')]
         with nested(*ctx) as (gaupg, raupg):
             response = self.app.put_json(
@@ -392,8 +407,9 @@ class TestManageSFAppMembershipController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              "User john@tests.dom has been added in group(s):"
                              " ptl-group, core-group for project p1")
-        ctx = [patch('managesf.controllers.gerrit.add_user_to_projectgroups'),
-               patch.object(membership.SFRedmineMembershipManager,
+        ctx = [patch.object(g_m.SFGerritMembershipManager,
+                            'create'),
+               patch.object(r_m.SFRedmineMembershipManager,
                             'create',
                             side_effect=raiseexc)]
         with nested(*ctx) as (gaupg, raupg):
@@ -407,13 +423,14 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
     def test_delete(self):
-        from managesf.services.redmine import membership
+        from managesf.services.redmine import membership as r_m
+        from managesf.services.gerrit import membership as g_m
         response = self.app.delete('/project/p1/membership/john', status="*")
         self.assertEqual(response.status_int, 400)
         ctx = [
-            patch(
-                'managesf.controllers.gerrit.delete_user_from_projectgroups'),
-            patch.object(membership.SFRedmineMembershipManager,
+            patch.object(g_m.SFGerritMembershipManager,
+                         'delete'),
+            patch.object(r_m.SFRedmineMembershipManager,
                          'delete')]
         with nested(*ctx) as (gdupg, rdupg):
             response = self.app.delete(
@@ -437,9 +454,9 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              "User john@tests.dom has been deleted from group "
                              "core-group for project p1.")
         ctx = [
-            patch(
-                'managesf.controllers.gerrit.delete_user_from_projectgroups'),
-            patch.object(membership.SFRedmineMembershipManager,
+            patch.object(g_m.SFGerritMembershipManager,
+                         'delete'),
+            patch.object(r_m.SFRedmineMembershipManager,
                          'delete',
                          side_effect=raiseexc)]
         with nested(*ctx) as (gdupg, rdupg):
@@ -661,8 +678,9 @@ class TestManageSFSSHConfigController(FunctionalTest):
 
 class TestProjectTestsController(FunctionalTest):
     def test_init_project_test(self):
+        from managesf.services.gerrit.project import SFGerritProjectManager
         environ = {'REMOTE_USER': self.config['admin']['name']}
-        ctx = [patch('managesf.controllers.gerrit.get_project'),
+        ctx = [patch.object(SFGerritProjectManager, 'get'),
                patch('managesf.controllers.gerrit.propose_test_definition')]
         with nested(*ctx) as (gp, ptd):
             gp.return_value = 'p1'
@@ -672,7 +690,8 @@ class TestProjectTestsController(FunctionalTest):
 
     def test_init_project_test_with_project_scripts(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
-        ctx = [patch('managesf.controllers.gerrit.get_project'),
+        from managesf.services.gerrit.project import SFGerritProjectManager
+        ctx = [patch.object(SFGerritProjectManager, 'get'),
                patch('managesf.controllers.gerrit.propose_test_definition'),
                patch('managesf.controllers.gerrit.propose_test_scripts')]
         with nested(*ctx) as (gp, ptd, pts):

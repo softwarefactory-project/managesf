@@ -40,7 +40,7 @@ class Redmine(base.BaseIssueTrackerServicePlugin):
         self.role = role.RoleManager(self)
         self.backup = None
 
-    def get_client(self):
+    def get_client(self, cookie=None):
         return RM(self.conf['url'],
                   key=self.conf['api_key'],
                   # TODO(mhu) should be in config
@@ -67,6 +67,6 @@ class SoftwareFactoryRedmine(Redmine):
         self.role = role.SFRedmineRoleManager(self)
         self.backup = None
 
-    def get_client(self):
+    def get_client(self, cookie=None):
         return RedmineUtils(self.conf['url'],
                             key=self.conf['api_key'])

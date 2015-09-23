@@ -98,7 +98,7 @@ class RedmineProjectManager(base.ProjectManager):
             raise exc.Unauthorized(msg % (username, project_name))
         self._delete(project_name)
 
-    def get(self, project_name=None):
+    def get(self, requestor, user=None, project_name=None):
         rm = self.plugin.get_client()
         if project_name:
             return rm.project.get(project_name)

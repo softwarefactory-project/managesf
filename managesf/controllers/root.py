@@ -22,9 +22,9 @@ from pecan import expose
 from pecan import abort
 from pecan.rest import RestController
 from pecan import request, response
-from managesf.controllers import gerrit
+from managesf.controllers import gerrit as gerrit_controller
 from managesf.controllers import backup, localuser, introspection
-from managesf.services import redmine
+from managesf.services import redmine, gerrit
 import logging
 import os.path
 
@@ -41,6 +41,7 @@ CLIENTERRORMSG = "Unable to process your request, failed with "\
 
 
 redmine_service = redmine.SoftwareFactoryRedmine(conf)
+gerrit_service = gerrit.SoftwareFactoryGerrit(conf)
 
 
 def report_unhandled_error(exp):
@@ -57,7 +58,7 @@ class ReplicationController(RestController):
             abort(400)
         value = request.json['value']
         try:
-            gerrit.replication_apply_config(section, setting, value)
+            gerrit_controller.replication_apply_config(section, setting, value)
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -68,7 +69,7 @@ class ReplicationController(RestController):
         if not section:
             abort(400)
         try:
-            gerrit.replication_apply_config(section, setting)
+            gerrit_controller.replication_apply_config(section, setting)
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -84,7 +85,7 @@ class ReplicationController(RestController):
             setting = remainder[1]
         config = None
         try:
-            config = gerrit.replication_get_config(section, setting)
+            config = gerrit_controller.replication_get_config(section, setting)
         except Exception as e:
             return report_unhandled_error(e)
         if config:
@@ -98,7 +99,7 @@ class ReplicationController(RestController):
         # A json with wait, url, project can be passed
         inp = request.json if request.content_length else {}
         try:
-            gerrit.replication_trigger(inp)
+            gerrit_controller.replication_trigger(inp)
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -156,7 +157,8 @@ class MembershipController(RestController):
         requestor = request.remote_user
         try:
             # Add/update user for the project groups
-            gerrit.add_user_to_projectgroups(project, user, inp['groups'])
+            gerrit_service.membership.create(requestor, user,
+                                             project, inp['groups'])
             redmine_service.membership.create(requestor, user,
                                               project, inp['groups'])
             response.status = 201
@@ -175,7 +177,7 @@ class MembershipController(RestController):
         requestor = request.remote_user
         try:
             # delete user from all project groups
-            gerrit.delete_user_from_projectgroups(project, user, group)
+            gerrit_service.membership.delete(requestor, user, project, group)
             redmine_service.membership.delete(requestor, user, project, group)
             response.status = 200
             if group:
@@ -212,18 +214,18 @@ class ProjectController(RestController):
     def _reload_cache(self):
         projects = {}
 
-        for p in gerrit.get_projects():
+        for p in gerrit_service.project.get():
             projects[p] = {'open_reviews': 0,
                            'open_issues': 0,
                            'admin': 0,
                            'groups': {}}
-            groups = gerrit.get_project_groups(p)
+            groups = gerrit_service.project.get_groups(p)
             for group in groups:
                 if group['name'].endswith(('-ptl', '-core', '-dev')):
                     grp = group['name'].split('-')[-1]
                     projects[p]['groups'][grp] = group
 
-        for p in gerrit.get_projects_by_user():
+        for p in gerrit_service.project.get(by_user=True):
             projects[p]['admin'] = 1
 
         for issue in redmine_service.get_open_issues().get('issues'):
@@ -231,7 +233,7 @@ class ProjectController(RestController):
             if prj in projects:
                 projects[prj]['open_issues'] += 1
 
-        for review in gerrit.get_open_changes():
+        for review in gerrit_service.review.get():
             prj = review.get('project')
             if prj in projects:
                 projects[prj]['open_reviews'] += 1
@@ -262,7 +264,7 @@ class ProjectController(RestController):
     @expose('json')
     def put(self, name=None):
         if getattr(conf, "project_create_administrator_only", True):
-            if not gerrit.user_is_administrator():
+            if not gerrit_service.role.is_admin():
                 abort(401)
 
         if not name:
@@ -277,7 +279,7 @@ class ProjectController(RestController):
                     if '@' not in u:
                         response.status = 400
                         return "User must be identified by its email address"
-            gerrit.init_project(name, inp)
+            gerrit_service.project.create(name, user, inp)
             redmine_service.project.create(name, user, inp)
             response.status = 201
             self.set_cache(None)
@@ -295,7 +297,7 @@ class ProjectController(RestController):
         user = request.remote_user
         try:
             # delete project
-            gerrit.delete_project(name)
+            gerrit_service.project.delete(name, user)
             redmine_service.project.delete(name, user)
             response.status = 200
             self.set_cache(None)
@@ -581,22 +583,21 @@ class TestsController(RestController):
     def put(self, project_name=''):
         if request.remote_user is None:
             abort(403)
-        if not gerrit.get_project(project_name):
+        if not gerrit_service.project.get(project_name=project_name):
             abort(404)
 
         try:
-            gerrit.propose_test_definition(project_name,
-                                           request.remote_user)
+            gerrit_controller.propose_test_definition(project_name,
+                                                      request.remote_user)
         except Exception as e:
             abort(500, detail=e.message)
-
         if request.json:
             project_scripts = request.json.get('project-scripts', False)
 
         if project_scripts:
             try:
-                gerrit.propose_test_scripts(project_name,
-                                            request.remote_user)
+                gerrit_controller.propose_test_scripts(project_name,
+                                                       request.remote_user)
             except Exception as e:
                 abort(500, detail=e.message)
 

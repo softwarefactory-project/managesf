@@ -284,6 +284,7 @@ class GerritRepo(object):
 
 class CustomGerritClient(gerrit.Gerrit):
     def deleteGroup(self, name):
+        # TODO(mhu) remove this method
         logger.info("[gerrit] Deleting group " + name)
         grp_id = "select group_id from account_group_names " \
                  "where name=\"%s\"" % name

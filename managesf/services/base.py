@@ -66,6 +66,12 @@ class ReplicationManager(BaseCRUDManager):
 
 
 @six.add_metaclass(abc.ABCMeta)
+class RepositoryManager(BaseCRUDManager):
+    """Abstract class handling repository creation and other repository
+    related operations"""
+
+
+@six.add_metaclass(abc.ABCMeta)
 class BackupManager(BaseCRUDManager):
     """Abstract class handling backups and data restoration for a given
     service."""
@@ -81,6 +87,12 @@ class BackupManager(BaseCRUDManager):
 
     def delete(self, **kwargs):
         raise NotImplementedError
+
+
+@six.add_metaclass(abc.ABCMeta)
+class CodeReviewManager(BaseCRUDManager):
+    """Abstract class handling code reviews operations for a given
+    gerrit-like service."""
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -122,7 +134,7 @@ class BaseServicePlugin(object):
             msg = ("The %s service is not available" % self._config_section)
             raise exc.ServiceNotAvailableError(msg)
 
-    def get_client(self):
+    def get_client(self, cookie=None):
         """returns a service client to be used by the managers."""
 
 
@@ -140,8 +152,19 @@ class BaseIssueTrackerServicePlugin(BaseServicePlugin):
 @six.add_metaclass(abc.ABCMeta)
 class BaseRepositoryServicePlugin(BaseServicePlugin):
     """Base plugin for a service managing repositories. This adds repository
-    replication operations."""
+    replication and repository operations."""
 
     def __init__(self, conf):
         super(BaseRepositoryServicePlugin, self).__init__(conf)
         self.replication = ReplicationManager(self)
+        self.repository = RepositoryManager(self)
+
+
+@six.add_metaclass(abc.ABCMeta)
+class BaseCodeReviewServicePlugin(BaseRepositoryServicePlugin):
+    """Base plugin for a service managing code review systems. This adds
+    code review operations like submitting a file for review to a project."""
+
+    def __init__(self, conf):
+        super(BaseCodeReviewServicePlugin, self).__init__(conf)
+        self.review = CodeReviewManager(self)
