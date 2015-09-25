@@ -202,7 +202,8 @@ def system_command(parser):
     sub_cmd.add_parser('backup_start')
     sub_cmd.add_parser('backup_get')
     restore = sub_cmd.add_parser('restore')
-    restore.add_argument('--filename', metavar='absolute-path')
+    restore.add_argument('--filename', metavar='absolute-path',
+                         required=True)
 
 
 def replication_command(parser):

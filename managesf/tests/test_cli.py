@@ -204,9 +204,9 @@ class TestSystemActions(BaseFunctionalTest):
 
     def test_restore(self):
         args = self.default_args
-        args += 'system restore --filename /tmp/toto'.split()
+        args += 'system restore --filename tmp_backup'.split()
         expected_url = self.base_url + 'restore/'
-        with open('/tmp/toto', 'a') as toto:
+        with open('tmp_backup', 'a') as toto:
             toto.write(' ')
 
         with patch('managesf.cli.get_cookie') as c:

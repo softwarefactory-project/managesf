@@ -31,10 +31,12 @@ class Backup(object):
         self.gru = RemoteUser('root', conf.gerrit['host'], path)
         self.jru = RemoteUser('root', conf.jenkins['host'], path)
         self.msqlru = RemoteUser('root', conf.mysql['host'], path)
+        self.mru = RemoteUser('root', conf.managesf['host'], path)
 
     def check_for_service(self, ru, service):
         attempt = 0
-        while attempt <= 350:
+        # Wait up to 10 minutes for gerrit to restart
+        while attempt <= 300:
             p = ru._ssh(service)
             logger.debug(" Return status is %s" % p.returncode)
             if p.returncode != 0:
@@ -44,28 +46,31 @@ class Backup(object):
                 break
 
     def start(self):
-        cmd = '/root/backup.sh'
         logger.debug(" start backup of Gerrit, jenkins and mysql")
-        self.gru._ssh(cmd)
-        self.jru._ssh(cmd)
-        self.msqlru._ssh(cmd)
-        gerrit_service = 'wget --spider http://localhost:8080/r/'
+        p = self.gru._ssh('/root/backup_gerrit.sh')
+        logger.info("-> Gerrit backup: %d" % p.returncode)
+        self.jru._ssh('/root/backup_jenkins.sh')
+        logger.info("-> Jenkins backup: %d" % p.returncode)
+        self.msqlru._ssh('/root/backup_mysql.sh')
+        logger.info("-> Mysql backup: %d" % p.returncode)
+        gerrit_service = 'wget --spider http://localhost:8000/r/'
         self.check_for_service(self.gru, gerrit_service)
         jenkins_service = 'wget --spider http://localhost:8082/jenkins/'
         self.check_for_service(self.jru, jenkins_service)
 
-    def get(self):
-        self.msqlru._scpFromRemote('/root/sf_backup.tar.gz',
-                                   '/tmp/sf_backup.tar.gz')
+        logger.debug(" generate backup")
+        self.mru._ssh(
+            'tar --absolute-names -czPf ' +
+            '/var/www/managesf/sf_backup.tar.gz /root/.bup /root/alldb.sql.gz')
+        self.mru._ssh('chmod 0400 /var/www/managesf/sf_backup.tar.gz')
+        self.mru._ssh('chown apache:apache /var/www/managesf/sf_backup.tar.gz')
 
     def restore(self):
-        self.msqlru._scpToRemote('/tmp/sf_backup.tar.gz',
-                                 '/root/sf_backup.tar.gz')
-        cmd = '/root/restore.sh'
-        self.msqlru._ssh(cmd)
-        self.gru._ssh(cmd)
-        self.jru._ssh(cmd)
-        gerrit_service = 'wget --spider http://localhost:8080/r/'
+        self.mru._ssh('tar -xzPf /var/www/managesf/sf_backup.tar.gz')
+        self.msqlru._ssh('/root/restore_mysql.sh')
+        self.gru._ssh('/root/restore_gerrit.sh')
+        self.jru._ssh('/root/restore_jenkins.sh')
+        gerrit_service = 'wget --spider http://localhost:8000/r/'
         self.check_for_service(self.gru, gerrit_service)
         jenkins_service = 'wget --spider http://localhost:8082/jenkins/'
         self.check_for_service(self.jru, jenkins_service)

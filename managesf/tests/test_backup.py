@@ -37,7 +37,7 @@ class TestBackup(TestCase):
             self.assertRaises(exc.HTTPUnauthorized, lambda: backup.Backup())
             uia.return_value = True
             backup.Backup()
-            self.assertEqual(3, len(ru.mock_calls))
+            self.assertEqual(4, len(ru.mock_calls))
 
     def test_start(self):
         ctx = [patch('managesf.controllers.backup.user_is_administrator'),
@@ -48,36 +48,23 @@ class TestBackup(TestCase):
             backup.Backup().start()
             self.assertTrue(ssh.called)
 
-    def test_get(self):
-        ctx = [patch('managesf.controllers.backup.user_is_administrator'),
-               patch('managesf.controllers.backup.RemoteUser._scpFromRemote')]
-        with nested(*ctx) as (uia, scp):
-            uia.return_value = True
-            backup.Backup().get()
-            self.assertTrue(scp.called)
-
     def test_restore(self):
         ctx = [patch('managesf.controllers.backup.user_is_administrator'),
                patch('managesf.controllers.backup.RemoteUser._ssh'),
-               patch('managesf.controllers.backup.Backup.check_for_service'),
-               patch('managesf.controllers.backup.RemoteUser._scpToRemote')]
+               patch('managesf.controllers.backup.Backup.check_for_service')]
 
-        with nested(*ctx) as (uia, ssh, cfs, scp):
+        with nested(*ctx) as (uia, ssh, cfs):
             uia.return_value = True
             backup.Backup().restore()
-            self.assertTrue(scp.called)
             self.assertTrue(ssh.called)
 
     def test_backup_ops(self):
         ctx = [patch('managesf.controllers.backup.user_is_administrator'),
                patch('managesf.controllers.backup.RemoteUser'),
                patch('managesf.controllers.backup.Backup.start'),
-               patch('managesf.controllers.backup.Backup.get'),
                patch('managesf.controllers.backup.Backup.restore')]
-        with nested(*ctx) as (uia, ru, s, g, r):
+        with nested(*ctx) as (uia, ru, s, r):
             backup.backup_start()
             self.assertTrue(s.called)
-            backup.backup_get()
-            self.assertTrue(g.called)
             backup.backup_restore()
             self.assertTrue(r.called)

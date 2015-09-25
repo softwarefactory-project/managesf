@@ -18,14 +18,18 @@ echo "$(date) - $(hostname)"
 
 echo "FLAKE8 tests"
 echo "~~~~~~~~~~~~"
-find . -iname "*.py" | grep -v .tox | xargs flake8
+flake8
 FLAKE8_ERRORS=$?
-[ $FLAKE8_ERRORS = 0 ] && echo "Success. Well done !"; echo || echo
+[ $FLAKE8_ERRORS = 0 ] && echo "Success. Well done !"
 
+echo
 echo "ManageSF tests"
 echo "~~~~~~~~~~~~~"
-(rm -Rf .tox; tox)
+sudo mkdir -p /var/www/managesf
+sudo chown $USER /var/www/managesf
+rm -Rf .tox
+tox
 MANAGESF_ERRORS=$?
 echo
 
-exit $[${FLAKE8_ERRORS} + ${BASH8_ERRORS} + ${MANAGESF_ERRORS}];
+exit $[${FLAKE8_ERRORS} + ${MANAGESF_ERRORS}];

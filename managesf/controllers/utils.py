@@ -43,7 +43,9 @@ class RemoteUser(object):
 
     def _exe(self, cmd):
         logger.debug(cmd)
-        p = Popen(cmd, stdout=PIPE)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        logger.debug("Stdout:\n%s\n\nStderr:\n%s\n" % (stdout, stderr))
         p.wait()
         return p
 

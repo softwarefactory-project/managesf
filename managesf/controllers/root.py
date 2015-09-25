@@ -100,12 +100,7 @@ class ReplicationController(RestController):
 class BackupController(RestController):
     @expose()
     def get(self):
-        # TODO: avoid using directly /tmp
-        filepath = '/tmp/sf_backup.tar.gz'
-        try:
-            backup.backup_get()
-        except Exception as e:
-            return report_unhandled_error(e)
+        filepath = '/var/www/managesf/sf_backup.tar.gz'
         if not os.path.isfile(filepath):
             abort(404)
         response.body_file = open(filepath, 'rb')
@@ -122,8 +117,7 @@ class BackupController(RestController):
 class RestoreController(RestController):
     @expose()
     def post(self):
-        # TODO: avoid using directly /tmp
-        filepath = '/tmp/sf_backup.tar.gz'
+        filepath = '/var/www/managesf/sf_backup.tar.gz'
         with open(filepath, 'wb+') as f:
             f.write(request.POST['file'].file.read())
         try:
