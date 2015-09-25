@@ -695,6 +695,8 @@ def gerrit_api_htpasswd_action(args, base_url, headers):
 
 def gerrit_ssh_config_action(args, base_url, headers):
     url = base_url + '/sshconfig'
+    if args.command not in ['gerrit', 'gerrit_ssh_config']:
+        return False
     if not getattr(args, 'subcommand', None):
         return False
     if args.subcommand not in ['add', 'delete']:
