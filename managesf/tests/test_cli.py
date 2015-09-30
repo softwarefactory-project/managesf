@@ -94,16 +94,24 @@ class TestTestsActions(BaseFunctionalTest):
 class TestMembershipAction(BaseFunctionalTest):
     def test_project_add_user_to_groups(self):
         args = self.default_args
-        cmd = 'membership add --user u --project p --groups dev-group'.split()
-        args += cmd
+        c = 'membership add --user u --project p --groups dev-group ptl-group'
+        args += c.split()
         expected_url = self.base_url + 'project/membership/p/u/'
-        self.assert_secure('post', args, cli.membership_action, expected_url,
-                           {'groups': ['dev-group']})
+        self.assert_secure('put', args, cli.membership_action, expected_url,
+                           {'groups': ['dev-group', 'ptl-group']})
 
     def test_project_remove_user_from_all_groups(self):
         args = self.default_args
         args += 'membership remove --user user1 --project proj1'.split()
         expected_url = self.base_url + 'project/membership/proj1/user1/'
+        self.assert_secure('delete', args, cli.membership_action,
+                           expected_url)
+
+    def test_project_remove_user_from_group(self):
+        args = self.default_args
+        cmd = 'membership remove --user u1 --project proj1 --group dev-group'
+        args += cmd.split()
+        expected_url = self.base_url + 'project/membership/proj1/u1/dev-group/'
         self.assert_secure('delete', args, cli.membership_action,
                            expected_url)
 

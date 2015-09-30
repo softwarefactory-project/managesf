@@ -192,6 +192,7 @@ def membership_command(parser):
 
     remove = sub_cmd.add_parser('remove')
     membership_args(remove)
+    remove.add_argument('--group', metavar='core-group, dev-group, ptl-group')
 
     sub_cmd.add_parser('list', help='Print a list of active users')
 
@@ -514,12 +515,14 @@ def membership_action(args, base_url, headers):
         logger.info('Add member %s to project %s', args.user, args.project)
         if args.groups:
             data = json.dumps({'groups': args.groups})
-        return requests.post(url, headers=headers, data=data,
-                             cookies=auth_cookie)
+        return requests.put(url, headers=headers, data=data,
+                            cookies=auth_cookie)
 
     if args.subcommand == 'remove':
         logger.info('Remove member %s from project %s', args.user,
                     args.project)
+        if args.group:
+            url = build_url(url, args.group)
         return requests.delete(url, headers=headers, cookies=auth_cookie)
 
 
