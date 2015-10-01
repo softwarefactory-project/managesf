@@ -508,22 +508,27 @@ def membership_action(args, base_url, headers):
     if args.subcommand == 'list':
         logger.info('List users assigned to projects')
         url = build_url(base_url, 'project/membership')
-        return requests.get(url, headers=headers, cookies=auth_cookie)
+        resp = requests.get(url, headers=headers, cookies=auth_cookie)
+        return response(resp)
 
     url = build_url(base_url, 'project/membership', args.project, args.user)
     if args.subcommand == 'add':
         logger.info('Add member %s to project %s', args.user, args.project)
         if args.groups:
             data = json.dumps({'groups': args.groups})
-        return requests.put(url, headers=headers, data=data,
+        resp = requests.put(url, headers=headers, data=data,
                             cookies=auth_cookie)
+        return response(resp)
 
     if args.subcommand == 'remove':
         logger.info('Remove member %s from project %s', args.user,
                     args.project)
         if args.group:
             url = build_url(url, args.group)
-        return requests.delete(url, headers=headers, cookies=auth_cookie)
+        resp = requests.delete(url, headers=headers, cookies=auth_cookie)
+        return response(resp)
+
+    return False
 
 
 def project_user_action(args, base_url, headers):
