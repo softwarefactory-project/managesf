@@ -155,20 +155,16 @@ def split_and_strip(s):
 
 def default_arguments(parser):
     parser.add_argument('--url',
-                        help='Softwarefactory public gateway URL',
+                        help='Software Factory public gateway URL',
                         required=True)
     parser.add_argument('--auth', metavar='username[:password]',
-                        help='Authentication information', required=False,
-                        default=None)
+                        help='Authentication information', required=False)
     parser.add_argument('--github-token', metavar='GithubPersonalAccessToken',
-                        help='Authenticate with a Github Access Token',
-                        required=False, default=None)
+                        help='Authenticate with a Github Access Token')
     parser.add_argument('--auth-server-url', metavar='central-auth-server',
-                        default=None,
                         help='URL of the central auth server')
     parser.add_argument('--cookie', metavar='Authentication cookie',
-                        help='cookie of the user if known',
-                        default=None)
+                        help='cookie of the user if known')
     parser.add_argument('--insecure', default=False, action='store_true',
                         help='disable SSL certificate verification, '
                         'verification is enabled by default')
@@ -179,32 +175,44 @@ def default_arguments(parser):
 
 def membership_command(parser):
     def membership_args(x):
-        x.add_argument('--project', metavar='project-name', required=True)
-        x.add_argument('--user', metavar='user-name', required=True)
+        x.add_argument('--project', metavar='project-name', required=True,
+                       help='The project name')
+        x.add_argument('--user', metavar='user@example.com', required=True,
+                       help="The user's email registered in Software Factory")
 
     root = parser.add_parser('membership',
-                             help='Users associated to a specific project')
+                             help='Users membership to project(s)')
     sub_cmd = root.add_subparsers(dest='subcommand')
-    add = sub_cmd.add_parser('add')
+    add = sub_cmd.add_parser('add', help="Add a user to a project's group(s)")
     membership_args(add)
     add.add_argument('--groups', nargs='+',
-                     metavar='core-group, dev-group, ptl-group')
+                     metavar='[core-group|dev-group|ptl-group]',
+                     help="The project's group(s)",
+                     choices=['core-group', 'dev-group', 'ptl-group'])
 
-    remove = sub_cmd.add_parser('remove')
+    remove = sub_cmd.add_parser('remove',
+                                help="Remove a user from project's group")
     membership_args(remove)
-    remove.add_argument('--group', metavar='core-group, dev-group, ptl-group')
+    remove.add_argument('--group', metavar='[core-group|dev-group|ptl-group]',
+                        help="The project's group(s)",
+                        choices=['core-group', 'dev-group', 'ptl-group'])
 
-    sub_cmd.add_parser('list', help='Print a list of active users')
+    sub_cmd.add_parser('list',
+                       help='Print a list of active users in Software Factory')
 
 
 def system_command(parser):
     root = parser.add_parser('system', help='system level commands')
     sub_cmd = root.add_subparsers(dest='subcommand')
-    sub_cmd.add_parser('backup_start')
-    sub_cmd.add_parser('backup_get')
-    restore = sub_cmd.add_parser('restore')
+    sub_cmd.add_parser('backup_start',
+                       help='Start the backup process in Software Factory')
+    sub_cmd.add_parser('backup_get',
+                       help='Download the latest backup from Software Factory')
+    restore = sub_cmd.add_parser('restore',
+                                 help='Restore Software Factory data')
     restore.add_argument('--filename', metavar='absolute-path',
-                         required=True)
+                         required=True,
+                         help='The file downloaded from backup_get')
 
 
 def replication_command(parser):
@@ -219,28 +227,35 @@ def replication_command(parser):
     root = parser.add_parser('replication', help='System replication commands')
     sub_cmd = root.add_subparsers(dest='subcommand')
 
-    trigger = sub_cmd.add_parser('trigger')
-    trigger.add_argument('--wait', default=False, action='store_true')
+    help_msg = 'Trigger the replication events of a project'
+    trigger = sub_cmd.add_parser('trigger', help=help_msg)
+    trigger.add_argument('--wait', default=False, action='store_true',
+                         help='Place the trigger in a queue')
     trigger.add_argument('--project', '-p', metavar='project-name')
-    trigger.add_argument('--url', metavar='repo-url')
+    trigger.add_argument('--url', metavar='repo-url',
+                         help='The url of the project')
 
-    config = sub_cmd.add_parser('configure')
+    config = sub_cmd.add_parser('configure',
+                                help='Configure the replication system')
     config_sub = config.add_subparsers(dest='rep_command')
-    config_sub.add_parser('list')
+    config_sub.add_parser('list',
+                          help='List of replication variables settings')
 
-    get_all = config_sub.add_parser('get-all')
+    get_all = config_sub.add_parser('get-all',
+                                    help='Get all variables for that setting')
     section_args(get_all)
 
-    replace_all = config_sub.add_parser('replace-all')
+    help_msg = 'Replace variable values for all settings'
+    replace_all = config_sub.add_parser('replace-all', help=help_msg)
     section_args(replace_all, True)
 
-    rename = config_sub.add_parser('rename')
+    rename = config_sub.add_parser('rename', help='Rename variable name')
     section_args(rename, True)
 
-    remove = config_sub.add_parser('remove')
+    remove = config_sub.add_parser('remove', help='Remove the variable')
     section_args(remove)
 
-    add = config_sub.add_parser('add')
+    add = config_sub.add_parser('add', help='Set new variable')
     section_args(add, True)
 
 
@@ -270,8 +285,8 @@ def user_management_command(sp):
     cump.add_argument('--email', '-e', nargs='?', metavar='email',
                       required=True, help='The user email')
     cump.add_argument('--fullname', '-f', nargs='+', metavar='John Doe',
-                      required=False,
-                      help="The user's full name, defaults to username")
+                      help="The user's full name, defaults to username",
+                      required=True)
     cump.add_argument('--ssh-key', '-s', nargs='?', metavar='/path/to/pub_key',
                       required=False, help="The user's ssh public key file")
     uump = sp.add_parser('update', help='Update user details. Admin can update'
