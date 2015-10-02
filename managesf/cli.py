@@ -244,17 +244,6 @@ def replication_command(parser):
     section_args(add, True)
 
 
-def backup_command(sp):
-    sp.add_parser('backup_get')
-    sp.add_parser('backup_start')
-
-
-def restore_command(sp):
-    rst = sp.add_parser('restore')
-    rst.add_argument('--filename', '-n', nargs='?', metavar='tarball-name',
-                     required=True, help='Tarball used to restore SF')
-
-
 def gerrit_api_htpasswd(sp):
     sp.add_parser('generate_password')
     sp.add_parser('delete_password')
@@ -268,27 +257,6 @@ def gerrit_ssh_config(sp):
 
     delete_config = sp.add_parser('delete')
     delete_config.add_argument('--alias', nargs='?', required=True)
-
-
-def project_user_command(sp):
-    dup = sp.add_parser('delete_user')
-    dup.add_argument('--name', '-n', nargs='?', metavar='project-name',
-                     required=True)
-    dup.add_argument('--user', '-u', nargs='?', metavar='user-name',
-                     required=True)
-    dup.add_argument('--group', '-g', nargs='?', metavar='group-name')
-
-    aup = sp.add_parser('add_user')
-    aup.add_argument('--name', '-n', nargs='?', metavar='project-name',
-                     required=True)
-    aup.add_argument('--user', '-u', nargs='?', metavar='user-name',
-                     required=True)
-    aup.add_argument('--groups', '-p', nargs='?', metavar='ptl-group-members',
-                     help='group names serarated by comma, allowed group names'
-                     ' are core-group, dev-group, ptl-group',
-                     required=True)
-
-    sp.add_parser('list_active_users', help='Print a list of active users')
 
 
 def user_management_command(sp):
@@ -365,62 +333,6 @@ def tests_command(parser):
                       required=True)
 
 
-def section_command(sp):
-    rp = sp.add_parser('replication_config')
-    rps = rp.add_subparsers(dest="rep_command")
-
-    rps.add_parser('list', help='List the sections and its content accessible'
-                   ' to this user')
-
-    repa = rps.add_parser('add', help='Add a setting value to the section')
-    repa.add_argument('--section', nargs='?', required=True,
-                      help='section to which this setting belongs to')
-    repa.add_argument('name', metavar='name', nargs='?',
-                      help='Setting name. Supported settings - project, url')
-    repa.add_argument('value', nargs='?', help='Value of the setting')
-
-    repg = rps.add_parser('get-all',
-                          help='Get all the values of a section setting')
-    repg.add_argument('--section', nargs='?', required=True,
-                      help='section to which this setting belongs to')
-    repg.add_argument('name', metavar='name', nargs='?',
-                      help='Setting name. Supported settings - project, url')
-
-    repu = rps.add_parser('unset-all',
-                          help='Remove the setting from the section')
-    repu.add_argument('--section', nargs='?', required=True,
-                      help='section to which this setting belongs to')
-    settings = 'projects, url, push, receivepack, uploadpack, timeout,'
-    settings = settings + ' replicationDelay, threads'
-    repu.add_argument('name', metavar='name', nargs='?',
-                      help='Setting name. Supported settings - ' + settings)
-
-    repr = rps.add_parser('replace-all',
-                          help='replaces all the current values with '
-                          'the given value for a setting')
-    repr.add_argument('--section', nargs='?', required=True,
-                      help='section to which this setting belongs to')
-    repr.add_argument('name', metavar='name', nargs='?',
-                      help='Setting name. Supported settings - project, url')
-    repr.add_argument('value', nargs='?', help='Value of the setting')
-
-    reprn = rps.add_parser('rename', help='Rename the section')
-    reprn.add_argument('--section', nargs='?', required=True,
-                       help='old section name')
-    reprn.add_argument('name', nargs='?', help='new section name')
-
-    reprm = rps.add_parser('remove', help='Remove the section')
-    reprm.add_argument('--section', nargs='?', required=True,
-                       help='section to be removed')
-
-
-def trigger_command(sp):
-    trp = sp.add_parser('trigger_replication')
-    trp.add_argument('--wait', default=False, action='store_true')
-    trp.add_argument('--project', '-p', metavar='project-name')
-    trp.add_argument('--url', metavar='repo-url')
-
-
 def command_options(parser):
     sp = parser.add_subparsers(dest="command")
     project_commands = sp.add_parser('project',
@@ -435,18 +347,11 @@ def command_options(parser):
     gerrit_ssh_commands = sp.add_parser('gerrit_ssh_config',
                                         help='Gerrit SSH config commands')
     gsc = gerrit_ssh_commands.add_subparsers(dest="subcommand")
-    backup_command(sp)
-    restore_command(sp)
+
     gerrit_api_htpasswd(gic)
     gerrit_ssh_config(gsc)
-    project_user_command(spc)
     project_command(spc)
     user_management_command(suc)
-    # for compatibility purpose, until calls in SF are modified
-    project_user_command(sp)
-    project_command(sp)
-    section_command(sp)
-    trigger_command(sp)
 
     # New options
     membership_command(sp)

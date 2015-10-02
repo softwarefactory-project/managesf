@@ -231,11 +231,3 @@ class TestSystemActions(BaseFunctionalTest):
                                                       self.base_url,
                                                       self.headers))
                     method.assert_called_with(expected_url, **params)
-
-    def test_old_configure(self):
-        args = self.default_args
-        cmd = 'replication_config add --section mysql_config projects config'
-        args += cmd.split()
-        excepted_url = self.base_url + 'replication/mysql_config/projects/'
-        self.assert_secure('put', args, cli.replication_action, excepted_url,
-                           {'value': 'config'})
