@@ -122,7 +122,7 @@ class TestRedmine(TestCase):
         get_project_membership_for_user_mock.return_value = user2_mem_id
         redminec.add_user_to_projectgroups('sf-demo', 'david', groups)
         update_membership_mock.assert_called_once_with(
-            user2_mem_id,  [dev_role_id, dev_role_id])
+            user2_mem_id, [dev_role_id, dev_role_id])
 
     @patch('managesf.controllers.redminec.RedmineUtils.delete_membership')
     @patch(

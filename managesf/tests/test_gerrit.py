@@ -223,9 +223,9 @@ class TestGerritController(TestCase):
             cige.return_value = True
             self.assertRaises(
                 exc.HTTPUnauthorized, lambda:
-                    gerrit.add_user_to_projectgroups(
-                        'p1', 'john',
-                        ['ptl-group', 'core-group', 'dev-group']))
+                gerrit.add_user_to_projectgroups(
+                    'p1', 'john',
+                    ['ptl-group', 'core-group', 'dev-group']))
             self.assertEqual(0, len(autg.mock_calls))
         with nested(*ctx) as (gc, gg, autg, cige, ggi):
             gg.return_value = [2]
@@ -241,9 +241,9 @@ class TestGerritController(TestCase):
             cige.return_value = True
             self.assertRaises(
                 exc.HTTPUnauthorized, lambda:
-                    gerrit.add_user_to_projectgroups(
-                        'p1', 'john',
-                        ['core-group', 'dev-group']))
+                gerrit.add_user_to_projectgroups(
+                    'p1', 'john',
+                    ['core-group', 'dev-group']))
             self.assertEqual(0, len(autg.mock_calls))
         with nested(*ctx) as (gc, gg, autg, cige, ggi):
             gg.return_value = [3]
@@ -291,18 +291,16 @@ class TestGerritController(TestCase):
             cige.return_value = True
             self.assertRaises(
                 exc.HTTPUnauthorized, lambda:
-                    gerrit.delete_user_from_projectgroups(
-                        'p1', 'john', 'ptl-group'))
+                gerrit.delete_user_from_projectgroups(
+                    'p1', 'john', 'ptl-group'))
             self.assertEqual(0, len(dgm.mock_calls))
 
     def test_delete_project(self):
-        ctx = [patch('managesf.controllers.gerrit.get_cookie'),
-               patch('managesf.controllers.gerrit.user_owns_project'),
-               patch('managesf.controllers.gerrit.user_is_administrator'),
-               patch('managesf.controllers.gerrit.GerritUtils.delete_project'),
-               patch(
-               'managesf.controllers.gerrit.CustomGerritClient.deleteGroup'),
-               patch('managesf.controllers.gerrit.gerrit.Gerrit._ssh')]
+        ctx = []
+        for method in ('get_cookie', 'user_owns_project',
+                       'user_is_administrator', 'GerritUtils.delete_project',
+                       'CustomGerritClient.deleteGroup', 'gerrit.Gerrit._ssh'):
+            ctx.append(patch('managesf.controllers.gerrit.%s' % method))
         with nested(*ctx) as (gc, uop, uia, dp, dg, ssh):
             ssh.return_value = ("", "")
             uop.return_value = False

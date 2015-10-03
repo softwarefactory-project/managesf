@@ -43,7 +43,7 @@ setup(
     packages=find_packages(exclude=['ez_setup']),
     entry_points={
         "console_scripts": ['sfmanager = managesf.cli:main']
-        },
+    },
     url=('http://softwarefactory.enovance.com/'
          'r/gitweb?p=managesf.git;a=summary'),
     download_url='https://github.com/redhat-cip/managesf/tarball/%s' % VERSION,

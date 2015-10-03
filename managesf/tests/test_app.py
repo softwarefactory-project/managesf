@@ -254,7 +254,7 @@ class TestManageSFAppProjectController(FunctionalTest):
         ctx = [patch('managesf.controllers.gerrit.init_project'),
                patch('managesf.controllers.gerrit.user_is_administrator'),
                patch('managesf.controllers.redminec.init_project',
-               side_effect=raiseexc)]
+                     side_effect=raiseexc)]
         with nested(*ctx) as (gip, gia, rip):
             response = self.app.put('/project/p1', status="*")
             self.assertEqual(response.status_int, 500)
@@ -281,7 +281,7 @@ class TestManageSFAppProjectController(FunctionalTest):
         # Delete a project with name - an error occurs
         ctx = [patch('managesf.controllers.gerrit.delete_project'),
                patch('managesf.controllers.redminec.delete_project',
-               side_effect=raiseexc)]
+                     side_effect=raiseexc)]
         with nested(*ctx) as (gip, rip):
             response = self.app.delete('/project/p1', status="*")
             self.assertEqual(response.status_int, 500)
@@ -379,7 +379,7 @@ class TestManageSFAppMembershipController(FunctionalTest):
                 response.body)
         ctx = [patch('managesf.controllers.gerrit.add_user_to_projectgroups'),
                patch('managesf.controllers.redminec.add_user_to_projectgroups',
-               side_effect=raiseexc)]
+                     side_effect=raiseexc)]
         with nested(*ctx) as (gaupg, raupg):
             response = self.app.put_json(
                 '/project/p1/membership/john@tests.dom',

@@ -167,11 +167,11 @@ class MembershipController(RestController):
             redminec.delete_user_from_projectgroups(project, user, group)
             response.status = 200
             if group:
-                return "User %s has been deleted from group %s for project %s." % \
-                    (user, group, project)
+                return ("User %s has been deleted from group %s " +
+                        "for project %s.") % (user, group, project)
             else:
-                return "User %s has been deleted from all groups for project %s." % \
-                    (user, project)
+                return ("User %s has been deleted from all groups " +
+                        "for project %s.") % (user, project)
         except Exception as e:
             return report_unhandled_error(e)
 
