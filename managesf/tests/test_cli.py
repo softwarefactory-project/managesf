@@ -26,6 +26,7 @@ class FakeResponse(object):
     def __init__(self, status_code=200, text='fake'):
         self.status_code = status_code
         self.text = text
+        self.ok = True
 
 
 class BaseFunctionalTest(TestCase):

@@ -409,9 +409,16 @@ def get_cookie(args):
 
 
 def response(resp):
-    if resp.status_code >= 200 and resp.status_code < 400:
+    if resp.ok:
         print resp.text
         return True
+    if resp.status_code // 100 == 4:
+        msg = 'The user and or project is not found.'
+        die(msg)
+    if resp.status_code // 100 == 5:
+        msg = 'Unexpected server error. Please check' \
+              ' the state of Software Factory.'
+        die(msg)
     else:
         die(resp.text)
 
