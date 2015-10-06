@@ -47,28 +47,30 @@ def report_unhandled_error(exp):
 
 class ReplicationController(RestController):
     # 'add','rename-section'
-    @expose()
+    @expose('json')
     def put(self, section=None, setting=None):
         if not section or ('value' not in request.json):
             abort(400)
         value = request.json['value']
         try:
             gerrit.replication_apply_config(section, setting, value)
+            response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
 
     # 'unset', 'replace-all', 'remove-section'
-    @expose()
+    @expose('json')
     def delete(self, section=None, setting=None):
         if not section:
             abort(400)
         try:
             gerrit.replication_apply_config(section, setting)
+            response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
 
     # 'get-all', 'list'
-    @expose()
+    @expose('json')
     def get(self, *remainder):
         section = None
         setting = None
@@ -87,18 +89,19 @@ class ReplicationController(RestController):
         response.status = 404
         return
 
-    @expose()
+    @expose('json')
     def post(self):
         # A json with wait, url, project can be passed
         inp = request.json if request.content_length else {}
         try:
             gerrit.replication_trigger(inp)
+            response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
 
 
 class BackupController(RestController):
-    @expose()
+    @expose('json')
     def get(self):
         filepath = '/var/www/managesf/sf_backup.tar.gz'
         if not os.path.isfile(filepath):
@@ -106,35 +109,37 @@ class BackupController(RestController):
         response.body_file = open(filepath, 'rb')
         return response
 
-    @expose()
+    @expose('json')
     def post(self):
         try:
             backup.backup_start()
+            response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
 
 
 class RestoreController(RestController):
-    @expose()
+    @expose('json')
     def post(self):
         filepath = '/var/www/managesf/sf_backup.tar.gz'
         with open(filepath, 'wb+') as f:
             f.write(request.POST['file'].file.read())
         try:
             backup.backup_restore()
+            response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
 
 
 class MembershipController(RestController):
-    @expose("json")
+    @expose('json')
     def get(self):
         try:
             return redminec.get_active_users()
         except Exception as e:
             return report_unhandled_error(e)
 
-    @expose()
+    @expose('json')
     def put(self, project=None, user=None):
         if not project or not user:
             abort(400)
@@ -154,7 +159,7 @@ class MembershipController(RestController):
         except Exception as e:
             return report_unhandled_error(e)
 
-    @expose()
+    @expose('json')
     def delete(self, project=None, user=None, group=None):
         if not project or not user:
             abort(400)
@@ -226,7 +231,7 @@ class ProjectController(RestController):
 
         self.set_cache(projects)
 
-    @expose("json")
+    @expose('json')
     def get_all(self):
         projects = self.get_cache()
         if projects:
@@ -235,7 +240,7 @@ class ProjectController(RestController):
         self._reload_cache()
         return self.get_cache()
 
-    @expose("json")
+    @expose('json')
     def get_one(self, project_id):
         projects = self.get_cache()
         try:
@@ -247,7 +252,7 @@ class ProjectController(RestController):
             logger.exception(exp)
             return abort(400)
 
-    @expose()
+    @expose('json')
     def put(self, name=None):
         if getattr(conf, "project_create_administrator_only", True):
             if not gerrit.user_is_administrator():
@@ -272,7 +277,7 @@ class ProjectController(RestController):
         except Exception as e:
             return report_unhandled_error(e)
 
-    @expose()
+    @expose('json')
     def delete(self, name=None):
         if name == 'config':
             response.status = 400
@@ -292,7 +297,7 @@ class ProjectController(RestController):
 
 class LocalUserController(RestController):
 
-    @expose("json")
+    @expose('json')
     def post(self, username):
         if request.remote_user is None:
             # remote_user must be set by auth_pubtkt plugin of apache
@@ -312,7 +317,7 @@ class LocalUserController(RestController):
             response.status = 201
         return ret
 
-    @expose("json")
+    @expose('json')
     def get(self, username):
         if request.remote_user is None:
             # remote_user must be set by auth_pubtkt plugin of apache
@@ -328,7 +333,7 @@ class LocalUserController(RestController):
             return report_unhandled_error(e)
         return ret
 
-    @expose("json")
+    @expose('json')
     def delete(self, username):
         if request.remote_user is None:
             # remote_user must be set by auth_pubtkt plugin of apache
@@ -347,7 +352,7 @@ class LocalUserController(RestController):
 
 class LocalUserBindController(RestController):
 
-    @expose("json")
+    @expose('json')
     def get(self):
         authorization = request.headers.get('Authorization', None)
         if not authorization:
@@ -371,7 +376,7 @@ class HtpasswdController(RestController):
             # Ensure file exists
             open(self.filename, "a").close()
 
-    @expose()
+    @expose('json')
     def put(self):
         if request.remote_user is None:
             abort(403)
@@ -390,27 +395,26 @@ class HtpasswdController(RestController):
         response.status = 201
         return password
 
-    @expose()
+    @expose('json')
     def get(self):
         if request.remote_user is None:
             abort(403)
         response.status = 404
         try:
             with htpasswd.Basic(self.filename) as userdb:
-                exists = request.remote_user in userdb.users
-                if exists:
-                    response.status = 200
+                if request.remote_user in userdb.users:
+                    response.status = 204
         except IOError:
             abort(406)
-        return
 
-    @expose()
+    @expose('json')
     def delete(self):
         if request.remote_user is None:
             abort(403)
         try:
             with htpasswd.Basic(self.filename) as userdb:
                 userdb.pop(request.remote_user)
+            response.status = 204
         except IOError:
             abort(406)
 
@@ -522,7 +526,7 @@ class SSHConfigController(RestController):
 
         return success
 
-    @expose()
+    @expose('json')
     def put(self, name):
         if request.remote_user is None:
             abort(403)
@@ -537,7 +541,7 @@ class SSHConfigController(RestController):
 
         response.status = 201
 
-    @expose()
+    @expose('json')
     def get(self, name):
         if request.remote_user is None:
             abort(403)
@@ -546,7 +550,7 @@ class SSHConfigController(RestController):
 
         return conf
 
-    @expose()
+    @expose('json')
     def delete(self, name):
         if request.remote_user is None:
             abort(403)
@@ -559,6 +563,7 @@ class SSHConfigController(RestController):
             del conf[name]
 
         self._write_config(conf)
+        response.status = 204
 
 
 class TestsController(RestController):

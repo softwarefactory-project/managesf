@@ -249,7 +249,8 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertTupleEqual(('p1', {}), gip.mock_calls[0][1])
             self.assertTupleEqual(('p1', {}), rip.mock_calls[0][1])
             self.assertEqual(response.status_int, 201)
-            self.assertEqual(response.body, 'Project p1 has been created.')
+            self.assertEqual(json.loads(response.body),
+                             'Project p1 has been created.')
         # Create a project with name - an error occurs
         ctx = [patch('managesf.controllers.gerrit.init_project'),
                patch('managesf.controllers.gerrit.user_is_administrator'),
@@ -258,7 +259,7 @@ class TestManageSFAppProjectController(FunctionalTest):
         with nested(*ctx) as (gip, gia, rip):
             response = self.app.put('/project/p1', status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -277,7 +278,8 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertTupleEqual(('p1',), gdp.mock_calls[0][1])
             self.assertTupleEqual(('p1',), rdp.mock_calls[0][1])
             self.assertEqual(response.status_int, 200)
-            self.assertEqual(response.body, 'Project p1 has been deleted.')
+            self.assertEqual(json.loads(response.body),
+                             'Project p1 has been deleted.')
         # Delete a project with name - an error occurs
         ctx = [patch('managesf.controllers.gerrit.delete_project'),
                patch('managesf.controllers.redminec.delete_project',
@@ -285,7 +287,7 @@ class TestManageSFAppProjectController(FunctionalTest):
         with nested(*ctx) as (gip, rip):
             response = self.app.delete('/project/p1', status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -313,7 +315,7 @@ class TestManageSFAppRestoreController(FunctionalTest):
             self.assertTrue(os.path.isfile(
                 '/var/www/managesf/sf_backup.tar.gz'))
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -340,7 +342,7 @@ class TestManageSFAppBackupController(FunctionalTest):
                    side_effect=raiseexc):
             response = self.app.post('/backup', status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -373,10 +375,9 @@ class TestManageSFAppMembershipController(FunctionalTest):
                 {'groups': ['ptl-group', 'core-group']},
                 status="*")
             self.assertEqual(response.status_int, 201)
-            self.assertEqual(
-                "User john@tests.dom has been added in group(s): ptl-group, "
-                "core-group for project p1",
-                response.body)
+            self.assertEqual(json.loads(response.body),
+                             "User john@tests.dom has been added in group(s):"
+                             " ptl-group, core-group for project p1")
         ctx = [patch('managesf.controllers.gerrit.add_user_to_projectgroups'),
                patch('managesf.controllers.redminec.add_user_to_projectgroups',
                      side_effect=raiseexc)]
@@ -386,7 +387,7 @@ class TestManageSFAppMembershipController(FunctionalTest):
                 {'groups': ['ptl-group', 'core-group']},
                 status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -404,25 +405,22 @@ class TestManageSFAppMembershipController(FunctionalTest):
                 '/project/p1/membership/john',
                 status="*")
             self.assertEqual(response.status_int, 400)
-            self.assertEqual(
-                "User must be identified by its email address",
-                response.body)
+            self.assertEqual(json.loads(response.body),
+                             "User must be identified by its email address")
             response = self.app.delete(
                 '/project/p1/membership/john@tests.dom',
                 status="*")
             self.assertEqual(response.status_int, 200)
-            self.assertEqual(
-                "User john@tests.dom has been deleted from all "
-                "groups for project p1.",
-                response.body)
+            self.assertEqual(json.loads(response.body),
+                             "User john@tests.dom has been deleted from all "
+                             "groups for project p1.")
             response = self.app.delete(
                 '/project/p1/membership/john@tests.dom/core-group',
                 status="*")
             self.assertEqual(response.status_int, 200)
-            self.assertEqual(
-                "User john@tests.dom has been deleted from group core-group "
-                "for project p1.",
-                response.body)
+            self.assertEqual(json.loads(response.body),
+                             "User john@tests.dom has been deleted from group "
+                             "core-group for project p1.")
         ctx = [
             patch(
                 'managesf.controllers.gerrit.delete_user_from_projectgroups'),
@@ -434,7 +432,7 @@ class TestManageSFAppMembershipController(FunctionalTest):
                 '/project/p1/membership/john@tests.dom',
                 status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -454,7 +452,8 @@ class TestManageSFAppReplicationController(FunctionalTest):
             response = self.app.put_json(
                 '/replication/repl', {'value': 'val'}, status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            msg = json.loads(response.body)
+            self.assertEqual(msg,
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -470,7 +469,8 @@ class TestManageSFAppReplicationController(FunctionalTest):
             response = self.app.delete(
                 '/replication/repl', status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            msg = json.loads(response.body)
+            self.assertEqual(msg,
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -483,13 +483,15 @@ class TestManageSFAppReplicationController(FunctionalTest):
             response = self.app.get(
                 '/replication/repl/', status="*")
             self.assertEqual(response.status_int, 200)
-            self.assertEqual(response.body, 'ret val')
+            msg = json.loads(response.body)
+            self.assertEqual(msg, 'ret val')
         with patch('managesf.controllers.gerrit.replication_get_config',
                    side_effect=raiseexc):
             response = self.app.get(
                 '/replication/repl/', status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            msg = json.loads(response.body)
+            self.assertEqual(msg,
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -505,7 +507,8 @@ class TestManageSFAppReplicationController(FunctionalTest):
             response = self.app.post_json(
                 '/replication/', status="*")
             self.assertEqual(response.status_int, 500)
-            self.assertEqual(response.body,
+            msg = json.loads(response.body)
+            self.assertEqual(msg,
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
 
@@ -529,13 +532,13 @@ class TestManageSFHtpasswdController(FunctionalTest):
 
         resp = self.app.put_json('/htpasswd/', {}, extra_environ=env)
         self.assertEqual(resp.status_int, 201)
-        self.assertTrue(len(resp.body) == 12)
+        self.assertTrue(len(resp.body) >= 12)
 
         # Create new password
         old_password = resp.body
         resp = self.app.put_json('/htpasswd/', {}, extra_environ=env)
         self.assertEqual(resp.status_int, 201)
-        self.assertTrue(len(resp.body) == 12)
+        self.assertTrue(len(resp.body) >= 12)
 
         self.assertTrue(old_password != resp.body)
 
@@ -543,16 +546,16 @@ class TestManageSFHtpasswdController(FunctionalTest):
         newenv = {'REMOTE_USER': 'random'}
         resp = self.app.put_json('/htpasswd/', {}, extra_environ=newenv)
         self.assertEqual(resp.status_int, 201)
-        self.assertTrue(len(resp.body) == 12)
+        self.assertTrue(len(resp.body) >= 12)
 
         # Ensure there are password entries for both users
         resp = self.app.get('/htpasswd/', extra_environ=env)
         self.assertEqual(204, resp.status_int)
-        self.assertFalse(resp.body)
+        self.assertEqual(resp.body, 'null')
 
         resp = self.app.get('/htpasswd/', extra_environ=newenv)
         self.assertEqual(204, resp.status_int)
-        self.assertFalse(resp.body)
+        self.assertEqual(resp.body, 'null')
 
         # Delete passwords
         resp = self.app.delete('/htpasswd/', extra_environ=env)

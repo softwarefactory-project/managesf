@@ -407,16 +407,18 @@ def get_cookie(args):
         die(e.message)
 
 
-def response(resp):
+def response(resp, as_text=False):
     if resp.ok:
-        print resp.text
+        if as_text:
+            print json.loads(resp.text)
+        else:
+            print resp.text
         return True
     if resp.status_code // 100 == 4:
-        msg = 'The user and or project is not found.'
+        msg = 'NOT FOUND : %s' % resp.text
         die(msg)
     if resp.status_code // 100 == 5:
-        msg = 'Unexpected server error. Please check' \
-              ' the state of Software Factory.'
+        msg = 'SERVER ERROR : %s' % resp.text
         die(msg)
     else:
         die(resp.text)
@@ -619,16 +621,12 @@ def gerrit_api_htpasswd_action(args, base_url, headers):
     if args.subcommand == 'generate_password':
         resp = requests.put(url, headers=headers,
                             cookies=dict(auth_pubtkt=get_cookie(args)))
-        if resp.status_code != 201:
-            die("generate_password failed with status_code " +
-                str(resp.status_code))
+
     elif args.subcommand == 'delete_password':
         resp = requests.delete(url, headers=headers,
                                cookies=dict(auth_pubtkt=get_cookie(args)))
-        if resp.status_code != 204:
-            die("delete_password failed with status_code " +
-                str(resp.status_code))
-    return response(resp)
+
+    return response(resp, as_text=True)
 
 
 def gerrit_ssh_config_action(args, base_url, headers):
@@ -654,15 +652,11 @@ def gerrit_ssh_config_action(args, base_url, headers):
             data["identityfile_content"] = ssh_key_file.read()
         resp = requests.put(url, headers=headers, data=json.dumps(data),
                             cookies=dict(auth_pubtkt=get_cookie(args)))
-        if resp.status_code != 201:
-            die("add ssh config failed with status_code " +
-                str(resp.status_code))
+
     elif args.subcommand == 'delete':
         resp = requests.delete(url, headers=headers,
                                cookies=dict(auth_pubtkt=get_cookie(args)))
-        if resp.status_code != 204:
-            die("remove ssh config failed with status_code " +
-                str(resp.status_code))
+
     return response(resp)
 
 
