@@ -293,7 +293,7 @@ def user_management_command(sp):
                          ' details of all users. User can update its own'
                          ' details.')
     uump.add_argument('--username', '-u', nargs='?', metavar='username',
-                      required=False,
+                      required=True,
                       help='the user to update, defaults to current user')
     uump.add_argument('--password', '-p', nargs='?', metavar='password',
                       required=False, default=False,
@@ -302,8 +302,7 @@ def user_management_command(sp):
     uump.add_argument('--email', '-e', nargs='?', metavar='email',
                       required=False, help='The user email')
     uump.add_argument('--fullname', '-f', metavar='John Doe', nargs='+',
-                      required=False,
-                      help="The user's full name")
+                      required=False, help="The user's full name")
     uump.add_argument('--ssh-key', '-s', nargs='?', metavar='/path/to/pub_key',
                       required=False, help="The user's ssh public key file")
     dump = sp.add_parser('delete', help='Delete user. Admin rights required')

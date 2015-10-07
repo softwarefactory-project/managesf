@@ -151,6 +151,13 @@ class TestUserActions(BaseFunctionalTest):
         self.assert_secure('post', args, cli.user_management_action,
                            expected_url, data)
 
+    def test_user_update_missing_username(self):
+        args = self.default_args
+        data = {'email': 'e@test.com', 'password': 'abc123'}
+        cmd = 'user update --password'
+        args += cmd.format(**data).split()
+        self.assertRaises(SystemExit, self.parser.parse_args, args)
+
 
 class TestReplicationActions(BaseFunctionalTest):
     def test_replication(self):
