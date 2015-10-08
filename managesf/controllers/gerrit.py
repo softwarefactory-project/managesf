@@ -675,7 +675,7 @@ def replication_trigger(json):
 
 
 def commit_init_tests_scripts(project_name):
-    config_git = gerrit.GerritRepo('config')
+    config_git = GerritRepo('config')
     config_git.clone()
     job_file = os.path.join(config_git.infos['localcopy_path'],
                             'jobs', 'projects.yaml')
