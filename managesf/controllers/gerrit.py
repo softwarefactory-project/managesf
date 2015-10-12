@@ -688,7 +688,7 @@ def commit_init_tests_scripts(project_name):
                              'zuul', 'projects.yaml')
     unit_test = '%s-unit-tests' % project_name
 
-    with open(job_file, 'rw') as fd:
+    with open(job_file, 'r+') as fd:
         job_yaml = yaml.load(fd)
         projects = [x['project']['name'] for x in job_yaml
                     if x.get('project')]
@@ -701,7 +701,7 @@ def commit_init_tests_scripts(project_name):
             fd.seek(0)
             fd.write(yaml.dump(job_yaml))
 
-    with open(zuul_file, 'rw') as fd:
+    with open(zuul_file, 'r+') as fd:
         zuul_yaml = yaml.load(fd)
         projects = [x['name'] for x in zuul_yaml['projects']]
         if project_name not in projects:
