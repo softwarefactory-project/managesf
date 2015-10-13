@@ -140,6 +140,20 @@ class TestGerritController(TestCase):
         self.assertEqual('p1-ptl', gerrit.get_ptl_group_name('p1'))
         self.assertEqual('p1-dev', gerrit.get_dev_group_name('p1'))
 
+    def test_get_groups_missing(self):
+        with patch('managesf.controllers.gerrit.get_client') as gc:
+            gc.return_value.get_project_groups.return_value = []
+            groups = gerrit.get_project_groups('projectname')
+            self.assertEqual([], groups)
+
+            gc.return_value.get_project_groups.return_value = ['one', 'two']
+            groups = gerrit.get_project_groups('projectname')
+            self.assertEqual(['one', 'two'], groups)
+
+            gc.return_value.get_project_groups.return_value = False
+            groups = gerrit.get_project_groups('projectname')
+            self.assertEqual([], groups)
+
     def test_init_project(self):
         ctx = [patch('managesf.controllers.gerrit.get_cookie'),
                patch('managesf.controllers.gerrit.init_git_repo'),

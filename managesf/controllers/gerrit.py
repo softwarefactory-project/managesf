@@ -101,7 +101,12 @@ def user_owns_project(prj_name):
 
 def get_project_groups(project_name):
     ge = get_client()
-    return ge.get_project_groups(project_name)
+    groups = ge.get_project_groups(project_name)
+    if isinstance(groups, bool):
+        logger.info("Could not find project %s: %s" % (
+            project_name, str(groups)))
+        groups = []
+    return groups
 
 
 def user_is_administrator():
