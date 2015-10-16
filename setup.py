@@ -36,8 +36,8 @@ setup(
     description=('A python client/server used to centralize management '
                  'of services deployed under Software Factory'),
     author='Software Factory',
-    author_email='softwarefactory@enovance.com',
-    test_suite='managesf',
+    author_email='softwarefactory@redhat.com',
+    test_suite='nose.collector',
     zip_safe=False,
     include_package_data=True,
     packages=find_packages(exclude=['ez_setup']),

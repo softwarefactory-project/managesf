@@ -16,12 +16,6 @@
 
 echo "$(date) - $(hostname)"
 
-echo "FLAKE8 tests ($(flake8 --version))"
-echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-flake8
-FLAKE8_ERRORS=$?
-[ $FLAKE8_ERRORS = 0 ] && echo "Success. Well done !"
-
 echo
 echo "ManageSF tests"
 echo "~~~~~~~~~~~~~"
@@ -32,4 +26,4 @@ tox
 MANAGESF_ERRORS=$?
 echo
 
-exit $[${FLAKE8_ERRORS} + ${MANAGESF_ERRORS}];
+exit ${MANAGESF_ERRORS}
