@@ -696,7 +696,7 @@ def commit_init_tests_scripts(project_name):
             project = {'project':
                        {'name': project_name,
                         'jobs': [unit_test, ],
-                        'node': 'sfstack-lxc-ubuntu || sfstack-lxc-centos'}}
+                        'node': 'master'}}
             job_yaml.append(project)
             fd.seek(0)
             fd.write(yaml.dump(job_yaml))
