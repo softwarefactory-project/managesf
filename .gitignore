@@ -2,3 +2,7 @@
 .tox
 *.egg
 *.egg-info
+.coverage
+coverage.xml
+managesf/sfmanager.log
+managesf/tmp_backup

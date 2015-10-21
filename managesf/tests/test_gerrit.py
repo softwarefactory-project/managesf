@@ -526,7 +526,8 @@ class TestGerritRepo(TestCase):
             gr = gerrit.GerritRepo('p1')
             gr.review_changes('this is a test')
             self.assertEqual(3, len(ex.mock_calls))
-            self.assertEqual('git review -s', ex.mock_calls[0][1][0])
+            self.assertTrue(ex.mock_calls[0][1][0].startswith(
+                'ssh-agent bash -c'))
             self.assertTrue(ex.mock_calls[1][1][0].startswith('git commit -a'))
             self.assertEqual('git review', ex.mock_calls[2][1][0])
 

@@ -646,22 +646,22 @@ class TestManageSFSSHConfigController(FunctionalTest):
 
 class TestProjectTestsController(FunctionalTest):
     def test_init_project_test(self):
-        ctx = [patch('managesf.controllers.gerrit.user_is_administrator'),
-               patch('managesf.controllers.gerrit.get_project'),
-               patch('managesf.controllers.gerrit.commit_init_tests_scripts')]
-        with nested(*ctx) as (gia, gp, cits):
-            gia.return_value = True
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        ctx = [patch('managesf.controllers.gerrit.get_project'),
+               patch('managesf.controllers.gerrit.propose_test_definition')]
+        with nested(*ctx) as (gp, ptd):
             gp.return_value = 'p1'
-            resp = self.app.put_json('/tests/toto', {'project-scripts': False})
+            resp = self.app.put_json('/tests/toto', {'project-scripts': False},
+                                     extra_environ=environ, status="*")
             self.assertEqual(resp.status_int, 201)
 
     def test_init_project_test_with_project_scripts(self):
-        ctx = [patch('managesf.controllers.gerrit.user_is_administrator'),
-               patch('managesf.controllers.gerrit.get_project'),
-               patch('managesf.controllers.gerrit.commit_init_tests_scripts'),
-               patch('managesf.controllers.gerrit.GerritRepo')]
-        with nested(*ctx) as (gia, gp, cits, gr):
-            gia.return_value = True
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        ctx = [patch('managesf.controllers.gerrit.get_project'),
+               patch('managesf.controllers.gerrit.propose_test_definition'),
+               patch('managesf.controllers.gerrit.propose_test_scripts')]
+        with nested(*ctx) as (gp, ptd, pts):
             gp.return_value = 'p1'
-            resp = self.app.put_json('/tests/toto', {'project-scripts': True})
+            resp = self.app.put_json('/tests/toto', {'project-scripts': True},
+                                     extra_environ=environ, status="*")
             self.assertEqual(resp.status_int, 201)

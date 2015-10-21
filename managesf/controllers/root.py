@@ -567,33 +567,32 @@ class SSHConfigController(RestController):
 
 
 class TestsController(RestController):
-    test_script_template = '''#! /bin/bash\n
-
-echo "Modify this script to run your project's unit tests. "
-echo "Until you do this, it will exit in failure !"
-exit 1;
-    '''
 
     @expose('json')
     def put(self, project_name=''):
-        if not gerrit.user_is_administrator():
+        if request.remote_user is None:
             abort(403)
-
         if not gerrit.get_project(project_name):
             abort(404)
 
-        gerrit.commit_init_tests_scripts(project_name)
+        try:
+            gerrit.propose_test_definition(project_name,
+                                           request.remote_user)
+        except Exception as e:
+            abort(500, detail=e.message)
 
-        project_scripts = False
         if request.json:
             project_scripts = request.json.get('project-scripts', False)
 
         if project_scripts:
-            project_git = gerrit.GerritRepo(project_name)
-            project_git.clone()
-            project_git.add_file('run_test.sh', self.test_script_template)
-            project_git.review_changes()
+            try:
+                gerrit.propose_test_scripts(project_name,
+                                            request.remote_user)
+            except Exception as e:
+                abort(500, detail=e.message)
+
         response.status = 201
+        return True
 
 
 class RootController(object):

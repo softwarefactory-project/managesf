@@ -154,6 +154,8 @@ class GerritRepo(object):
         # is not a registered user (author can be anything else)
         self.env['GIT_COMMITTER_NAME'] = conf.admin['name']
         self.env['GIT_COMMITTER_EMAIL'] = conf.admin['email']
+        # This var is used by git-review to set the remote via git review -s
+        self.env['USERNAME'] = conf.admin['name']
 
     def _ssh_wraper_setup(self, filename):
         ssh_wrapper = "ssh -o StrictHostKeyChecking=no -i %s \"$@\"" % filename
@@ -269,7 +271,9 @@ class GerritRepo(object):
         self._exec(cmd, cwd=self.infos['localcopy_path'])
 
     def review_changes(self, commit_msg):
-        cmd = 'git review -s'
+        logger.info("[gerrit] Send a review via git review")
+        cmd = "ssh-agent bash -c 'ssh-add %s; git review -s'" %\
+              conf.gerrit['sshkey_priv_path']
         self._exec(cmd, cwd=self.infos['localcopy_path'])
         cmd = "git commit -a --author '%s' -m'%s'" % (self.email,
                                                       commit_msg)
@@ -679,7 +683,7 @@ def replication_trigger(json):
     gerrit_client.trigger_replication(cmd)
 
 
-def commit_init_tests_scripts(project_name):
+def propose_test_definition(project_name, requester):
     config_git = GerritRepo('config')
     config_git.clone()
     job_file = os.path.join(config_git.infos['localcopy_path'],
@@ -688,29 +692,46 @@ def commit_init_tests_scripts(project_name):
                              'zuul', 'projects.yaml')
     unit_test = '%s-unit-tests' % project_name
 
-    with open(job_file, 'r+') as fd:
+    with open(job_file, 'r') as fd:
         job_yaml = yaml.load(fd)
         projects = [x['project']['name'] for x in job_yaml
                     if x.get('project')]
-        if project_name not in projects:
+    if project_name not in projects:
+        with open(job_file, 'w') as fd:
             project = {'project':
                        {'name': project_name,
-                        'jobs': [unit_test, ],
+                        'jobs': ['{name}-unit-tests', ],
                         'node': 'master'}}
             job_yaml.append(project)
-            fd.seek(0)
-            fd.write(yaml.dump(job_yaml))
+            fd.write(yaml.safe_dump(job_yaml))
 
-    with open(zuul_file, 'r+') as fd:
+    with open(zuul_file, 'r') as fd:
         zuul_yaml = yaml.load(fd)
         projects = [x['name'] for x in zuul_yaml['projects']]
-        if project_name not in projects:
-            project = {'name': project_name,
-                       'check': unit_test,
-                       'gate': unit_test}
-            zuul_yaml['projects'].append(project)
-            fd.seek(0)
-            fd.write(yaml.dump(zuul_yaml))
 
-    config_git.review_changes('Added test scripts for project %s' %
-                              project_name)
+    if project_name not in projects:
+        with open(zuul_file, 'w') as fd:
+            project = {'name': project_name,
+                       'check': [unit_test, ],
+                       'gate': [unit_test, ]}
+            zuul_yaml['projects'].append(project)
+            fd.write(yaml.safe_dump(zuul_yaml))
+
+    config_git.review_changes(
+        '%s proposes initial test definition for project %s' %
+        (requester, project_name))
+
+
+def propose_test_scripts(project_name, requester):
+    test_script_template = '''#!/bin/bash
+
+echo "Modify this script to run your project's unit tests."
+exit 0;'''
+    project_git = GerritRepo(project_name)
+    project_git.clone()
+    project_git.add_file('run_tests.sh', test_script_template)
+    os.chmod(os.path.join(project_git.infos['localcopy_path'],
+                          'run_tests.sh'), stat.S_IRWXU)
+    project_git.review_changes(
+        '%s proposes initial test scripts for project %s' %
+        (requester, project_name))
