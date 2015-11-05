@@ -17,7 +17,6 @@
 from unittest import TestCase
 from mock import patch
 from contextlib import nested
-from pecan.core import exc
 
 from managesf.controllers import backup
 from managesf.tests import dummy_conf
@@ -30,40 +29,31 @@ class TestBackup(TestCase):
         backup.conf = cls.conf
 
     def test_init(self):
-        ctx = [patch('managesf.controllers.backup.user_is_administrator'),
-               patch('managesf.controllers.backup.RemoteUser')]
-        with nested(*ctx) as (uia, ru):
-            uia.return_value = False
-            self.assertRaises(exc.HTTPUnauthorized, lambda: backup.Backup())
-            uia.return_value = True
+        ctx = [patch('managesf.controllers.backup.RemoteUser'), ]
+        with nested(*ctx) as (ru, ):
             backup.Backup()
-            self.assertEqual(4, len(ru.mock_calls))
+            self.assertEqual(3, len(ru.mock_calls))
 
     def test_start(self):
-        ctx = [patch('managesf.controllers.backup.user_is_administrator'),
-               patch('managesf.controllers.backup.Backup.check_for_service'),
+        ctx = [patch('managesf.controllers.backup.Backup.check_for_service'),
                patch('managesf.controllers.backup.RemoteUser._ssh')]
-        with nested(*ctx) as (uia, cfs, ssh):
-            uia.return_value = True
+        with nested(*ctx) as (cfs, ssh):
             backup.Backup().start()
             self.assertTrue(ssh.called)
 
     def test_restore(self):
-        ctx = [patch('managesf.controllers.backup.user_is_administrator'),
-               patch('managesf.controllers.backup.RemoteUser._ssh'),
+        ctx = [patch('managesf.controllers.backup.RemoteUser._ssh'),
                patch('managesf.controllers.backup.Backup.check_for_service')]
 
-        with nested(*ctx) as (uia, ssh, cfs):
-            uia.return_value = True
+        with nested(*ctx) as (ssh, cfs):
             backup.Backup().restore()
             self.assertTrue(ssh.called)
 
     def test_backup_ops(self):
-        ctx = [patch('managesf.controllers.backup.user_is_administrator'),
-               patch('managesf.controllers.backup.RemoteUser'),
+        ctx = [patch('managesf.controllers.backup.RemoteUser'),
                patch('managesf.controllers.backup.Backup.start'),
                patch('managesf.controllers.backup.Backup.restore')]
-        with nested(*ctx) as (uia, ru, s, r):
+        with nested(*ctx) as (ru, s, r):
             backup.backup_start()
             self.assertTrue(s.called)
             backup.backup_restore()

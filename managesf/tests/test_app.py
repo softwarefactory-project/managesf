@@ -40,7 +40,10 @@ class FunctionalTest(TestCase):
                        'sqlalchemy': c.sqlalchemy,
                        'auth': c.auth,
                        'htpasswd': c.htpasswd,
-                       'sshconfig': c.sshconfig}
+                       'sshconfig': c.sshconfig,
+                       'managesf': c.managesf,
+                       'jenkins': c.jenkins,
+                       'mysql': c.mysql}
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}
@@ -322,18 +325,25 @@ class TestManageSFAppRestoreController(FunctionalTest):
             os.unlink('/var/www/managesf/sf_backup.tar.gz')
 
     def test_restore_post(self):
+        from managesf.services.base import BackupManager
         files = [('file', 'useless', 'backup content')]
-        # retore a provided backup
-        with patch('managesf.controllers.backup.backup_restore') as br:
+        # restore a provided backup
+        ctx = [patch('managesf.controllers.backup.backup_restore'),
+               patch('managesf.controllers.backup.backup_unpack'),
+               patch.object(BackupManager,
+                            'restore'), ]
+        with nested(*ctx) as (backup_restore, backup_unpack, restore):
             response = self.app.post('/restore', status="*",
                                      upload_files=files)
             self.assertTrue(os.path.isfile(
                 '/var/www/managesf/sf_backup.tar.gz'))
-            self.assertTrue(br.called)
+            self.assertTrue(backup_unpack.called)
+            self.assertTrue(backup_restore.called)
+            self.assertEqual(2, len(restore.mock_calls))
             self.assertEqual(response.status_int, 204)
-        # retore a provided backup - an error occurs
-        with patch('managesf.controllers.backup.backup_restore',
-                   side_effect=raiseexc) as br:
+        # restore a provided backup - an error occurs
+        with nested(*ctx) as (backup_restore, backup_unpack, restore):
+            backup_restore.side_effect = raiseexc
             response = self.app.post('/restore', status="*",
                                      upload_files=files)
             self.assertTrue(os.path.isfile(
@@ -358,17 +368,22 @@ class TestManageSFAppBackupController(FunctionalTest):
         self.assertEqual(response.status_int, 404)
 
     def test_backup_post(self):
-        with patch('managesf.controllers.backup.backup_start') as bs:
+        from managesf.services.base import BackupManager
+        from managesf.services.gerrit.role import SFGerritRoleManager
+        ctx = [patch('managesf.controllers.backup.backup_start'),
+               patch.object(BackupManager,
+                            'backup'),
+               patch.object(SFGerritRoleManager,
+                            'is_admin'), ]
+        with nested(*ctx) as (backup_start, backup, is_admin):
+            is_admin.return_value = False
             response = self.app.post('/backup', status="*")
-            self.assertTrue(bs.called)
+            self.assertEqual(response.status_int, 401)
+            is_admin.return_value = True
+            response = self.app.post('/backup', status="*")
             self.assertEqual(response.status_int, 204)
-        with patch('managesf.controllers.backup.backup_start',
-                   side_effect=raiseexc):
-            response = self.app.post('/backup', status="*")
-            self.assertEqual(response.status_int, 500)
-            self.assertEqual(json.loads(response.body),
-                             'Unable to process your request, failed '
-                             'with unhandled error (server side): FakeExcMsg')
+            self.assertEqual(2, len(backup.mock_calls))
+            self.assertTrue(backup_start.called)
 
 
 class TestManageSFAppMembershipController(FunctionalTest):

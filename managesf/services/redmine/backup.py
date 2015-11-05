@@ -17,10 +17,8 @@
 
 import logging
 
-# from redmine.exceptions import ResourceNotFoundError
-
 from managesf.services import base
-# from managesf.services import exceptions as exc
+from managesf.services import exceptions as exc
 
 
 logger = logging.getLogger(__name__)
@@ -28,9 +26,11 @@ logger = logging.getLogger(__name__)
 
 class RedmineBackupManager(base.BackupManager):
     """backup management"""
-    # TODO(mhu)
 
+    err_msg = 'You should manage the backups of own Redmine yourself'
 
-class SFRedmineBackupManager(RedmineBackupManager):
-    """backup management"""
-    # TODO(mhu)
+    def get(self, **kwargs):
+        raise exc.UnavailableActionError(self.err_msg)
+
+    def update(self, **kwargs):
+        raise exc.UnavailableActionError(self.err_msg)

@@ -14,10 +14,8 @@
 # under the License.
 
 from pecan import conf
-from pecan import abort
 import logging
 from utils import RemoteUser
-from gerrit import user_is_administrator
 import time
 
 logger = logging.getLogger(__name__)
@@ -25,10 +23,7 @@ logger = logging.getLogger(__name__)
 
 class Backup(object):
     def __init__(self):
-        if not user_is_administrator():
-            abort(401)
         path = conf.managesf['sshkey_priv_path']
-        self.gru = RemoteUser('root', conf.gerrit['host'], path)
         self.jru = RemoteUser('root', conf.jenkins['host'], path)
         self.msqlru = RemoteUser('root', conf.mysql['host'], path)
         self.mru = RemoteUser('root', conf.managesf['host'], path)
@@ -46,32 +41,29 @@ class Backup(object):
                 break
 
     def start(self):
-        logger.debug(" start backup of Gerrit, jenkins and mysql")
-        p = self.gru._ssh('/root/backup_gerrit.sh')
-        logger.info("-> Gerrit backup: %d" % p.returncode)
-        self.jru._ssh('/root/backup_jenkins.sh')
-        logger.info("-> Jenkins backup: %d" % p.returncode)
-        self.msqlru._ssh('/root/backup_mysql.sh')
-        logger.info("-> Mysql backup: %d" % p.returncode)
-        gerrit_service = 'wget --spider http://localhost:8000/r/'
-        self.check_for_service(self.gru, gerrit_service)
+        logger.debug("start backup of jenkins and mysql")
+        p = self.jru._ssh('/root/backup_jenkins.sh')
+        logger.info("-> Jenkins backup ended with code: %d" % p.returncode)
+        p = self.msqlru._ssh('/root/backup_mysql.sh')
+        logger.info("-> Mysql backup ended with code: %d" % p.returncode)
         jenkins_service = 'wget --spider http://localhost:8082/jenkins/'
         self.check_for_service(self.jru, jenkins_service)
 
-        logger.debug(" generate backup")
+        logger.debug("generate backup")
         self.mru._ssh(
             'tar --absolute-names -czPf ' +
-            '/var/www/managesf/sf_backup.tar.gz /root/.bup /root/alldb.sql.gz')
+            '/var/www/managesf/sf_backup.tar.gz /root/.bup /root/*db.sql.gz')
         self.mru._ssh('chmod 0400 /var/www/managesf/sf_backup.tar.gz')
         self.mru._ssh('chown apache:apache /var/www/managesf/sf_backup.tar.gz')
 
-    def restore(self):
+    def unpack(self):
         self.mru._ssh('tar -xzPf /var/www/managesf/sf_backup.tar.gz')
-        self.msqlru._ssh('/root/restore_mysql.sh')
-        self.gru._ssh('/root/restore_gerrit.sh')
-        self.jru._ssh('/root/restore_jenkins.sh')
-        gerrit_service = 'wget --spider http://localhost:8000/r/'
-        self.check_for_service(self.gru, gerrit_service)
+
+    def restore(self):
+        p = self.msqlru._ssh('/root/restore_mysql.sh')
+        logger.info("Mysql restoration ended with code: %d" % p.returncode)
+        p = self.jru._ssh('/root/restore_jenkins.sh')
+        logger.info("Jenkins restoration ended with code: %d" % p.returncode)
         jenkins_service = 'wget --spider http://localhost:8082/jenkins/'
         self.check_for_service(self.jru, jenkins_service)
 
@@ -81,9 +73,9 @@ def backup_start():
     bkp.start()
 
 
-def backup_get():
+def backup_unpack():
     bkp = Backup()
-    bkp.get()
+    bkp.unpack()
 
 
 def backup_restore():

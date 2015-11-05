@@ -19,7 +19,7 @@ from pysflib.sfredmine import RedmineUtils
 from redmine import Redmine as RM
 
 from managesf.services import base
-# from managesf.services.redmine import backup
+from managesf.services.redmine import backup
 from managesf.services.redmine import membership
 from managesf.services.redmine import project
 from managesf.services.redmine import role
@@ -30,7 +30,7 @@ class Redmine(base.BaseIssueTrackerServicePlugin):
     """Plugin managing the Redmine issue tracker service."""
 
     _config_section = "redmine"
-    service_name = "Redmine"
+    service_name = "redmine"
 
     def __init__(self, conf):
         super(base.BaseIssueTrackerServicePlugin, self).__init__(conf)
@@ -38,7 +38,7 @@ class Redmine(base.BaseIssueTrackerServicePlugin):
         self.user = user.UserManager(self)
         self.membership = membership.MembershipManager(self)
         self.role = role.RoleManager(self)
-        self.backup = None
+        self.backup = backup.RedmineBackupManager(self)
 
     def get_client(self, cookie=None):
         return RM(self.conf['url'],
@@ -65,7 +65,8 @@ class SoftwareFactoryRedmine(Redmine):
         self.user = user.SFRedmineUserManager(self)
         self.membership = membership.SFRedmineMembershipManager(self)
         self.role = role.SFRedmineRoleManager(self)
-        self.backup = None
+        self.backup = base.BackupManager(self)
+        self.backup.heartbeat_cmd = None
 
     def get_client(self, cookie=None):
         return RedmineUtils(self.conf['url'],

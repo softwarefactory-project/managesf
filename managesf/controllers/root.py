@@ -116,11 +116,16 @@ class BackupController(RestController):
 
     @expose('json')
     def post(self):
-        try:
-            backup.backup_start()
-            response.status = 204
-        except Exception as e:
-            return report_unhandled_error(e)
+        if not gerrit_service.role.is_admin(request.remote_user):
+            abort(401)
+        else:
+            try:
+                gerrit_service.backup.backup()
+                redmine_service.backup.backup()
+                backup.backup_start()
+                response.status = 204
+            except Exception as e:
+                return report_unhandled_error(e)
 
 
 class RestoreController(RestController):
@@ -130,7 +135,10 @@ class RestoreController(RestController):
         with open(filepath, 'wb+') as f:
             f.write(request.POST['file'].file.read())
         try:
+            backup.backup_unpack()
             backup.backup_restore()
+            gerrit_service.backup.restore()
+            redmine_service.backup.restore()
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -264,7 +272,7 @@ class ProjectController(RestController):
     @expose('json')
     def put(self, name=None):
         if getattr(conf, "project_create_administrator_only", True):
-            if not gerrit_service.role.is_admin():
+            if not gerrit_service.role.is_admin(request.remote_user):
                 abort(401)
 
         if not name:

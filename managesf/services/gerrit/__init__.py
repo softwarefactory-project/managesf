@@ -21,7 +21,6 @@ from pysflib.sfgerrit import GerritUtils
 from pysflib.sfauth import get_cookie
 
 from managesf.services import base
-# from managesf.services.gerrit import backup
 from managesf.services.gerrit import membership
 from managesf.services.gerrit import project
 from managesf.services.gerrit import role
@@ -34,7 +33,7 @@ class Gerrit(base.BaseCodeReviewServicePlugin):
     """Plugin managing the Gerrit Code Review service."""
 
     _config_section = "gerrit"
-    service_name = "Gerrit"
+    service_name = "gerrit"
 
     def __init__(self, conf):
         super(Gerrit, self).__init__(conf)
@@ -65,7 +64,8 @@ class SoftwareFactoryGerrit(Gerrit):
         self.user = user.SFGerritUserManager(self)
         self.membership = membership.SFGerritMembershipManager(self)
         self.role = role.SFGerritRoleManager(self)
-        self.backup = None
+        self.backup = base.BackupManager(self)
+        self.backup.heartbeat_cmd = 'wget --spider http://localhost:8000/r/'
         self.replication = None
         self.repository = repository.SFGerritRepositoryManager(self)
         self.review = review.SFGerritReviewManager(self)

@@ -16,11 +16,17 @@
 
 
 import abc
+import logging
 import six
+import time
 
 from pecan import conf
 
+from managesf.controllers import utils
 from managesf.services import exceptions as exc
+
+
+logger = logging.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -75,6 +81,19 @@ class RepositoryManager(BaseCRUDManager):
 class BackupManager(BaseCRUDManager):
     """Abstract class handling backups and data restoration for a given
     service."""
+
+    heartbeat_cmd = None
+
+    def __init__(self, plugin):
+        super(BackupManager, self).__init__(plugin)
+        key_path = plugin._full_conf.managesf['sshkey_priv_path']
+        # this might have to be adapted depending on services
+        self.remote = utils.RemoteUser('root',
+                                       getattr(plugin._full_conf,
+                                               plugin.service_name,
+                                               {'host': 'tests.dom'})['host'],
+                                       key_path)
+
     # more sensible mapping
     def backup(self, **kwargs):
         return self.get(**kwargs)
@@ -87,6 +106,36 @@ class BackupManager(BaseCRUDManager):
 
     def delete(self, **kwargs):
         raise NotImplementedError
+
+    def check_for_service(self):
+        attempt = 0
+        # check only if we have a means to do so
+        if self.heartbeat_cmd:
+            # Wait up to 10 minutes for gerrit to restart
+            while attempt <= 300:
+                p = self.remote._ssh(self.heartbeat_cmd)
+                msg = "[%s] checking for heartbeat, return code is %s"
+                logger.debug(msg % (self.plugin.service_name,
+                                    p.returncode))
+                if p.returncode != 0:
+                    time.sleep(2)
+                    attempt += 1
+                else:
+                    break
+
+    def get(self, **kwargs):
+        logger.debug("[%s] starting backup" % self.plugin.service_name)
+        # This is a convention that will need to be checked for each service
+        p = self.remote._ssh('/root/backup_%s.sh' % self.plugin.service_name)
+        msg = "[%s] backup script return code is %d"
+        logger.info(msg % (self.plugin.service_name, p.returncode))
+        self.check_for_service()
+
+    def update(self, **kwargs):
+        p = self.remote._ssh('/root/restore_%s.sh' % self.plugin.service_name)
+        msg = "[%s] restoration script return code is %d"
+        logger.info(msg % (self.plugin.service_name, p.returncode))
+        self.check_for_service()
 
 
 @six.add_metaclass(abc.ABCMeta)
