@@ -25,6 +25,19 @@ from basicauth import encode
 
 from managesf.tests import dummy_conf
 
+# plugins imports
+# TODO: should be done dynamically depending on what plugins we want
+from managesf.services.base import BackupManager
+from managesf.services.gerrit import project
+from managesf.services.gerrit import role
+from managesf.services.gerrit.membership import SFGerritMembershipManager
+from managesf.services.gerrit.project import SFGerritProjectManager
+from managesf.services.gerrit.review import SFGerritReviewManager
+from managesf.services.gerrit.role import SFGerritRoleManager
+from managesf.services.redmine import SoftwareFactoryRedmine
+from managesf.services.redmine.membership import SFRedmineMembershipManager
+from managesf.services.redmine.project import SFRedmineProjectManager
+
 
 def raiseexc(*args, **kwargs):
     raise Exception('FakeExcMsg')
@@ -191,9 +204,6 @@ def project_get(*args, **kwargs):
 class TestManageSFAppProjectController(FunctionalTest):
 
     def test_project_get_all(self):
-        from managesf.services.redmine import SoftwareFactoryRedmine
-        from managesf.services.gerrit.project import SFGerritProjectManager
-        from managesf.services.gerrit.review import SFGerritReviewManager
         ctx = [patch.object(SFGerritProjectManager, 'get'),
                patch.object(SFGerritProjectManager, 'get_groups'),
                patch.object(SFGerritReviewManager, 'get'),
@@ -227,9 +237,6 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(200, response.status_int)
 
     def test_project_get_one(self):
-        from managesf.services.redmine import SoftwareFactoryRedmine
-        from managesf.services.gerrit.project import SFGerritProjectManager
-        from managesf.services.gerrit.review import SFGerritReviewManager
         ctx = [patch.object(SFGerritProjectManager, 'get'),
                patch.object(SFGerritProjectManager, 'get_groups'),
                patch.object(SFGerritReviewManager, 'get'),
@@ -247,9 +254,6 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertTrue('"open_reviews": 1', response.body)
 
     def test_project_put(self):
-        from managesf.services.gerrit import role
-        from managesf.services.gerrit import project
-        from managesf.services.redmine.project import SFRedmineProjectManager
         # Create a project with no name
         with patch.object(role.SFGerritRoleManager, 'is_admin') as gia:
             response = self.app.put('/project/', status="*")
@@ -287,9 +291,6 @@ class TestManageSFAppProjectController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
     def test_project_delete(self):
-        # TODO: should be done dynamically depending on what plugins we want
-        from managesf.services.redmine.project import SFRedmineProjectManager
-        from managesf.services.gerrit.project import SFGerritProjectManager
         # Delete a project with no name
         response = self.app.delete('/project/', status="*")
         self.assertEqual(response.status_int, 400)
@@ -325,7 +326,6 @@ class TestManageSFAppRestoreController(FunctionalTest):
             os.unlink('/var/www/managesf/sf_backup.tar.gz')
 
     def test_restore_post(self):
-        from managesf.services.base import BackupManager
         files = [('file', 'useless', 'backup content')]
         # restore a provided backup
         ctx = [patch('managesf.controllers.backup.backup_restore'),
@@ -368,8 +368,6 @@ class TestManageSFAppBackupController(FunctionalTest):
         self.assertEqual(response.status_int, 404)
 
     def test_backup_post(self):
-        from managesf.services.base import BackupManager
-        from managesf.services.gerrit.role import SFGerritRoleManager
         ctx = [patch('managesf.controllers.backup.backup_start'),
                patch.object(BackupManager,
                             'backup'),
@@ -388,7 +386,6 @@ class TestManageSFAppBackupController(FunctionalTest):
 
 class TestManageSFAppMembershipController(FunctionalTest):
     def test_get_all_users(self):
-        from managesf.services.redmine import SoftwareFactoryRedmine
         with patch.object(SoftwareFactoryRedmine,
                           'get_active_users') as au:
             au.return_value = [[1, "a"], [2, "b"]]
@@ -407,11 +404,9 @@ class TestManageSFAppMembershipController(FunctionalTest):
         self.assertEqual(response.status_int, 400)
 
     def test_put(self):
-        from managesf.services.redmine import membership as r_m
-        from managesf.services.gerrit import membership as g_m
-        ctx = [patch.object(r_m.SFRedmineMembershipManager,
+        ctx = [patch.object(SFRedmineMembershipManager,
                             'create'),
-               patch.object(g_m.SFGerritMembershipManager,
+               patch.object(SFGerritMembershipManager,
                             'create')]
         with nested(*ctx) as (gaupg, raupg):
             response = self.app.put_json(
@@ -422,9 +417,9 @@ class TestManageSFAppMembershipController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              "User john@tests.dom has been added in group(s):"
                              " ptl-group, core-group for project p1")
-        ctx = [patch.object(g_m.SFGerritMembershipManager,
+        ctx = [patch.object(SFGerritMembershipManager,
                             'create'),
-               patch.object(r_m.SFRedmineMembershipManager,
+               patch.object(SFRedmineMembershipManager,
                             'create',
                             side_effect=raiseexc)]
         with nested(*ctx) as (gaupg, raupg):
@@ -438,14 +433,12 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
     def test_delete(self):
-        from managesf.services.redmine import membership as r_m
-        from managesf.services.gerrit import membership as g_m
         response = self.app.delete('/project/p1/membership/john', status="*")
         self.assertEqual(response.status_int, 400)
         ctx = [
-            patch.object(g_m.SFGerritMembershipManager,
+            patch.object(SFGerritMembershipManager,
                          'delete'),
-            patch.object(r_m.SFRedmineMembershipManager,
+            patch.object(SFRedmineMembershipManager,
                          'delete')]
         with nested(*ctx) as (gdupg, rdupg):
             response = self.app.delete(
@@ -469,9 +462,9 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              "User john@tests.dom has been deleted from group "
                              "core-group for project p1.")
         ctx = [
-            patch.object(g_m.SFGerritMembershipManager,
+            patch.object(SFGerritMembershipManager,
                          'delete'),
-            patch.object(r_m.SFRedmineMembershipManager,
+            patch.object(SFRedmineMembershipManager,
                          'delete',
                          side_effect=raiseexc)]
         with nested(*ctx) as (gdupg, rdupg):
@@ -693,7 +686,6 @@ class TestManageSFSSHConfigController(FunctionalTest):
 
 class TestProjectTestsController(FunctionalTest):
     def test_init_project_test(self):
-        from managesf.services.gerrit.project import SFGerritProjectManager
         environ = {'REMOTE_USER': self.config['admin']['name']}
         ctx = [patch.object(SFGerritProjectManager, 'get'),
                patch('managesf.controllers.gerrit.propose_test_definition')]
@@ -705,7 +697,6 @@ class TestProjectTestsController(FunctionalTest):
 
     def test_init_project_test_with_project_scripts(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
-        from managesf.services.gerrit.project import SFGerritProjectManager
         ctx = [patch.object(SFGerritProjectManager, 'get'),
                patch('managesf.controllers.gerrit.propose_test_definition'),
                patch('managesf.controllers.gerrit.propose_test_scripts')]
