@@ -20,6 +20,8 @@ class dummy_conf():
     auth = {
         'host': 'auth.tests.dom',
     }
+    services = ['SFGerrit',
+                'SFRedmine']
     gerrit = {
         'user': 'gerrit',
         'host': 'gerrit.test.dom',

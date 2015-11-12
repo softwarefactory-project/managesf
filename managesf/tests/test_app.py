@@ -29,11 +29,9 @@ from managesf.tests import dummy_conf
 # TODO: should be done dynamically depending on what plugins we want
 from managesf.services.base import BackupManager
 from managesf.services.gerrit import project
-from managesf.services.gerrit import role
 from managesf.services.gerrit.membership import SFGerritMembershipManager
 from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit.review import SFGerritReviewManager
-from managesf.services.gerrit.role import SFGerritRoleManager
 from managesf.services.redmine import SoftwareFactoryRedmine
 from managesf.services.redmine.membership import SFRedmineMembershipManager
 from managesf.services.redmine.project import SFRedmineProjectManager
@@ -46,7 +44,8 @@ def raiseexc(*args, **kwargs):
 class FunctionalTest(TestCase):
     def setUp(self):
         c = dummy_conf()
-        self.config = {'gerrit': c.gerrit,
+        self.config = {'services': c.services,
+                       'gerrit': c.gerrit,
                        'redmine': c.redmine,
                        'app': c.app,
                        'admin': c.admin,
@@ -255,17 +254,17 @@ class TestManageSFAppProjectController(FunctionalTest):
 
     def test_project_put(self):
         # Create a project with no name
-        with patch.object(role.SFGerritRoleManager, 'is_admin') as gia:
+        with patch('managesf.controllers.root.is_admin') as gia:
             response = self.app.put('/project/', status="*")
             self.assertEqual(response.status_int, 400)
         # Create a project with name, but without administrator status
-        with patch.object(role.SFGerritRoleManager, 'is_admin') as gia:
+        with patch('managesf.controllers.root.is_admin') as gia:
             gia.return_value = False
             response = self.app.put('/project/p1', status="*")
             self.assertEqual(response.status_int, 401)
         # Create a project with name
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch.object(role.SFGerritRoleManager, 'is_admin'),
+               patch('managesf.controllers.root.is_admin'),
                patch.object(SFRedmineProjectManager,
                             'create')]
         with nested(*ctx) as (gip, gia, rip):
@@ -278,7 +277,7 @@ class TestManageSFAppProjectController(FunctionalTest):
                              'Project p1 has been created.')
         # Create a project with name - an error occurs
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch.object(role.SFGerritRoleManager, 'is_admin'),
+               patch('managesf.controllers.root.is_admin'),
                patch.object(SFRedmineProjectManager,
                             'create',
                             side_effect=raiseexc)]
@@ -371,8 +370,7 @@ class TestManageSFAppBackupController(FunctionalTest):
         ctx = [patch('managesf.controllers.backup.backup_start'),
                patch.object(BackupManager,
                             'backup'),
-               patch.object(SFGerritRoleManager,
-                            'is_admin'), ]
+               patch('managesf.controllers.root.is_admin'), ]
         with nested(*ctx) as (backup_start, backup, is_admin):
             is_admin.return_value = False
             response = self.app.post('/backup', status="*")

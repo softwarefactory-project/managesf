@@ -148,7 +148,8 @@ class CodeReviewManager(BaseCRUDManager):
 class RoleManager(BaseCRUDManager):
     """Abstract class handling roles if the service can handle them"""
 
-    def is_admin(self, user):
+    @staticmethod
+    def is_admin(user):
         return user == conf.admin['name']
 
 

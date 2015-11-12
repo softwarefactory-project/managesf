@@ -42,7 +42,11 @@ setup(
     include_package_data=True,
     packages=find_packages(exclude=['ez_setup']),
     entry_points={
-        "console_scripts": ['sfmanager = managesf.cli:main']
+        "console_scripts": ['sfmanager = managesf.cli:main'],
+        'managesf.service': [
+            ('SFGerrit = managesf.services.gerrit:SoftwareFactoryGerrit'),
+            ('SFRedmine = managesf.services.redmine:SoftwareFactoryRedmine'),
+        ],
     },
     url=('http://softwarefactory.enovance.com/'
          'r/gitweb?p=managesf.git;a=summary'),

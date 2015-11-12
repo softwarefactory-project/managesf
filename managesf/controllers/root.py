@@ -15,20 +15,22 @@
 import random
 import string
 import time
+import logging
+import os.path
 
+import htpasswd
 import paramiko
 from pecan import conf
 from pecan import expose
 from pecan import abort
 from pecan.rest import RestController
 from pecan import request, response
+from stevedore import driver
+
 from managesf.controllers import gerrit as gerrit_controller
 from managesf.controllers import backup, localuser, introspection
-from managesf.services import redmine, gerrit
-import logging
-import os.path
+from managesf.services import base
 
-import htpasswd
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +42,38 @@ CLIENTERRORMSG = "Unable to process your request, failed with "\
 # TODO: add detail (detail arg or abort function) for all abort calls.
 
 
-redmine_service = redmine.SoftwareFactoryRedmine(conf)
-gerrit_service = gerrit.SoftwareFactoryGerrit(conf)
+# instanciate service plugins
+SF_SERVICES = []
+DEFAULT_SERVICES = ['SFGerrit', 'SFRedmine']
+
+
+def load_services():
+    try:
+        if conf.services:
+            services = conf.services
+        else:
+            services = DEFAULT_SERVICES
+            msg = 'No service configured, loading: %s' % DEFAULT_SERVICES
+            logger.info(msg)
+    except AttributeError:
+        services = DEFAULT_SERVICES
+        msg = 'Obsolete conf file, loading default: %s' % DEFAULT_SERVICES
+        logger.info(msg)
+
+    for service in services:
+        try:
+            plugin = driver.DriverManager(namespace='managesf.service',
+                                          name=service,
+                                          invoke_on_load=True,
+                                          invoke_args=(conf,)).driver
+            SF_SERVICES.append(plugin)
+            logger.info('%s plugin loaded successfully' % service)
+        except Exception as e:
+            logger.error('Could not load service %s: %s' % (service, e))
+
+
+def is_admin(user):
+    return base.RoleManager.is_admin(user)
 
 
 def report_unhandled_error(exp):
@@ -116,12 +148,12 @@ class BackupController(RestController):
 
     @expose('json')
     def post(self):
-        if not gerrit_service.role.is_admin(request.remote_user):
+        if not is_admin(request.remote_user):
             abort(401)
         else:
             try:
-                gerrit_service.backup.backup()
-                redmine_service.backup.backup()
+                for service in SF_SERVICES:
+                    service.backup.backup()
                 backup.backup_start()
                 response.status = 204
             except Exception as e:
@@ -137,8 +169,8 @@ class RestoreController(RestController):
         try:
             backup.backup_unpack()
             backup.backup_restore()
-            gerrit_service.backup.restore()
-            redmine_service.backup.restore()
+            for service in SF_SERVICES:
+                service.backup.restore()
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -148,7 +180,10 @@ class MembershipController(RestController):
     @expose('json')
     def get(self):
         try:
-            return redmine_service.get_active_users()
+            # TODO(mhu) this must be independent from redmine
+            tracker = [s for s in SF_SERVICES
+                       if isinstance(s, base.BaseIssueTrackerServicePlugin)][0]
+            return tracker.get_active_users()
         except Exception as e:
             return report_unhandled_error(e)
 
@@ -165,10 +200,9 @@ class MembershipController(RestController):
         requestor = request.remote_user
         try:
             # Add/update user for the project groups
-            gerrit_service.membership.create(requestor, user,
-                                             project, inp['groups'])
-            redmine_service.membership.create(requestor, user,
-                                              project, inp['groups'])
+            for service in SF_SERVICES:
+                service.membership.create(requestor, user,
+                                          project, inp['groups'])
             response.status = 201
             return "User %s has been added in group(s): %s for project %s" % \
                 (user, ", ".join(inp['groups']), project)
@@ -185,8 +219,8 @@ class MembershipController(RestController):
         requestor = request.remote_user
         try:
             # delete user from all project groups
-            gerrit_service.membership.delete(requestor, user, project, group)
-            redmine_service.membership.delete(requestor, user, project, group)
+            for service in SF_SERVICES:
+                service.membership.delete(requestor, user, project, group)
             response.status = 200
             if group:
                 return ("User %s has been deleted from group %s " +
@@ -222,26 +256,32 @@ class ProjectController(RestController):
     def _reload_cache(self):
         projects = {}
 
-        for p in gerrit_service.project.get():
+        # TODO(mhu) this must be independent from gerrit
+        code_review = [s for s in SF_SERVICES
+                       if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
+        for p in code_review.project.get():
             projects[p] = {'open_reviews': 0,
                            'open_issues': 0,
                            'admin': 0,
                            'groups': {}}
-            groups = gerrit_service.project.get_groups(p)
+            groups = code_review.project.get_groups(p)
             for group in groups:
                 if group['name'].endswith(('-ptl', '-core', '-dev')):
                     grp = group['name'].split('-')[-1]
                     projects[p]['groups'][grp] = group
 
-        for p in gerrit_service.project.get(by_user=True):
+        for p in code_review.project.get(by_user=True):
             projects[p]['admin'] = 1
 
-        for issue in redmine_service.get_open_issues().get('issues'):
+        # This is okay here :)
+        tracker = [s for s in SF_SERVICES
+                   if isinstance(s, base.BaseIssueTrackerServicePlugin)][0]
+        for issue in tracker.get_open_issues().get('issues'):
             prj = issue.get('project').get('name')
             if prj in projects:
                 projects[prj]['open_issues'] += 1
 
-        for review in gerrit_service.review.get():
+        for review in code_review.review.get():
             prj = review.get('project')
             if prj in projects:
                 projects[prj]['open_reviews'] += 1
@@ -272,7 +312,7 @@ class ProjectController(RestController):
     @expose('json')
     def put(self, name=None):
         if getattr(conf, "project_create_administrator_only", True):
-            if not gerrit_service.role.is_admin(request.remote_user):
+            if not is_admin(request.remote_user):
                 abort(401)
 
         if not name:
@@ -287,8 +327,8 @@ class ProjectController(RestController):
                     if '@' not in u:
                         response.status = 400
                         return "User must be identified by its email address"
-            gerrit_service.project.create(name, user, inp)
-            redmine_service.project.create(name, user, inp)
+            for service in SF_SERVICES:
+                service.project.create(name, user, inp)
             response.status = 201
             self.set_cache(None)
             return "Project %s has been created." % name
@@ -305,8 +345,8 @@ class ProjectController(RestController):
         user = request.remote_user
         try:
             # delete project
-            gerrit_service.project.delete(name, user)
-            redmine_service.project.delete(name, user)
+            for service in SF_SERVICES:
+                service.project.delete(name, user)
             response.status = 200
             self.set_cache(None)
             return "Project %s has been deleted." % name
@@ -591,7 +631,10 @@ class TestsController(RestController):
     def put(self, project_name=''):
         if request.remote_user is None:
             abort(403)
-        if not gerrit_service.project.get(project_name=project_name):
+        # TODO(mhu) this must be independent from gerrit
+        code_review = [s for s in SF_SERVICES
+                       if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
+        if not code_review.project.get(project_name=project_name):
             abort(404)
 
         try:
@@ -611,6 +654,9 @@ class TestsController(RestController):
 
         response.status = 201
         return True
+
+
+load_services()
 
 
 class RootController(object):
