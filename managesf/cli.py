@@ -318,7 +318,8 @@ def project_command(sp):
                     metavar='project-description')
     cp.add_argument('--upstream', '-u', nargs='?', metavar='GIT link')
     cp.add_argument('--upstream-ssh-key', metavar='upstream-ssh-key',
-                    help='SSH key for upstream repository')
+                    help='SSH key for authentication against the upstream ' +
+                    'repository (without a passphrase)')
     cp.add_argument('--core-group', '-c', metavar='core-group-members',
                     help='member ids separated by comma', nargs='?')
     cp.add_argument('--ptl-group', '-p', metavar='ptl-group-members',

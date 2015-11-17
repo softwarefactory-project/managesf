@@ -28,6 +28,47 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 
+def _exec(cmd, cwd=None, env=None):
+    cmd = shlex.split(cmd)
+    ocwd = os.getcwd()
+    if cwd:
+        os.chdir(cwd)
+    if not env:
+        env = os.environ.copy()
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
+                         env=env, cwd=cwd)
+    p.wait()
+    std_out, std_err = p.communicate()
+    # logging std_out also logs std_error as both use same pipe
+    if std_out:
+        logger.info("[gerrit] cmd %s output" % cmd)
+        logger.info(std_out)
+    os.chdir(ocwd)
+    return p.returncode, std_out, std_err
+
+
+def ssh_wrapper_setup(filename):
+    ssh_wrapper = "ssh -o StrictHostKeyChecking=no -i %s \"$@\"" % filename
+    wrapper_path = os.path.join(tempfile.mkdtemp(), 'ssh_wrapper.sh')
+    file(wrapper_path, 'w').write(ssh_wrapper)
+    os.chmod(wrapper_path, stat.S_IRWXU)
+    return wrapper_path
+
+
+def set_gitssh_wrapper_from_str(ssh_key):
+    tmpf = tempfile.NamedTemporaryFile(delete=False)
+    tmpf.close()
+    path = tmpf.name
+    os.chmod(path, 0600)
+    with open(path, "wb") as f:
+        f.write(ssh_key)
+    wrapper_path = ssh_wrapper_setup(path)
+    env = os.environ.copy()
+    env['GIT_SSH'] = wrapper_path
+    return env, path
+
+
 class GerritRepo(object):
     def __init__(self, prj_name, conf):
         # TODO: manage to destroy temp dir/file after usage
@@ -42,37 +83,16 @@ class GerritRepo(object):
                      {'admin': self.conf.admin['name'],
                       'email': self.conf.admin['email']}
         ssh_key = self.conf.gerrit['sshkey_priv_path']
-        wrapper_path = self._ssh_wrapper_setup(ssh_key)
+        self.wrapper_path = ssh_wrapper_setup(ssh_key)
         self.env = os.environ.copy()
-        self.env['GIT_SSH'] = wrapper_path
+        self.env['GIT_SSH'] = self.wrapper_path
         # Commit will be reject by gerrit if the commiter info
         # is not a registered user (author can be anything else)
         self.env['GIT_COMMITTER_NAME'] = self.conf.admin['name']
         self.env['GIT_COMMITTER_EMAIL'] = self.conf.admin['email']
 
-    def _ssh_wrapper_setup(self, filename):
-        ssh_wrapper = "ssh -o StrictHostKeyChecking=no -i %s \"$@\"" % filename
-        wrapper_path = os.path.join(tempfile.mkdtemp(), 'ssh_wrapper.sh')
-        file(wrapper_path, 'w').write(ssh_wrapper)
-        os.chmod(wrapper_path, stat.S_IRWXU)
-        self.env = os.environ.copy()
-        return wrapper_path
-
-    def _exec(self, cmd, cwd=None):
-        cmd = shlex.split(cmd)
-        ocwd = os.getcwd()
-        if cwd:
-            os.chdir(cwd)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT,
-                             env=self.env, cwd=cwd)
-        p.wait()
-        std_out, std_err = p.communicate()
-        # logging std_out also logs std_error as both use same pipe
-        if std_out:
-            logger.info("[gerrit] cmd %s output" % cmd)
-            logger.info(std_out)
-        os.chdir(ocwd)
+    def _exec(self, cmd):
+        return _exec(cmd, cwd=self.infos['localcopy_path'], env=self.env)
 
     def clone(self):
         logger.info("[gerrit] Clone repository %s" % self.prj_name)
@@ -84,7 +104,21 @@ class GerritRepo(object):
                'name': self.prj_name,
                'localcopy_path': self.infos['localcopy_path']
                }
-        self._exec(cmd)
+        _exec(cmd, env=self.env)
+
+    @staticmethod
+    def check_upstream(remote, ssh_key=None):
+        cmd = "git ls-remote %s" % remote
+        if ssh_key:
+            env, path = set_gitssh_wrapper_from_str(ssh_key)
+            code, stdout, stderr = _exec(cmd, env=env)
+            os.remove(path)
+        else:
+            code, stdout, stderr = _exec(cmd)
+        if code != 0:
+            return False, "%s %s" % (stdout, stderr)
+        else:
+            return True, None
 
     def add_file(self, path, content):
         logger.info("[gerrit] Add file %s to index" % path)
@@ -97,23 +131,23 @@ class GerritRepo(object):
         file(os.path.join(self.infos['localcopy_path'],
              path), 'w').write(content)
         cmd = "git add %s" % path
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
 
     def push_config(self, paths):
         logger.info("[gerrit] Prepare push on config for repository %s" %
                     self.prj_name)
         cmd = "git fetch origin " + \
               "refs/meta/config:refs/remotes/origin/meta/config"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         cmd = "git checkout meta/config"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         for path, content in paths.items():
             self.add_file(path, content)
         cmd = "git commit -a --author '%s' -m'Provides ACL and Groups'" % \
               self.email
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         cmd = "git push origin meta/config:meta/config"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         logger.info("[gerrit] Push on config for repository %s" %
                     self.prj_name)
 
@@ -121,53 +155,42 @@ class GerritRepo(object):
         logger.info("[gerrit] Prepare push on master for repository %s" %
                     self.prj_name)
         cmd = "git checkout master"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         for path, content in paths.items():
             self.add_file(path, content)
         cmd = "git commit -a --author '%s' -m'ManageSF commit'" % self.email
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         cmd = "git push origin master"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         logger.info("[gerrit] Push on master for repository %s" %
                     self.prj_name)
 
     def push_master_from_git_remote(self, remote, ssh_key=None):
-        if ssh_key:
-            tmpf = tempfile.NamedTemporaryFile(delete=False)
-            tmpf.close()
-            fname = tmpf.name
-            with open(fname, "wb") as f:
-                f.write(ssh_key)
-            os.chmod(f.name, 0600)
-            wrapper_path = self._ssh_wrapper_setup(fname)
-            self.env = os.environ.copy()
-            self.env['GIT_SSH'] = wrapper_path
         logger.info("[gerrit] Fetch git objects from a remote and push "
                     "to master for repository %s" % self.prj_name)
         cmd = "git checkout master"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         cmd = "git remote add upstream %s" % remote
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         cmd = "git fetch upstream"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
         if ssh_key:
-            wrapper_path = self._ssh_wrapper_setup(
-                self.conf.gerrit['sshkey_priv_path'])
-            self.env = os.environ.copy()
-            self.env['GIT_SSH'] = wrapper_path
-            os.remove(f.name)
+            env, path = set_gitssh_wrapper_from_str(ssh_key)
+            _exec(cmd, cwd=self.infos['localcopy_path'], env=env)
+            os.remove(path)
+        else:
+            self._exec(cmd)
         logger.info("[gerrit] Push remote (master branch) of %s to the "
                     "Gerrit repository" % remote)
         cmd = "git push -f origin upstream/master:master"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         cmd = "git reset --hard origin/master"
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
 
     def review_changes(self, commit_msg):
         cmd = 'git review -s'
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         cmd = "git commit -a --author '%s' -m'%s'" % (self.email,
                                                       commit_msg)
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)
         cmd = 'git review'
-        self._exec(cmd, cwd=self.infos['localcopy_path'])
+        self._exec(cmd)

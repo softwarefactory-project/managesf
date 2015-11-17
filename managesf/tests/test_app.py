@@ -29,6 +29,7 @@ from managesf.tests import dummy_conf
 # TODO: should be done dynamically depending on what plugins we want
 from managesf.services.base import BackupManager
 from managesf.services.gerrit import project
+from managesf.services.gerrit import utils
 from managesf.services.gerrit.membership import SFGerritMembershipManager
 from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit.review import SFGerritReviewManager
@@ -265,8 +266,7 @@ class TestManageSFAppProjectController(FunctionalTest):
         # Create a project with name
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
                patch('managesf.controllers.root.is_admin'),
-               patch.object(SFRedmineProjectManager,
-                            'create')]
+               patch.object(SFRedmineProjectManager, 'create')]
         with nested(*ctx) as (gip, gia, rip):
             response = self.app.put('/project/p1', status="*",
                                     extra_environ={'REMOTE_USER': 'bob'})
@@ -288,6 +288,30 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
+
+        # Create a project based on an upstream and test early fail
+        # if upstream is not reachable
+        ctx = [patch.object(project.SFGerritProjectManager, 'create'),
+               patch('managesf.controllers.root.is_admin'),
+               patch.object(SFRedmineProjectManager, 'create'),
+               patch.object(utils.GerritRepo, 'check_upstream')]
+        with nested(*ctx) as (gip, gia, rip, cu):
+            cu.return_value = [False, "fatal: unable to access remote"]
+            response = self.app.put_json(
+                '/project/p1',
+                {'upstream': 'git@github.com/account/repo.git'},
+                status="*",
+                extra_environ={'REMOTE_USER': 'bob'})
+            self.assertEqual(response.status_int, 400)
+            self.assertEqual(json.loads(response.body),
+                             "fatal: unable to access remote")
+            cu.return_value = [True, None]
+            response = self.app.put_json(
+                '/project/p1',
+                {'upstream': 'git@github.com/account/repo.git'},
+                status="*",
+                extra_environ={'REMOTE_USER': 'bob'})
+            self.assertEqual(response.status_int, 201)
 
     def test_project_delete(self):
         # Delete a project with no name
