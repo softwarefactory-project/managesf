@@ -362,7 +362,7 @@ class TestManageSFAppRestoreController(FunctionalTest):
                 '/var/www/managesf/sf_backup.tar.gz'))
             self.assertTrue(backup_unpack.called)
             self.assertTrue(backup_restore.called)
-            self.assertEqual(2, len(restore.mock_calls))
+            self.assertEqual(3, len(restore.mock_calls))
             self.assertEqual(response.status_int, 204)
         # restore a provided backup - an error occurs
         with nested(*ctx) as (backup_restore, backup_unpack, restore):
@@ -402,7 +402,7 @@ class TestManageSFAppBackupController(FunctionalTest):
             is_admin.return_value = True
             response = self.app.post('/backup', status="*")
             self.assertEqual(response.status_int, 204)
-            self.assertEqual(2, len(backup.mock_calls))
+            self.assertEqual(3, len(backup.mock_calls))
             self.assertTrue(backup_start.called)
 
 

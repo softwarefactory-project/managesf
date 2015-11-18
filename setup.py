@@ -46,6 +46,7 @@ setup(
         'managesf.service': [
             ('SFGerrit = managesf.services.gerrit:SoftwareFactoryGerrit'),
             ('SFRedmine = managesf.services.redmine:SoftwareFactoryRedmine'),
+            ('jenkins = managesf.services.jenkins:Jenkins'),
         ],
     },
     url=('http://softwarefactory.enovance.com/'

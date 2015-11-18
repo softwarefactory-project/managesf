@@ -41,13 +41,9 @@ class Backup(object):
                 break
 
     def start(self):
-        logger.debug("start backup of jenkins and mysql")
-        p = self.jru._ssh('/root/backup_jenkins.sh')
-        logger.info("-> Jenkins backup ended with code: %d" % p.returncode)
+        logger.debug("start backup of mysql")
         p = self.msqlru._ssh('/root/backup_mysql.sh')
         logger.info("-> Mysql backup ended with code: %d" % p.returncode)
-        jenkins_service = 'wget --spider http://localhost:8082/jenkins/'
-        self.check_for_service(self.jru, jenkins_service)
 
         logger.debug("generate backup")
         self.mru._ssh(
@@ -62,10 +58,6 @@ class Backup(object):
     def restore(self):
         p = self.msqlru._ssh('/root/restore_mysql.sh')
         logger.info("Mysql restoration ended with code: %d" % p.returncode)
-        p = self.jru._ssh('/root/restore_jenkins.sh')
-        logger.info("Jenkins restoration ended with code: %d" % p.returncode)
-        jenkins_service = 'wget --spider http://localhost:8082/jenkins/'
-        self.check_for_service(self.jru, jenkins_service)
 
 
 def backup_start():

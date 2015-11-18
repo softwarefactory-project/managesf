@@ -30,6 +30,7 @@ from stevedore import driver
 from managesf.controllers import gerrit as gerrit_controller
 from managesf.controllers import backup, localuser, introspection
 from managesf.services import base, gerrit
+from managesf.services import exceptions
 
 
 logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ CLIENTERRORMSG = "Unable to process your request, failed with "\
 
 # instanciate service plugins
 SF_SERVICES = []
-DEFAULT_SERVICES = ['SFGerrit', 'SFRedmine']
+DEFAULT_SERVICES = ['SFGerrit', 'SFRedmine', 'jenkins']
 
 
 def load_services():
@@ -153,7 +154,11 @@ class BackupController(RestController):
         else:
             try:
                 for service in SF_SERVICES:
-                    service.backup.backup()
+                    try:
+                        service.backup.backup()
+                    except exceptions.UnavailableActionError:
+                        msg = '[%s] backup is not an available action'
+                        logger.debug(msg % service.service_name)
                 backup.backup_start()
                 response.status = 204
             except Exception as e:
@@ -170,7 +175,11 @@ class RestoreController(RestController):
             backup.backup_unpack()
             backup.backup_restore()
             for service in SF_SERVICES:
-                service.backup.restore()
+                try:
+                    service.backup.restore()
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] backup is not an available action'
+                    logger.debug(msg % service.service_name)
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -201,8 +210,12 @@ class MembershipController(RestController):
         try:
             # Add/update user for the project groups
             for service in SF_SERVICES:
-                service.membership.create(requestor, user,
-                                          project, inp['groups'])
+                try:
+                    service.membership.create(requestor, user,
+                                              project, inp['groups'])
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] membership creation is not an available action'
+                    logger.debug(msg % service.service_name)
             response.status = 201
             return "User %s has been added in group(s): %s for project %s" % \
                 (user, ", ".join(inp['groups']), project)
@@ -220,7 +233,11 @@ class MembershipController(RestController):
         try:
             # delete user from all project groups
             for service in SF_SERVICES:
-                service.membership.delete(requestor, user, project, group)
+                try:
+                    service.membership.delete(requestor, user, project, group)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] membership deletion is not an available action'
+                    logger.debug(msg % service.service_name)
             response.status = 200
             if group:
                 return ("User %s has been deleted from group %s " +
@@ -342,8 +359,11 @@ class ProjectController(RestController):
                     return msg
 
             for service in SF_SERVICES:
-                service.project.create(name, user, inp)
-
+                try:
+                    service.project.create(name, user, inp)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] project creation is not an available action'
+                    logger.debug(msg % service.service_name)
             response.status = 201
             self.set_cache(None)
             return "Project %s has been created." % name
@@ -361,7 +381,11 @@ class ProjectController(RestController):
         try:
             # delete project
             for service in SF_SERVICES:
-                service.project.delete(name, user)
+                try:
+                    service.project.delete(name, user)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] project deletion is not an available action'
+                    logger.debug(msg % service.service_name)
             response.status = 200
             self.set_cache(None)
             return "Project %s has been deleted." % name
