@@ -47,6 +47,7 @@ setup(
             ('SFGerrit = managesf.services.gerrit:SoftwareFactoryGerrit'),
             ('SFRedmine = managesf.services.redmine:SoftwareFactoryRedmine'),
             ('jenkins = managesf.services.jenkins:Jenkins'),
+            ('etherpad = managesf.services.etherpad:Etherpad'),
         ],
     },
     url=('http://softwarefactory.enovance.com/'

@@ -34,17 +34,21 @@ class BaseCRUDManager(object):
     def __init__(self, plugin):
         self.plugin = plugin
 
-    def create(self, **kwargs):
+    def create(self, *args, **kwargs):
         """Creation operation"""
+        raise exc.UnavailableActionError()
 
-    def get(self, **kwargs):
+    def get(self, *args, **kwargs):
         """Fetching operation"""
+        raise exc.UnavailableActionError()
 
-    def update(self, **kwargs):
+    def update(self, *args, **kwargs):
         """Update operation"""
+        raise exc.UnavailableActionError()
 
-    def delete(self, **kwargs):
+    def delete(self, *args, **kwargs):
         """Deletion operation"""
+        raise exc.UnavailableActionError()
 
 
 @six.add_metaclass(abc.ABCMeta)

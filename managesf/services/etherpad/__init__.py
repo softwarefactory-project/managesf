@@ -18,17 +18,18 @@
 from managesf.services import base
 
 
-heartbeat = 'wget --spider http://localhost:8082/jenkins/'
+# TODO(mhu) - this isn't a vital service but we should check it
+heartbeat = None
 
 
-class Jenkins(base.BaseServicePlugin):
-    """Very simple Jenkins plugin only used for backups."""
+class Etherpad(base.BaseServicePlugin):
+    """Very simple Etherpad plugin only used for backups."""
 
-    _config_section = "jenkins"
-    service_name = "jenkins"
+    _config_section = "etherpad"
+    service_name = "etherpad"
 
     def __init__(self, conf):
-        super(Jenkins, self).__init__(conf)
+        super(Etherpad, self).__init__(conf)
         self.backup.heartbeat_cmd = heartbeat
 
     def get_client(self, cookie=None):
