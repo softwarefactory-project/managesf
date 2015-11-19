@@ -24,7 +24,8 @@ class dummy_conf():
                 'SFRedmine',
                 'jenkins',
                 'etherpad',
-                'nodepool', ]
+                'nodepool',
+                'lodgeit', ]
     gerrit = {
         'user': 'gerrit',
         'host': 'gerrit.test.dom',
@@ -51,6 +52,9 @@ class dummy_conf():
     }
     nodepool = {
         'host': 'nodepool.test.dom',
+    }
+    lodgeit = {
+        'host': 'managesf.test.dom',
     }
     mysql = {
         'host': 'mysql.test.dom',

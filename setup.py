@@ -49,6 +49,7 @@ setup(
             ('jenkins = managesf.services.jenkins:Jenkins'),
             ('nodepool = managesf.services.nodepool:Nodepool'),
             ('etherpad = managesf.services.etherpad:Etherpad'),
+            ('lodgeit = managesf.services.lodgeit:Lodgeit'),
         ],
     },
     url=('http://softwarefactory.enovance.com/'
