@@ -39,7 +39,7 @@ class SFGerritProjectManager(base.ProjectManager):
             else:
                 names = []
                 if requestor:
-                    groups_id = client.get_user_groups(requestor)
+                    groups_id = client.get_user_groups_id(requestor)
                 else:
                     groups_id = client.get_my_groups()
                 for p in result:

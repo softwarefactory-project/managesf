@@ -270,7 +270,9 @@ class ProjectController(RestController):
                     grp = group['name'].split('-')[-1]
                     projects[p]['groups'][grp] = group
 
-        for p in code_review.project.get(by_user=True):
+        requestor = request.remote_user
+        for p in code_review.project.get(requestor=requestor,
+                                         by_user=True):
             projects[p]['admin'] = 1
 
         # This is okay here :)
