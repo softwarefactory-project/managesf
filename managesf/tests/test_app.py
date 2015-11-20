@@ -57,6 +57,7 @@ class FunctionalTest(TestCase):
                        'managesf': c.managesf,
                        'jenkins': c.jenkins,
                        'mysql': c.mysql,
+                       'nodepool': c.nodepool,
                        'etherpad': c.etherpad, }
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs

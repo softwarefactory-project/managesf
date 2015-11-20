@@ -23,7 +23,8 @@ class dummy_conf():
     services = ['SFGerrit',
                 'SFRedmine',
                 'jenkins',
-                'etherpad', ]
+                'etherpad',
+                'nodepool', ]
     gerrit = {
         'user': 'gerrit',
         'host': 'gerrit.test.dom',
@@ -47,6 +48,9 @@ class dummy_conf():
     }
     etherpad = {
         'host': 'managesf.test.dom',
+    }
+    nodepool = {
+        'host': 'nodepool.test.dom',
     }
     mysql = {
         'host': 'mysql.test.dom',
