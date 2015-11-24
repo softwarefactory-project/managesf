@@ -466,6 +466,57 @@ class LocalUserBindController(RestController):
         return ret
 
 
+class ServicesUsersController(RestController):
+
+    @expose()
+    def post(self):
+        if not is_admin(request.remote_user):
+            abort(401,
+                  detail='Adding users is limited to administrators')
+        infos = request.json if request.content_length else {}
+        if not infos or not infos.get('username'):
+            abort(400, detail='Incomplete user information: %r' % infos)
+        try:
+            for service in SF_SERVICES:
+                try:
+                    service.user.create(username=infos.get('username'),
+                                        email=infos.get('email'),
+                                        full_name=infos.get('full_name'),
+                                        ssh_keys=infos.get('ssh_keys', []))
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] service has no authenticated user backend'
+                    logger.debug(msg % service.service_name)
+        except Exception as e:
+            return report_unhandled_error(e)
+        response.status = 201
+
+    @expose('json')
+    def get(self, username):
+        # Allowed for all authenticated users
+        if request.remote_user is None:
+            abort(403)
+        # TODO(mhu) this must be independent from redmine
+        tracker = [s for s in SF_SERVICES
+                   if isinstance(s, base.BaseIssueTrackerServicePlugin)][0]
+        return tracker.user.get(username=username)
+
+    @expose()
+    def delete(self, username):
+        if not is_admin(request.remote_user):
+            abort(401,
+                  detail='Deleting users is limited to administrators')
+        try:
+            for service in SF_SERVICES:
+                try:
+                    service.user.delete(username=username)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] service has no authenticated user backend'
+                    logger.debug(msg % service.service_name)
+        except Exception as e:
+            return report_unhandled_error(e)
+        response.status = 204
+
+
 class HtpasswdController(RestController):
     def __init__(self):
         self.filename = None
@@ -709,3 +760,4 @@ class RootController(object):
     about = introspection.IntrospectionController()
     sshconfig = SSHConfigController()
     tests = TestsController()
+    services_users = ServicesUsersController()

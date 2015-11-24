@@ -22,12 +22,15 @@ from contextlib import nested
 from mock import patch
 
 from basicauth import encode
+from redmine.exceptions import ValidationError
 
+from pysflib.sfredmine import RedmineUtils
 from managesf.tests import dummy_conf
 
 # plugins imports
 # TODO: should be done dynamically depending on what plugins we want
 from managesf.services.base import BackupManager
+from managesf.services import exceptions as exc
 from managesf.services.gerrit import project
 from managesf.services.gerrit import utils
 from managesf.services.gerrit.membership import SFGerritMembershipManager
@@ -36,6 +39,7 @@ from managesf.services.gerrit.review import SFGerritReviewManager
 from managesf.services.redmine import SoftwareFactoryRedmine
 from managesf.services.redmine.membership import SFRedmineMembershipManager
 from managesf.services.redmine.project import SFRedmineProjectManager
+from managesf.services.redmine.user import SFRedmineUserManager
 
 
 def raiseexc(*args, **kwargs):
@@ -732,3 +736,94 @@ class TestProjectTestsController(FunctionalTest):
             resp = self.app.put_json('/tests/toto', {'project-scripts': True},
                                      extra_environ=environ, status="*")
             self.assertEqual(resp.status_int, 201)
+
+
+class TestManageSFServicesUserController(FunctionalTest):
+
+    def test_add_user_in_backends_non_admin(self):
+        environ = {'REMOTE_USER': 'dio'}
+        infos = {'email': 'jojo@starplatinum.dom',
+                 'ssh_keys': ['ora', 'oraora'],
+                 'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
+        ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(RedmineUtils, 'create_user'), ]
+        with nested(*ctx) as (redmine_create, create_user, ):
+            response = self.app.post_json('/services_users/', infos,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 401)
+
+    def test_add_user_in_backends(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos = {'email': 'jojo@starplatinum.dom',
+                 'ssh_keys': ['ora', 'oraora'],
+                 'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
+        ctx = [patch.object(SFRedmineUserManager, 'create'), ]
+        with nested(*ctx) as (redmine_create, ):
+            response = self.app.post_json('/services_users/', infos,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+            redmine_create.assert_called_with(username=infos.get('username'),
+                                              email=infos.get('email'),
+                                              full_name=infos.get('full_name'),
+                                              ssh_keys=infos['ssh_keys'])
+        with patch.object(RedmineUtils, 'create_user') as rm_create_user:
+            response = self.app.post_json('/services_users/', infos,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+            rm_create_user.assert_called_with(infos['username'],
+                                              infos['email'],
+                                              infos['full_name'])
+        with nested(*ctx) as (redmine_create, ):
+            # assert that raising UnavailableActionError won't fail
+            def unavailable(*args, **kwargs):
+                raise exc.UnavailableActionError
+            redmine_create.side_effect = unavailable
+            response = self.app.post_json('/services_users/', infos,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+        with patch.object(RedmineUtils, 'create_user') as rm_create_user:
+            # assert that user already existing in backend won't fail
+            def already(*args, **kwargs):
+                raise ValidationError('Resource already exists')
+            rm_create_user.side_effect = already
+            response = self.app.post_json('/services_users/', infos,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+
+    def test_add_user_in_backends_failures(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos = {'email': 'jojo@starplatinum.dom',
+                 'ssh_keys': ['ora', 'oraora'],
+                 'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
+        ctx = [patch.object(SFRedmineUserManager, 'create'), ]
+        with patch.object(RedmineUtils, 'create_user') as rm_create_user:
+            # assert that other errors will fail
+            def already(*args, **kwargs):
+                raise ValidationError('No idea what I am doing')
+            rm_create_user.side_effect = already
+            response = self.app.post_json('/services_users/', infos,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 500)
+        # forget the username
+        infos = {'email': 'jojo@starplatinum.dom',
+                 'ssh_keys': ['ora', 'oraora'],
+                 'full_name': 'Jotaro Kujoh', }
+        with nested(*ctx) as (redmine_create, ):
+            response = self.app.post_json('/services_users/', infos,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 400)
+
+    def test_delete_user_in_backends_non_admin(self):
+        environ = {'REMOTE_USER': 'dio'}
+        response = self.app.delete('/services_users/iggy',
+                                   extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 401)
+
+    def test_delete_user_in_backends(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        ctx = [patch.object(SFRedmineUserManager, 'delete'), ]
+        with nested(*ctx) as (redmine_delete, ):
+            response = self.app.delete('/services_users/iggy',
+                                       extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 204)
+            redmine_delete.assert_called_with(username='iggy')

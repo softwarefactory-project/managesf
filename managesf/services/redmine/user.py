@@ -17,8 +17,7 @@
 
 import logging
 
-from redmine.exceptions import ResourceNotFoundError
-
+from redmine.exceptions import ResourceNotFoundError, ValidationError
 from managesf.services import base
 from managesf.services import exceptions as exc
 
@@ -26,14 +25,16 @@ from managesf.services import exceptions as exc
 logger = logging.getLogger(__name__)
 
 
-class RedmineUserManager(base.MembershipManager):
+class RedmineUserManager(base.UserManager):
     """User management"""
-    def create(self, username, email, lastname):
+    def create(self, username, email, lastname, **kwargs):
         rm = self.plugin.get_client()
-        return rm.user.create(login=username,
-                              firstname=username,
-                              mail=email,
-                              lastname=lastname)
+        rm.user.create(login=username,
+                       firstname=username,
+                       mail=email,
+                       lastname=lastname)
+        logger.debug('[%s] user %s created' % (self.plugin.service_name,
+                                               username))
 
     def get(self, mail=None, username=None):
         """get user id by mail or username"""
@@ -63,22 +64,41 @@ class RedmineUserManager(base.MembershipManager):
     def update(self, username, email, lastname):
         raise NotImplementedError
 
-    def delete(self, mail=None, username=None):
+    def delete(self, email=None, username=None):
         # we don't manage user removal yet
         raise NotImplementedError
 
 
 class SFRedmineUserManager(RedmineUserManager):
 
-    def create(self, username, email, lastname):
+    def create(self, username, email, full_name, **kwargs):
         rm = self.plugin.get_client()
-        return rm.create_user(username, email, lastname)
+        try:
+            rm.create_user(username, email, full_name)
+            logger.debug('[%s] user %s created' % (self.plugin.service_name,
+                                                   username))
+        except ValidationError as e:
+            # not optimal but python-redmine does not differentiate this case
+            if 'Resource already exists' in e.message:
+                msg = '[%s] user %s already exists, skipping creation'
+                logger.info(msg % (self.plugin.service_name,
+                                   username))
+            else:
+                # unknown error, raise it
+                raise e
 
-    def get(self, mail=None, username=None):
+    def get(self, email=None, username=None):
         rm = self.plugin.get_client()
-        if mail and not username:
-            return rm.get_user_id(mail)
-        elif username and not mail:
+        if email and not username:
+            return rm.get_user_id(email)
+        elif username and not email:
             return rm.get_user_id_by_username(username)
         else:
             raise exc.UnavailableActionError('must specify mail OR username')
+
+    def delete(self, email=None, username=None):
+        if not (bool(email) != bool(username)):
+            raise TypeError('mail OR username needed')
+        rm = self.plugin.get_client()
+        user_id = self.get(email, username)
+        rm.r.user.delete(user_id)

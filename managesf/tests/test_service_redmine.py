@@ -78,11 +78,29 @@ class TestSFRedmineUserManager(BaseSFRedmineService):
         with patch.object(RedmineUtils, 'get_user_id') as g:
             g.return_value = 'testuserid'
             self.assertEqual('testuserid',
-                             self.redmine.user.get(mail='mail@address.com'))
+                             self.redmine.user.get(email='mail@address.com'))
         with patch.object(RedmineUtils, 'get_user_id_by_username') as g:
             g.return_value = 'testuserid'
             self.assertEqual('testuserid',
                              self.redmine.user.get(username='testy'))
+
+    def test_delete(self):
+        self.assertRaises(TypeError,
+                          self.redmine.user.delete)
+        self.assertRaises(TypeError,
+                          self.redmine.user.delete,
+                          'mail@address.com', 'username')
+        patches = [patch.object(RedmineUtils, 'get_user_id'),
+                   patch.object(managers.ResourceManager,
+                                'delete'),
+                   patch.object(RedmineUtils, 'get_user_id_by_username'), ]
+        with nested(*patches) as (gui, d, guibu):
+            gui.return_value = 1
+            guibu.return_value = 2
+            self.redmine.user.delete(username='blip')
+            d.assert_called_with(2)
+            self.redmine.user.delete(email='blip')
+            d.assert_called_with(1)
 
 
 class TestSFRedmineBackupManager(BaseSFRedmineService):

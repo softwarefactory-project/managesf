@@ -33,7 +33,7 @@ class RedmineMembershipManager(base.MembershipManager):
     def _get_uid(self, username):
         uid = self.plugin.user.get(username=username)
         if not uid:
-            uid = self.plugin.user.get(mail=username)
+            uid = self.plugin.user.get(email=username)
         return uid
 
 
