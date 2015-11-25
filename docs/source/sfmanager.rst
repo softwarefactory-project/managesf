@@ -159,7 +159,7 @@ Add user to project groups
 .. code-block:: bash
 
  sfmanager --url <http://sfgateway.dom> --auth user:password \
-           membership add --name user1@tests.dom --project p1 \
+           membership add --user user1@tests.dom --project p1 \
            --groups ptl-group core-group
 
 
@@ -170,7 +170,7 @@ Remove user from project groups
 .. code-block:: bash
 
  sfmanager --url <http://sfgateway.dom> --auth user:password \
-           membership remove --name user1@tests.dom --project p1 \
+           membership remove --user user1@tests.dom --project p1 \
            --group ptl-group
 
 If the request does not provide a specific group to delete the user from, SF
@@ -179,7 +179,7 @@ will remove the user from all groups associated to a project.
 .. code-block:: bash
 
  sfmanager --url <http://sfgateway.dom> --auth user:password \
-           membership remove --name user1@tests.dom --project p1
+           membership remove --user user1@tests.dom --project p1
 
 
 User management
