@@ -479,6 +479,12 @@ class ServicesUsersController(RestController):
         try:
             for service in SF_SERVICES:
                 try:
+                    if service.user.get(username=infos.get('username')) or\
+                       service.user.get(username=infos.get('email')):
+                        msg = '[%s] user %s exists, skipping creation'
+                        logger.debug(msg % (service.service_name,
+                                            infos.get('username')))
+                        continue
                     service.user.create(username=infos.get('username'),
                                         email=infos.get('email'),
                                         full_name=infos.get('full_name'),

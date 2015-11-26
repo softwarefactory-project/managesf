@@ -79,7 +79,8 @@ class SFRedmineUserManager(RedmineUserManager):
                                                    username))
         except ValidationError as e:
             # not optimal but python-redmine does not differentiate this case
-            if 'Resource already exists' in e.message:
+            if ('Resource already exists' in e.message) or\
+               ('has already been taken' in e.message):
                 msg = '[%s] user %s already exists, skipping creation'
                 logger.info(msg % (self.plugin.service_name,
                                    username))

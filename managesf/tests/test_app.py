@@ -19,7 +19,7 @@ from unittest import TestCase
 from webtest import TestApp
 from pecan import load_app
 from contextlib import nested
-from mock import patch
+from mock import Mock, patch
 
 from basicauth import encode
 from redmine.exceptions import ValidationError
@@ -36,6 +36,7 @@ from managesf.services.gerrit import utils
 from managesf.services.gerrit.membership import SFGerritMembershipManager
 from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit.review import SFGerritReviewManager
+from managesf.services.gerrit import user as g_user
 from managesf.services.redmine import SoftwareFactoryRedmine
 from managesf.services.redmine.membership import SFRedmineMembershipManager
 from managesf.services.redmine.project import SFRedmineProjectManager
@@ -745,20 +746,34 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos = {'email': 'jojo@starplatinum.dom',
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
-        ctx = [patch.object(SFRedmineUserManager, 'create'),
-               patch.object(RedmineUtils, 'create_user'), ]
-        with nested(*ctx) as (redmine_create, create_user, ):
-            response = self.app.post_json('/services_users/', infos,
-                                          extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 401)
+#        ctx = [patch.object(SFRedmineUserManager, 'create'),
+#               patch.object(RedmineUtils, 'create_user'), ]
+#        with nested(*ctx) as (redmine_create, create_user, ):
+        response = self.app.post_json('/services_users/', infos,
+                                      extra_environ=environ, status="*")
+        self.assertEqual(response.status_int, 401)
 
     def test_add_user_in_backends(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
         infos = {'email': 'jojo@starplatinum.dom',
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
-        ctx = [patch.object(SFRedmineUserManager, 'create'), ]
-        with nested(*ctx) as (redmine_create, ):
+        ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(g_user.SFGerritUserManager, 'create'),
+               patch.object(SFRedmineUserManager, 'get'),
+               patch.object(g_user.SFGerritUserManager, 'get'), ]
+        create_ctx = [patch('managesf.services.gerrit.get_cookie'),
+                      patch.object(RedmineUtils, 'create_user'),
+                      patch.object(g_user.SFGerritUserManager, '_add_sshkeys'),
+                      patch.object(g_user.SFGerritUserManager,
+                                   '_add_account_as_external'),
+                      patch('managesf.services.gerrit.user.requests.put'),
+                      patch('managesf.services.gerrit.user.requests.get'),
+                      patch.object(SFRedmineUserManager, 'get'),
+                      patch.object(g_user.SFGerritUserManager, 'get'), ]
+        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+            r_get.return_value = None
+            g_get.return_value = None
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
@@ -766,14 +781,40 @@ class TestManageSFServicesUserController(FunctionalTest):
                                               email=infos.get('email'),
                                               full_name=infos.get('full_name'),
                                               ssh_keys=infos['ssh_keys'])
-        with patch.object(RedmineUtils, 'create_user') as rm_create_user:
+            gerrit_create.assert_called_with(username=infos.get('username'),
+                                             email=infos.get('email'),
+                                             full_name=infos.get('full_name'),
+                                             ssh_keys=infos['ssh_keys'])
+
+        with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
+                                     external, put, get,
+                                     r_get, g_get, ):
+            get_cookie.return_value = 'admin_cookie'
+            r_get.return_value = None
+            g_get.return_value = None
+            created = ''')]}\'
+{
+  "_account_id": 5,
+  "name": "Jotaro Kujoh",
+  "email": "jojo@starplatinum.dom",
+  "username": "jojo",
+  "avatars": [
+    {
+      "url": "meh",
+      "height": 26
+    }
+  ]
+}'''
+            get.return_value = Mock(status_code=200, content=created)
+
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
             rm_create_user.assert_called_with(infos['username'],
                                               infos['email'],
                                               infos['full_name'])
-        with nested(*ctx) as (redmine_create, ):
+
+        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
             # assert that raising UnavailableActionError won't fail
             def unavailable(*args, **kwargs):
                 raise exc.UnavailableActionError
@@ -781,11 +822,26 @@ class TestManageSFServicesUserController(FunctionalTest):
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-        with patch.object(RedmineUtils, 'create_user') as rm_create_user:
+        with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
+                                     external, put, get,
+                                     r_get, g_get, ):
+            get_cookie.return_value = 'admin_cookie'
             # assert that user already existing in backend won't fail
+
             def already(*args, **kwargs):
                 raise ValidationError('Resource already exists')
+
             rm_create_user.side_effect = already
+            response = self.app.post_json('/services_users/', infos,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+        with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
+                                     external, put, get,
+                                     r_get, g_get, ):
+            get_cookie.return_value = 'admin_cookie'
+            # assert that user found in backend will skip gracefully
+            r_get.return_value = True
+            g_get.return_value = True
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)

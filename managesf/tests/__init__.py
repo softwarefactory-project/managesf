@@ -34,6 +34,10 @@ class dummy_conf():
         'ssh_port': 2929,
         'sshkey_priv_path': tempfile.mkstemp()[1],
         'replication_config_path': tempfile.mkstemp()[1],
+        'db_host': 'db.tests.dom',
+        'db_name': 'gerrit_db',
+        'db_user': 'gerrit_db_user',
+        'db_password': 'gerrit_db_password',
     }
     redmine = {
         'api_key': 'XXX',

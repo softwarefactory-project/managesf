@@ -15,7 +15,7 @@
 # under the License.
 
 from unittest import TestCase
-from mock import patch, call
+from mock import patch, call, Mock
 from contextlib import nested
 from gerritlib.gerrit import Gerrit
 
@@ -80,8 +80,81 @@ class TestSFGerritRoleManager(BaseSFGerritService):
 
 
 class TestSFGerritUserManager(BaseSFGerritService):
-    # TODO not implemented yet
-    pass
+    user_data = ''')]}\'
+{
+  "_account_id": 5,
+  "name": "Jotaro Kujoh",
+  "email": "jojo@starplatinum.dom",
+  "username": "jojo",
+  "avatars": [
+    {
+      "url": "meh",
+      "height": 26
+    }
+  ]
+}'''
+
+    def test_create(self):
+        patches = [patch.object(self.gerrit.user, '_add_account_as_external'),
+                   patch.object(self.gerrit.user, '_add_sshkeys'),
+                   patch('managesf.services.gerrit.user.requests.get'),
+                   patch('managesf.services.gerrit.user.requests.put'),
+                   patch('managesf.services.gerrit.get_cookie'), ]
+        with nested(*patches) as (add_external, add_sshkeys,
+                                  get, put, get_cookie):
+            get.return_value = Mock(status_code=200, content=self.user_data)
+            get_cookie.return_value = 'admin_cookie'
+            self.gerrit.user.create('jojo', 'jojo@starplatinum.dom',
+                                    'Jotaro Kujoh')
+            url = "%s/r/a/accounts/%s" % (self.gerrit.conf['url'],
+                                          'jojo')
+            h = {"Content-type": "application/json"}
+            cookies = {'auth_pubtkt': 'admin_cookie'}
+            get.assert_called_with(url,
+                                   headers=h,
+                                   cookies=cookies)
+            add_external.assert_called_with(5, 'jojo')
+            self.gerrit.user.create('jojo', 'jojo@starplatinum.dom',
+                                    'Jotaro Kujoh',
+                                    ssh_keys=[{'key': 'bop'}])
+            add_sshkeys.assert_called_with('jojo',
+                                           [{'key': 'bop'}],
+                                           cookies)
+
+    def test_get(self):
+        self.assertRaises(TypeError,
+                          self.gerrit.user.get)
+        self.assertRaises(TypeError,
+                          self.gerrit.user.get,
+                          'mail@address.com', 'extra_user_param')
+        patches = [patch('managesf.services.gerrit.get_cookie'),
+                   patch('managesf.services.gerrit.user.requests.get'), ]
+        with nested(*patches) as (get_cookie, get, ):
+            get.return_value = Mock(status_code=200, content=self.user_data)
+            get_cookie.return_value = 'admin_cookie'
+            u = self.gerrit.user.get(email='jojo@starplatinum.dom')
+            url = "%s/r/a/accounts/%s" % (self.gerrit.conf['url'],
+                                          'jojo@starplatinum.dom')
+            h = {"Content-type": "application/json"}
+            cookies = {'auth_pubtkt': 'admin_cookie'}
+            get.assert_called_with(url,
+                                   headers=h,
+                                   cookies=cookies)
+            self.assertEqual('jojo',
+                             u['username'])
+
+    def test_delete(self):
+        self.assertRaises(TypeError,
+                          self.gerrit.user.delete)
+        self.assertRaises(TypeError,
+                          self.gerrit.user.delete,
+                          'mail@address.com', 'username')
+        self.assertRaises(exc.UnavailableActionError,
+                          self.gerrit.user.delete,
+                          'mail@address.com', None)
+        self.assertRaises(exc.UnavailableActionError,
+                          self.gerrit.user.delete,
+                          None, 'username')
 
 
 class TestSFGerritBackupManager(BaseSFGerritService):
