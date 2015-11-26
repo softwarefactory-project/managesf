@@ -165,11 +165,10 @@ class GerritRepo(object):
         logger.info("[gerrit] Push on master for repository %s" %
                     self.prj_name)
 
-    def push_master_from_git_remote(self, remote, ssh_key=None):
-        logger.info("[gerrit] Fetch git objects from a remote and push "
-                    "to master for repository %s" % self.prj_name)
-        cmd = "git checkout master"
-        self._exec(cmd)
+    def _fetch_upstream_repo(self, remote, ssh_key=None):
+        msg = "Add and fetch upstream repo %s to project's repo %s"
+        msg = msg % (remote, self.prj_name)
+        logger.info(msg)
         cmd = "git remote add upstream %s" % remote
         self._exec(cmd)
         cmd = "git fetch upstream"
@@ -179,12 +178,37 @@ class GerritRepo(object):
             os.remove(path)
         else:
             self._exec(cmd)
-        logger.info("[gerrit] Push remote (master branch) of %s to the "
+
+    def push_master_from_git_remote(self, remote, ssh_key=None,
+                                    add_branches=False):
+        self._fetch_upstream_repo(remote, ssh_key)
+        logger.info("Push remote (master branch) of %s to the "
                     "Gerrit repository" % remote)
+        cmd = "git checkout master"
+        self._exec(cmd)
         cmd = "git push -f origin upstream/master:master"
         self._exec(cmd)
         cmd = "git reset --hard origin/master"
         self._exec(cmd)
+        if add_branches:
+            cmd = 'git ls-remote --heads %s' % remote
+            if ssh_key:
+                env, path = set_gitssh_wrapper_from_str(ssh_key)
+                code, output, err = _exec(cmd,
+                                          cwd=self.infos['localcopy_path'],
+                                          env=env)
+            else:
+                code, output, err = self._exec(cmd)
+            if err:
+                logger.error('Can not list remote branches %s' % remote)
+            if output:
+                # Remove the '*' and master branch from the list of branches
+                for line in output.splitlines():
+                    branch = line.split('refs/heads/')[-1]
+                    if branch in ['*', 'master']:
+                        continue
+                    cmd = 'git push -f origin upstream/%s:%s' % branch, branch
+                    self._exec(cmd)
 
     def review_changes(self, commit_msg):
         cmd = 'git review -s'

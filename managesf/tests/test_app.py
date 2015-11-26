@@ -323,6 +323,21 @@ class TestManageSFAppProjectController(FunctionalTest):
                 extra_environ={'REMOTE_USER': 'bob'})
             self.assertEqual(response.status_int, 201)
 
+        # Create a project with upstream and include all branches
+        ctx = [patch.object(project.SFGerritProjectManager, 'create'),
+               patch('managesf.controllers.root.is_admin'),
+               patch.object(SFRedmineProjectManager, 'create'),
+               patch.object(utils.GerritRepo, 'check_upstream')]
+        with nested(*ctx) as (gip, gia, rip, cu):
+            cu.return_value = [True, None]
+            data = {'upstream': 'git@github.com/account/repo.git',
+                    'add_branches': True}
+            response = self.app.put_json('/project/prj2',
+                                         data,
+                                         status='*',
+                                         extra_environ={'REMOTE_USER': 'BOB'})
+            self.assertEqual(response.status_code, 201)
+
     def test_project_delete(self):
         # Delete a project with no name
         response = self.app.delete('/project/', status="*")

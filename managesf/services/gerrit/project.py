@@ -62,16 +62,16 @@ class SFGerritProjectManager(base.ProjectManager):
     def create(self, project_name, username, project_data=None):
         if not project_data:
             project_data = {}
+
+        data = {'upstream': None,
+                'upstream-ssh-key': False,
+                'private': False,
+                'description': '',
+                'add-branches': False}
+        data.update(project_data)
+
         msg = "[%s] Init project: %s"
         logger.info(msg % (self.plugin.service_name, project_name))
-        upstream = (None if 'upstream' not in project_data
-                    else project_data['upstream'])
-        ssh_key = (False if 'upstream-ssh-key' not in project_data
-                   else project_data['upstream-ssh-key'])
-        description = ("" if 'description' not in project_data
-                       else project_data['description'])
-        private = (False if 'private' not in project_data
-                   else project_data['private'])
         client = self.plugin.get_client()
         core = "%s-core" % project_name
         core_desc = "Core developers for project " + project_name
@@ -93,7 +93,7 @@ class SFGerritProjectManager(base.ProjectManager):
                                               project_name,
                                               ["ptl-group"])
 
-        if private:
+        if data['private']:
             dev = "%s-dev" % project_name
             dev_desc = "Developers for project " + project_name
             self.plugin.role.create(username, dev, dev_desc)
@@ -106,12 +106,13 @@ class SFGerritProjectManager(base.ProjectManager):
                                                       ["dev-group"])
 
         owner = [ptl]
-        client.create_project(project_name, description, owner)
+        client.create_project(project_name, data['description'], owner)
         self.plugin.repository.create(project_name,
-                                      description,
-                                      upstream,
-                                      private,
-                                      ssh_key)
+                                      data['description'],
+                                      data['upstream'],
+                                      data['private'],
+                                      data['upstream-ssh-key'],
+                                      data['add-branches'])
 
     def delete(self, project_name, requestor, *args, **kwargs):
         logger.info("[%s] Delete project %s" % (self.plugin.service_name,

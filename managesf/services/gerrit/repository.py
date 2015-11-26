@@ -27,7 +27,8 @@ logger = logging.getLogger(__name__)
 
 class SFGerritRepositoryManager(base.RepositoryManager):
 
-    def create(self, prj_name, prj_desc, upstream, private, ssh_key=None):
+    def create(self, prj_name, prj_desc, upstream, private, ssh_key=None,
+               add_branches=False):
         logger.info("[%s] Init project repo: %s" % (self.plugin.service_name,
                                                     prj_name))
         ge = self.plugin.get_client()
@@ -55,7 +56,8 @@ class SFGerritRepositoryManager(base.RepositoryManager):
         paths['groups'] = file(template(prefix + 'groups')).read() % grps
         grepo.push_config(paths)
         if upstream:
-            grepo.push_master_from_git_remote(upstream, ssh_key)
+            grepo.push_master_from_git_remote(upstream, ssh_key,
+                                              add_branches=add_branches)
         paths = {}
         paths['.gitreview'] = file(template('gitreview')).read() % \
             {'gerrit-host': self.plugin.conf['top_domain'],

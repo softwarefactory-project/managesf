@@ -457,7 +457,8 @@ class TestSFGerritProjectManager(BaseSFGerritService):
                                'Project team lead for project p_name'), ]
             r_create.assert_has_calls(role_calls)
             create_project.assert_called_with('p_name', '', ['p_name-ptl'])
-            rep_create.assert_called_with('p_name', '', None, False, False)
+            rep_create.assert_called_with('p_name', '', None, False, False,
+                                          False)
             r_create.reset_mock()
             create_project.reset_mock()
             rep_create.reset_mock()
