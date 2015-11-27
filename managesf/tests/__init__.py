@@ -105,3 +105,6 @@ class dummy_conf():
     sshconfig = {
         'confdir': '/tmp'
     }
+    pages = {
+        'maps': tempfile.mkstemp()[1]
+    }

@@ -67,7 +67,8 @@ class FunctionalTest(TestCase):
                        'mysql': c.mysql,
                        'nodepool': c.nodepool,
                        'etherpad': c.etherpad,
-                       'lodgeit': c.lodgeit, }
+                       'lodgeit': c.lodgeit,
+                       'pages': c.pages, }
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}
@@ -618,6 +619,74 @@ class TestManageSFAppReplicationController(FunctionalTest):
             self.assertEqual(msg,
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
+
+
+class TestManageSFPagesController(FunctionalTest):
+    def test_unauthenticated(self):
+        resp = self.app.get('/pages/p1', status="*")
+        self.assertEqual(resp.status_int, 403)
+
+        resp = self.app.post_json('/pages/p1', {}, status="*")
+        self.assertEqual(resp.status_int, 403)
+
+        resp = self.app.delete('/pages/p1', status="*")
+        self.assertEqual(resp.status_int, 403)
+
+    def test_authenticated(self):
+        env = {'REMOTE_USER': 'user1'}
+        with patch.object(SFGerritProjectManager, 'user_owns_project') as uop:
+            uop.return_value = False
+            resp = self.app.post_json('/pages/p1', {'url': 'http://target'},
+                                      extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 403)
+
+            # Now user1 is the project onwer
+            uop.return_value = True
+            resp = self.app.post_json('/pages/p1', {'url': 'http://target'},
+                                      extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 201)
+            resp = self.app.post_json('/pages/p1', {'url': 'http://target'},
+                                      extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 200)
+            resp = self.app.post_json('/pages/p2', {'url': 'http://target2'},
+                                      extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 201)
+
+            # Try to fetch configured target for p1 and p2
+            resp = self.app.get('/pages/p1',
+                                extra_environ=env, status="*")
+            self.assertEqual(resp.json, 'http://target')
+            resp = self.app.get('/pages/p2',
+                                extra_environ=env, status="*")
+            self.assertEqual(resp.json, 'http://target2')
+            uop.return_value = False
+            resp = self.app.get('/pages/p1',
+                                extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 403)
+
+            # Try to add an invalid target
+            uop.return_value = True
+            resp = self.app.post_json('/pages/p3', {'url': 'invalid'},
+                                      extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 400)
+
+            # Try to delete a target
+            uop.return_value = False
+            resp = self.app.delete('/pages/p1',
+                                   extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 403)
+            uop.return_value = True
+            resp = self.app.delete('/pages/p1',
+                                   extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 200)
+            resp = self.app.delete('/pages/p2',
+                                   extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 200)
+
+            # Trye to delete a non existing target
+            resp = self.app.delete('/pages/p3',
+                                   extra_environ=env, status="*")
+            self.assertEqual(resp.status_int, 404)
 
 
 class TestManageSFHtpasswdController(FunctionalTest):

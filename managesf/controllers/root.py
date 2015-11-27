@@ -24,7 +24,7 @@ from pecan.rest import RestController
 from pecan import request, response
 from stevedore import driver
 
-from managesf.controllers import backup, localuser, introspection, htp
+from managesf.controllers import backup, localuser, introspection, htp, pages
 from managesf.services import base, gerrit
 from managesf.services import exceptions
 
@@ -425,6 +425,76 @@ class ProjectController(RestController):
             return "Project %s has been deleted." % name
         except Exception as e:
             return report_unhandled_error(e)
+
+
+class PagesController(RestController):
+
+    @expose('json')
+    def post(self, project):
+        if request.remote_user is None:
+            abort(403)
+        user = request.remote_user
+        code_review = [s for s in SF_SERVICES
+                       if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
+        if not code_review.project.user_owns_project(request.remote_user,
+                                                     project):
+            abort(403, detail="You are not the project owner")
+        infos = request.json if request.content_length else {}
+        try:
+            ret = pages.update_content_url(project, infos)
+        except pages.InvalidInfosInput as e:
+            abort(400, detail=e.message)
+        except pages.PageNotFound as e:
+            abort(404, detail=e.message)
+        except Exception as e:
+            return report_unhandled_error(e)
+        if ret:
+            retmsg = "The pages target has been created for project %s" \
+                     % project
+            response.status = 201
+        else:
+            retmsg = "The pages target has been updated for project %s" \
+                     % project
+        logger.info("User %s has modified the pages target for project %s" % (
+                    user, project))
+        return retmsg
+
+    @expose('json')
+    def get(self, project):
+        if request.remote_user is None:
+            abort(403)
+        code_review = [s for s in SF_SERVICES
+                       if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
+        if not code_review.project.user_owns_project(request.remote_user,
+                                                     project):
+            abort(403, detail="You are not the project owner")
+        try:
+            ret = pages.get_content_url(project)
+        except pages.PageNotFound as e:
+            abort(404, detail=e.message)
+        except Exception as e:
+            return report_unhandled_error(e)
+        return ret
+
+    @expose('json')
+    def delete(self, project):
+        if request.remote_user is None:
+            abort(403)
+        user = request.remote_user
+        code_review = [s for s in SF_SERVICES
+                       if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
+        if not code_review.project.user_owns_project(request.remote_user,
+                                                     project):
+            abort(403, detail="You are not the project owner")
+        try:
+            pages.delete_content_url(project)
+        except pages.PageNotFound as e:
+            abort(404, detail=e.message)
+        except Exception as e:
+            return report_unhandled_error(e)
+        logger.info("User %s has deleted the pages target for project %s" % (
+                    user, project))
+        return "The pages target has been deleted for project %s" % project
 
 
 class LocalUserController(RestController):
@@ -855,3 +925,4 @@ class RootController(object):
     services_users = ServicesUsersController()
     hooks = HooksController()
     config = ConfigController()
+    pages = PagesController()

@@ -1,5 +1,6 @@
 *.py[cod]
 .tox
+*.swp
 *.egg
 *.egg-info
 .coverage

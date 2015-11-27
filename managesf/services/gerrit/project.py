@@ -50,6 +50,11 @@ class SFGerritProjectManager(base.ProjectManager):
         else:
             return result
 
+    def user_owns_project(self, requestor, project_name):
+        client = self.plugin.get_client()
+        return (client.get_project_owner(project_name)
+                in client.get_user_groups_id(requestor))
+
     def get_groups(self, project):
         client = self.plugin.get_client()
         groups = client.get_project_groups(project)
@@ -126,8 +131,7 @@ class SFGerritProjectManager(base.ProjectManager):
         logger.info("[%s] Delete project %s" % (self.plugin.service_name,
                                                 project_name))
         client = self.plugin.get_client()
-        user_owns_project = (client.get_project_owner(project_name)
-                             in client.get_user_groups_id(requestor))
+        user_owns_project = self.user_owns_project(requestor, project_name)
         if not user_owns_project and not self.plugin.role.is_admin(requestor):
             msg = ("[%s] User is neither an Administrator "
                    "nor project %s's owner")
