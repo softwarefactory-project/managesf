@@ -30,6 +30,31 @@ logger = logging.getLogger(__name__)
 
 
 @six.add_metaclass(abc.ABCMeta)
+class BaseHooksManager(object):
+    """Abstract class handling hooks triggered by specific events in the CI
+    workflow. These are mainly based on gerrit's own hook events."""
+    def __init__(self, plugin):
+        self.plugin = plugin
+
+    def patchset_created(self, *args, **kwargs):
+        """Called whenever a new patch is submitted."""
+        raise exc.UnavailableActionError()
+
+    def change_merged(self, *args, **kwargs):
+        """Called whenever a new patch is merged into a project's master
+        branch."""
+        raise exc.UnavailableActionError()
+
+    def __getattr__(self, hook):
+        """Generic behavior for undefined hooks"""
+        def _generic_hook(*args, **kwargs):
+            msg = "[%s] undefined hook %s" % (self.plugin.service_name,
+                                              hook)
+            raise exc.UnavailableActionError(msg)
+        return _generic_hook
+
+
+@six.add_metaclass(abc.ABCMeta)
 class BaseCRUDManager(object):
     def __init__(self, plugin):
         self.plugin = plugin
@@ -177,6 +202,7 @@ class BaseServicePlugin(object):
         self.membership = MembershipManager(self)
         self.role = RoleManager(self)
         self.backup = BackupManager(self)
+        self.hooks = BaseHooksManager(self)
 
     def configure_plugin(self, conf):
         try:

@@ -36,6 +36,13 @@ class BaseSFRedmineService(TestCase):
         pass
 
 
+class TestSFRedmineHooksManager(BaseSFRedmineService):
+    def test_hooks_are_present(self):
+        self.assertRaises(exc.UnavailableActionError,
+                          self.redmine.hooks.just_a_random_hook,
+                          'dummy arg')
+
+
 class TestSFRedmineRoleManager(BaseSFRedmineService):
     def test_is_admin(self):
         self.assertEqual(True,
