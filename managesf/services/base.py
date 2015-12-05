@@ -20,7 +20,7 @@ import logging
 import six
 import time
 
-from pecan import conf
+from pecan import conf as pconf
 
 from managesf.controllers import utils
 from managesf.services import exceptions as exc
@@ -179,7 +179,7 @@ class RoleManager(BaseCRUDManager):
 
     @staticmethod
     def is_admin(user):
-        return user == conf.admin['name']
+        return user == pconf.admin['name']
 
 
 @six.add_metaclass(abc.ABCMeta)
