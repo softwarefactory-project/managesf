@@ -908,37 +908,57 @@ class TestHooksController(FunctionalTest):
 
     def test_patchset_created(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
-        resp = self.app.post_json('/hooks/patchset_created',
-                                  {'arg1': 1, 'arg2': 2},
-                                  extra_environ=environ, status="*")
-        # TODO(mhu) will need to change once the redmine hook is implemented
-        self.assertEqual(404, resp.status_int)
-        j = json.loads(resp.body)
-        # +1 from adding the name of the hook
-        self.assertEqual(len(self.config['services']) + 1,
-                         len(j))
-        self.assertEqual('patchset_created',
-                         j['hook_name'])
-
-    def test_patchset_created_mocked(self):
-        environ = {'REMOTE_USER': self.config['admin']['name']}
-        with patch.object(BaseHooksManager,
-                          'patchset_created') as patchset_created:
-            patchset_created.return_value = "mocked"
+        hooks_kwargs = {'change': 123,
+                        'is_draft': False,
+                        'change_url': 'blop',
+                        'project': 'testytest',
+                        'branch': 'branchy',
+                        'topic': 'thunder',
+                        'uploader': 'Doe',
+                        'commit': 456,
+                        'patchset': 1,
+                        'commit_message': 'fix the thing Closes: #789'}
+        with patch.object(RedmineUtils,
+                          'set_issue_status') as set_issue_status:
+            set_issue_status.return_value = True
             resp = self.app.post_json('/hooks/patchset_created',
-                                      {'arg1': 1, 'arg2': 2},
+                                      hooks_kwargs,
                                       extra_environ=environ, status="*")
             self.assertEqual(200, resp.status_int)
-            patchset_created.assert_called_with(arg1=1,
-                                                arg2=2)
+            issue_msg = """Fix proposed to branch: branchy by Doe
+Review: blop
+"""
+            set_issue_status.assert_called_with('789',
+                                                2,
+                                                message=issue_msg)
             j = json.loads(resp.body)
             # +1 from adding the name of the hook
             self.assertEqual(len(self.config['services']) + 1,
                              len(j))
             self.assertEqual('patchset_created',
                              j['hook_name'])
-            self.assertTrue(all(j[s] == 'mocked' for s in ('gerrit',
-                                                           'lodgeit')))
+            self.assertEqual('Success',
+                             j['redmine'])
+            # oh no ! something went wrong with redmine
+            set_issue_status.return_value = False
+            resp = self.app.post_json('/hooks/patchset_created',
+                                      hooks_kwargs,
+                                      extra_environ=environ, status="*")
+            self.assertEqual(400, resp.status_int)
+            j = json.loads(resp.body)
+            # +1 from adding the name of the hook
+            self.assertEqual(len(self.config['services']) + 1,
+                             len(j))
+            self.assertEqual('patchset_created',
+                             j['hook_name'])
+            self.assertEqual("Could not change status of issue #789",
+                             j['redmine'])
+
+    def test_patchset_created_one_service(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        with patch.object(BaseHooksManager,
+                          'patchset_created') as patchset_created:
+            patchset_created.return_value = "mocked"
             resp = self.app.post_json('/hooks/patchset_created/etherpad',
                                       {'arg1': 1, 'arg2': 2},
                                       extra_environ=environ, status="*")
@@ -961,3 +981,55 @@ class TestHooksController(FunctionalTest):
             j = json.loads(resp.body)
             self.assertEqual('Unknown service',
                              j['blagh'])
+
+    def test_change_merged(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        hooks_kwargs = {'change': 123,
+                        'change_url': 'blop',
+                        'project': 'testytest',
+                        'branch': 'b',
+                        'topic': 'thunder',
+                        'submitter': 'Doe',
+                        'commit': 456,
+                        'commit_message': 'fix the thing Closes: #789'}
+        with patch.object(RedmineUtils,
+                          'set_issue_status') as set_issue_status:
+            set_issue_status.return_value = True
+            resp = self.app.post_json('/hooks/change_merged',
+                                      hooks_kwargs,
+                                      extra_environ=environ, status="*")
+            self.assertEqual(200, resp.status_int)
+            issue_msg = """The following change on Gerrit has been merged to: b
+Review: blop
+Submitter: Doe
+
+Commit message:
+fix the thing Closes: #789
+
+gitweb: http://redmine.tests.dom/r/gitweb?p=testytest.git;a=commit;h=456
+"""
+            set_issue_status.assert_called_with('789',
+                                                5,
+                                                message=issue_msg)
+            j = json.loads(resp.body)
+            # +1 from adding the name of the hook
+            self.assertEqual(len(self.config['services']) + 1,
+                             len(j))
+            self.assertEqual('change_merged',
+                             j['hook_name'])
+            self.assertEqual('Success',
+                             j['redmine'])
+            # oh no ! something went wrong with redmine
+            set_issue_status.return_value = False
+            resp = self.app.post_json('/hooks/change_merged',
+                                      hooks_kwargs,
+                                      extra_environ=environ, status="*")
+            self.assertEqual(400, resp.status_int)
+            j = json.loads(resp.body)
+            # +1 from adding the name of the hook
+            self.assertEqual(len(self.config['services']) + 1,
+                             len(j))
+            self.assertEqual('change_merged',
+                             j['hook_name'])
+            self.assertEqual("Could not change status of issue #789",
+                             j['redmine'])

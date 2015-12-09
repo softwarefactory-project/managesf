@@ -42,6 +42,113 @@ class TestSFRedmineHooksManager(BaseSFRedmineService):
                           self.redmine.hooks.just_a_random_hook,
                           'dummy arg')
 
+    def test_patch_created(self):
+        args = ('change', 'is_draft', 'change_url', 'project',
+                'branch', 'topic', 'uploader', 'commit',
+                'patchset', 'commit_message')
+        kwargs = dict((k, None) for k in args)
+        with patch.object(RedmineUtils,
+                          'set_issue_status') as set_issue_status:
+            kwargs['patchset'] = 12
+            self.assertEqual('Do nothing as the patchset is not the first',
+                             self.redmine.hooks.patchset_created(**kwargs))
+            kwargs['patchset'] = 1
+            kwargs['project'] = 'aaa'
+            kwargs['commit'] = 123
+            kwargs['branch'] = 'test_branch'
+            kwargs['change_url'] = 'ccc'
+            kwargs['submitter'] = 'doe'
+            kwargs['commit_message'] = 'super patch'
+            msg = "No issue found in the commit message, nothing to do."
+            self.assertEqual(msg,
+                             self.redmine.hooks.patchset_created(**kwargs))
+            kwargs['commit_message'] = 'super patch Related-To: #1234'
+            msg = "Success"
+            ticket_msg = """Fix proposed to branch: test_branch by doe
+Review: ccc
+"""
+            self.assertEqual(msg,
+                             self.redmine.hooks.patchset_created(**kwargs))
+            set_issue_status.assert_called_with('1234',
+                                                2,
+                                                message=ticket_msg)
+            kwargs['commit_message'] = 'super patch Closes-Bug: #1234'
+            self.assertEqual(msg,
+                             self.redmine.hooks.patchset_created(**kwargs))
+            set_issue_status.assert_called_with('1234',
+                                                2,
+                                                message=ticket_msg)
+            set_issue_status.return_value = False
+            msg = "Could not change status of issue #1234"
+            try:
+                self.redmine.hooks.patchset_created(**kwargs)
+                self.assertFail()
+            except Exception as e:
+                self.assertEqual(msg,
+                                 e.message)
+            kwargs['commit_message'] = 'uuu Related: #789 Fix: #1234'
+            try:
+                self.redmine.hooks.patchset_created(**kwargs)
+                self.assertFail()
+            except Exception as e:
+                self.assertEqual(msg,
+                                 e.message)
+
+    def test_change_merged(self):
+        args = ('change', 'change_url', 'project',
+                'branch', 'topic', 'submitter', 'commit')
+        kwargs = dict((k, None) for k in args)
+        with patch.object(RedmineUtils,
+                          'set_issue_status') as set_issue_status:
+            kwargs['project'] = 'aaa'
+            kwargs['commit'] = 123
+            kwargs['branch'] = 'test_branch'
+            kwargs['topic'] = 'super_duper'
+            kwargs['change_url'] = 'ccc'
+            kwargs['submitter'] = 'doe'
+            kwargs['commit_message'] = 'super patch'
+            msg = "No issue found in the commit message, nothing to do."
+            self.assertEqual(msg,
+                             self.redmine.hooks.change_merged(**kwargs))
+            kwargs['commit_message'] = 'super patch Related-To: #1234'
+            msg = "Success"
+            ticket_msg = ('The following change on Gerrit has been merged to: '
+                          'test_branch\nReview: ccc\nSubmitter: doe\n\nCommit '
+                          'message:\nsuper patch Related-To: #1234\n\ngitweb: '
+                          'http://redmine.tests.dom/r/gitweb?'
+                          'p=aaa.git;a=commit;h=123\n')
+            self.assertEqual(msg,
+                             self.redmine.hooks.change_merged(**kwargs))
+            set_issue_status.assert_called_with('1234',
+                                                2,
+                                                message=ticket_msg)
+            kwargs['commit_message'] = 'super patch Closes-Bug: #1234'
+            ticket_msg = ('The following change on Gerrit has been merged to: '
+                          'test_branch\nReview: ccc\nSubmitter: doe\n\nCommit '
+                          'message:\nsuper patch Closes-Bug: #1234\n\ngitweb: '
+                          'http://redmine.tests.dom/r/gitweb?'
+                          'p=aaa.git;a=commit;h=123\n')
+            self.assertEqual(msg,
+                             self.redmine.hooks.change_merged(**kwargs))
+            set_issue_status.assert_called_with('1234',
+                                                5,
+                                                message=ticket_msg)
+            set_issue_status.return_value = False
+            msg = "Could not change status of issue #1234"
+            try:
+                self.redmine.hooks.change_merged(**kwargs)
+                self.assertFail()
+            except Exception as e:
+                self.assertEqual(msg,
+                                 e.message)
+            kwargs['commit_message'] = 'uuu Related: #789 Fix: #1234'
+            try:
+                self.redmine.hooks.change_merged(**kwargs)
+                self.assertFail()
+            except Exception as e:
+                self.assertEqual(msg,
+                                 e.message)
+
 
 class TestSFRedmineRoleManager(BaseSFRedmineService):
     def test_is_admin(self):

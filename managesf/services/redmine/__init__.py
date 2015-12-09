@@ -20,6 +20,7 @@ from redmine import Redmine as RM
 
 from managesf.services import base
 from managesf.services.redmine import backup
+from managesf.services.redmine import hooks
 from managesf.services.redmine import membership
 from managesf.services.redmine import project
 from managesf.services.redmine import role
@@ -39,6 +40,7 @@ class Redmine(base.BaseIssueTrackerServicePlugin):
         self.membership = membership.MembershipManager(self)
         self.role = role.RoleManager(self)
         self.backup = backup.RedmineBackupManager(self)
+        self.hooks = hooks.RedmineHooksManager(self)
 
     def get_client(self, cookie=None):
         return RM(self.conf['url'],
@@ -67,6 +69,7 @@ class SoftwareFactoryRedmine(Redmine):
         self.role = role.SFRedmineRoleManager(self)
         self.backup = base.BackupManager(self)
         self.backup.heartbeat_cmd = None
+        self.hooks = hooks.RedmineHooksManager(self)
 
     def get_client(self, cookie=None):
         return RedmineUtils(self.conf['url'],
