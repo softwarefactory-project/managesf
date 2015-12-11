@@ -42,7 +42,6 @@ setup(
     include_package_data=True,
     packages=find_packages(exclude=['ez_setup']),
     entry_points={
-        "console_scripts": ['sfmanager = managesf.cli:main'],
         'managesf.service': [
             ('SFGerrit = managesf.services.gerrit:SoftwareFactoryGerrit'),
             ('SFRedmine = managesf.services.redmine:SoftwareFactoryRedmine'),
@@ -52,9 +51,8 @@ setup(
             ('lodgeit = managesf.services.lodgeit:Lodgeit'),
         ],
     },
-    url=('http://softwarefactory.enovance.com/'
+    url=('http://softwarefactory-project.io/'
          'r/gitweb?p=managesf.git;a=summary'),
     download_url='https://github.com/redhat-cip/managesf/tarball/%s' % VERSION,
     keywords=['software factory', 'CI', 'continuous integration'],
-    data_files=[('share/man/man1', ['docs/man/sfmanager.1'])],
 )

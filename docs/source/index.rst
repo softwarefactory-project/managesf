@@ -5,6 +5,5 @@ Welcome to the managesf/sfmanager documentation!
    :maxdepth: 2
 
    install
-   sfmanager
    restapi
    plugins
