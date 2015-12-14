@@ -12,13 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import random
-import string
 import time
 import logging
 import os.path
 
-import htpasswd
 import paramiko
 from pecan import conf
 from pecan import expose
@@ -28,7 +25,7 @@ from pecan import request, response
 from stevedore import driver
 
 from managesf.controllers import gerrit as gerrit_controller
-from managesf.controllers import backup, localuser, introspection
+from managesf.controllers import backup, localuser, introspection, htp
 from managesf.services import base, gerrit
 from managesf.services import exceptions
 
@@ -525,26 +522,14 @@ class ServicesUsersController(RestController):
 
 class HtpasswdController(RestController):
     def __init__(self):
-        self.filename = None
-        if getattr(conf, "htpasswd", None):
-            self.filename = conf.htpasswd.get('filename')
-            # Ensure file exists
-            open(self.filename, "a").close()
+        self.htp = htp.Htpasswd(conf)
 
     @expose('json')
     def put(self):
         if request.remote_user is None:
             abort(403)
-        password = ''.join(
-            random.SystemRandom().choice(string.letters + string.digits)
-            for _ in range(12))
         try:
-            with htpasswd.Basic(self.filename) as userdb:
-                try:
-                    userdb.add(request.remote_user, password)
-                except htpasswd.basic.UserExists:
-                    pass
-                userdb.change_password(request.remote_user, password)
+            password = self.htp.set_api_password(request.remote_user)
         except IOError:
             abort(406)
         response.status = 201
@@ -556,9 +541,8 @@ class HtpasswdController(RestController):
             abort(403)
         response.status = 404
         try:
-            with htpasswd.Basic(self.filename) as userdb:
-                if request.remote_user in userdb.users:
-                    response.status = 204
+            if self.htp.user_has_api_password(request.remote_user):
+                response.status = 204
         except IOError:
             abort(406)
 
@@ -567,8 +551,7 @@ class HtpasswdController(RestController):
         if request.remote_user is None:
             abort(403)
         try:
-            with htpasswd.Basic(self.filename) as userdb:
-                userdb.pop(request.remote_user)
+            self.htp.delete(request.remote_user)
             response.status = 204
         except IOError:
             abort(406)
