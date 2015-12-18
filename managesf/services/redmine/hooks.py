@@ -73,7 +73,7 @@ def parse_commit_message(message, issue_reg):
 
 def generic_redmine_hook(kwargs, status_closing, status_related,
                          gitweb_url, template_message, client):
-    if kwargs.get('patchset', 1) != 1:
+    if str(kwargs.get('patchset', 1)) != "1":
         msg = 'Do nothing as the patchset is not the first'
         return msg
     gitweb = gitweb_url % {'project': kwargs.get('project') + '.git',
