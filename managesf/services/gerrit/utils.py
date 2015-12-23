@@ -205,9 +205,10 @@ class GerritRepo(object):
                 # Remove the '*' and master branch from the list of branches
                 for line in output.splitlines():
                     branch = line.split('refs/heads/')[-1]
-                    if branch in ['*', 'master']:
+                    if not branch and branch in ['*', 'master']:
                         continue
-                    cmd = 'git push -f origin upstream/%s:%s' % branch, branch
+                    cmd = 'git push -f origin upstream/%s:%s' % (branch,
+                                                                 branch)
                     self._exec(cmd)
 
     def review_changes(self, commit_msg):
