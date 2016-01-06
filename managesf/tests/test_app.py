@@ -331,7 +331,7 @@ class TestManageSFAppProjectController(FunctionalTest):
         with nested(*ctx) as (gip, gia, rip, cu):
             cu.return_value = [True, None]
             data = {'upstream': 'git@github.com/account/repo.git',
-                    'add_branches': True}
+                    'add-branches': True}
             response = self.app.put_json('/project/prj2',
                                          data,
                                          status='*',

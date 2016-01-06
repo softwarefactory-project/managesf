@@ -207,6 +207,8 @@ class GerritRepo(object):
                     branch = line.split('refs/heads/')[-1]
                     if not branch and branch in ['*', 'master']:
                         continue
+                    cmd = 'git checkout %s' % branch
+                    self._exec(cmd)
                     cmd = 'git push -f origin upstream/%s:%s' % (branch,
                                                                  branch)
                     self._exec(cmd)
