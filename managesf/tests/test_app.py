@@ -37,6 +37,7 @@ from managesf.services.gerrit import project
 from managesf.services.gerrit import utils
 from managesf.services.gerrit.membership import SFGerritMembershipManager
 from managesf.services.gerrit.project import SFGerritProjectManager
+from managesf.services.gerrit.replication import SFGerritReplicationManager
 from managesf.services.gerrit.review import SFGerritReviewManager
 from managesf.services.gerrit import user as g_user
 from managesf.services.redmine import SoftwareFactoryRedmine
@@ -532,12 +533,12 @@ class TestManageSFAppReplicationController(FunctionalTest):
         self.assertEqual(response.status_int, 400)
         response = self.app.put_json('/replication/repl', {}, status="*")
         self.assertEqual(response.status_int, 400)
-        with patch('managesf.controllers.gerrit.replication_apply_config'):
+        with patch.object(SFGerritReplicationManager, 'apply_config'):
             response = self.app.put_json(
                 '/replication/repl', {'value': 'val'}, status="*")
             self.assertEqual(response.status_int, 204)
-        with patch('managesf.controllers.gerrit.replication_apply_config',
-                   side_effect=raiseexc):
+        with patch.object(SFGerritReplicationManager, 'apply_config',
+                          side_effect=raiseexc):
             response = self.app.put_json(
                 '/replication/repl', {'value': 'val'}, status="*")
             self.assertEqual(response.status_int, 500)
@@ -549,12 +550,12 @@ class TestManageSFAppReplicationController(FunctionalTest):
     def test_delete(self):
         response = self.app.delete('/replication/', status="*")
         self.assertEqual(response.status_int, 400)
-        with patch('managesf.controllers.gerrit.replication_apply_config'):
+        with patch.object(SFGerritReplicationManager, 'apply_config'):
             response = self.app.delete(
                 '/replication/repl', status="*")
             self.assertEqual(response.status_int, 204)
-        with patch('managesf.controllers.gerrit.replication_apply_config',
-                   side_effect=raiseexc):
+        with patch.object(SFGerritReplicationManager, 'apply_config',
+                          side_effect=raiseexc):
             response = self.app.delete(
                 '/replication/repl', status="*")
             self.assertEqual(response.status_int, 500)
@@ -564,7 +565,7 @@ class TestManageSFAppReplicationController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
     def test_get(self):
-        with patch('managesf.controllers.gerrit.replication_get_config') \
+        with patch.object(SFGerritReplicationManager, 'get_config') \
                 as rgc:
             rgc.return_value = 'ret val'
             response = self.app.get('/replication/', status="*")
@@ -574,8 +575,8 @@ class TestManageSFAppReplicationController(FunctionalTest):
             self.assertEqual(response.status_int, 200)
             msg = json.loads(response.body)
             self.assertEqual(msg, 'ret val')
-        with patch('managesf.controllers.gerrit.replication_get_config',
-                   side_effect=raiseexc):
+        with patch.object(SFGerritReplicationManager, 'get_config',
+                          side_effect=raiseexc):
             response = self.app.get(
                 '/replication/repl/', status="*")
             self.assertEqual(response.status_int, 500)
@@ -585,14 +586,14 @@ class TestManageSFAppReplicationController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
     def test_post(self):
-        with patch('managesf.controllers.gerrit.replication_trigger'):
+        with patch.object(SFGerritReplicationManager, 'trigger'):
             response = self.app.post_json(
                 '/replication/',
                 {},
                 status="*")
             self.assertEqual(response.status_int, 204)
-        with patch('managesf.controllers.gerrit.replication_trigger',
-                   side_effect=raiseexc):
+        with patch.object(SFGerritReplicationManager, 'trigger',
+                          side_effect=raiseexc):
             response = self.app.post_json(
                 '/replication/', status="*")
             self.assertEqual(response.status_int, 500)

@@ -87,8 +87,17 @@ class ReplicationController(RestController):
         if not section or ('value' not in request.json):
             abort(400)
         value = request.json['value']
+        user = request.remote_user
         try:
-            gerrit_controller.replication_apply_config(section, setting, value)
+            replicators = [s for s in SF_SERVICES
+                           if isinstance(s, base.BaseRepositoryServicePlugin)]
+            for service in replicators:
+                try:
+                    service.replication.apply_config(user, section,
+                                                     setting, value)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] replication not available'
+                    logger.debug(msg % (service.service_name, ))
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -98,8 +107,16 @@ class ReplicationController(RestController):
     def delete(self, section=None, setting=None):
         if not section:
             abort(400)
+        user = request.remote_user
         try:
-            gerrit_controller.replication_apply_config(section, setting)
+            replicators = [s for s in SF_SERVICES
+                           if isinstance(s, base.BaseRepositoryServicePlugin)]
+            for service in replicators:
+                try:
+                    service.replication.apply_config(user, section, setting)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] replication not available'
+                    logger.debug(msg % (service.service_name, ))
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -113,14 +130,27 @@ class ReplicationController(RestController):
             section = remainder[0]
         if len(remainder) >= 2:
             setting = remainder[1]
-        config = None
+        config = []
+        user = request.remote_user
         try:
-            config = gerrit_controller.replication_get_config(section, setting)
+            replicators = [s for s in SF_SERVICES
+                           if isinstance(s, base.BaseRepositoryServicePlugin)]
+            for service in replicators:
+                try:
+                    config.append(service.replication.get_config(user,
+                                                                 section,
+                                                                 setting))
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] replication not available'
+                    logger.debug(msg % (service.service_name, ))
         except Exception as e:
             return report_unhandled_error(e)
         if config:
             response.status = 200
-            return str(config)
+            if len(config) == 1:
+                return str(config[0])
+            else:
+                return str(config)
         response.status = 404
         return
 
@@ -128,8 +158,16 @@ class ReplicationController(RestController):
     def post(self):
         # A json with wait, url, project can be passed
         inp = request.json if request.content_length else {}
+        user = request.remote_user
         try:
-            gerrit_controller.replication_trigger(inp)
+            replicators = [s for s in SF_SERVICES
+                           if isinstance(s, base.BaseRepositoryServicePlugin)]
+            for service in replicators:
+                try:
+                    service.replication.trigger(user, inp)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] replication not available'
+                    logger.debug(msg % (service.service_name, ))
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)

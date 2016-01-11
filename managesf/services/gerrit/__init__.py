@@ -28,8 +28,8 @@ from managesf.services.gerrit import project
 from managesf.services.gerrit import role
 from managesf.services.gerrit import user
 from managesf.services.gerrit import review
+from managesf.services.gerrit import replication
 from managesf.services.gerrit import repository
-
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class SoftwareFactoryGerrit(Gerrit):
         self.role = role.SFGerritRoleManager(self)
         self.backup = base.BackupManager(self)
         self.backup.heartbeat_cmd = 'wget --spider http://localhost:8000/r/'
-        self.replication = None
+        self.replication = replication.SFGerritReplicationManager(self)
         self.repository = repository.SFGerritRepositoryManager(self)
         self.review = review.SFGerritReviewManager(self)
 

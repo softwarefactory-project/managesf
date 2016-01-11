@@ -106,6 +106,15 @@ class MembershipManager(BaseCRUDManager):
 class ReplicationManager(BaseCRUDManager):
     """Abstract class handling replication operations if the service can
     handle them (usually, a repository service)"""
+    def get_config(self, **kwargs):
+        return self.get(**kwargs)
+
+    def apply_config(self, **kwargs):
+        return self.update(**kwargs)
+
+    def trigger(self, **kwargs):
+        """Trigger a replication"""
+        raise exc.UnavailableActionError()
 
 
 @six.add_metaclass(abc.ABCMeta)
