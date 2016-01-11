@@ -106,13 +106,19 @@ class SFGerritProjectManager(base.ProjectManager):
                                                       ["dev-group"])
 
         owner = [ptl]
-        client.create_project(project_name, data['description'], owner)
-        self.plugin.repository.create(project_name,
-                                      data['description'],
-                                      data['upstream'],
-                                      data['private'],
-                                      data['upstream-ssh-key'],
-                                      data['add-branches'])
+        if client.project_exists(project_name):
+            msg = "[%s] project %s already exists"
+            logger.info(msg % (self.plugin.service_name, project_name))
+        else:
+            client.create_project(project_name, data['description'], owner)
+            self.plugin.repository.create(project_name,
+                                          data['description'],
+                                          data['upstream'],
+                                          data['private'],
+                                          data['upstream-ssh-key'],
+                                          data['add-branches'])
+            msg = "[%s] project %s created"
+            logger.info(msg % (self.plugin.service_name, project_name))
 
     def delete(self, project_name, requestor, *args, **kwargs):
         logger.info("[%s] Delete project %s" % (self.plugin.service_name,

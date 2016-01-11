@@ -18,6 +18,7 @@ from unittest import TestCase
 from mock import patch, call
 from contextlib import nested
 from redmine import managers
+from redmine.exceptions import ValidationError
 
 from managesf.services import exceptions as exc
 from managesf.services import redmine
@@ -456,6 +457,30 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
                                      project='p',
                                      groups=['dev-group']), ]
             m_c.assert_has_calls(membership_calls)
+
+    def test_create_project_exists(self):
+        patches = [patch.object(self.redmine.project, '_create'),
+                   patch.object(self.redmine.membership, 'create'), ]
+        with nested(*patches) as (_c, m_c):
+            err = 'Identifier has already been taken'
+            _c.side_effect = ValidationError(err)
+            self.redmine.project.create('p', 'u')
+            # assert that we proceed normally nevertheless
+            membership_calls = [call(requestor='u',
+                                     username='u',
+                                     project='p',
+                                     groups=['ptl-group'],
+                                     user_is_owner=True),
+                                call(requestor='u',
+                                     username='u',
+                                     project='p',
+                                     groups=['dev-group'])]
+            m_c.assert_has_calls(membership_calls)
+            m_c.reset_mock()
+            _c.reset_mock()
+            _c.side_effect = ValidationError('Something completely different')
+            self.assertRaises(ValidationError,
+                              self.redmine.project.create, 'pp', 'uu')
 
     def test_delete(self):
         patches = [patch.object(self.redmine.role, 'get'),

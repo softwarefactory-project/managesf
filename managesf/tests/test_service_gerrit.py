@@ -445,9 +445,12 @@ class TestSFGerritProjectManager(BaseSFGerritService):
         patches = [patch.object(self.gerrit.role, 'create'),
                    patch.object(self.gerrit.membership, 'create'),
                    patch.object(GerritUtils, 'create_project'),
-                   patch.object(self.gerrit.repository, 'create'), ]
+                   patch.object(self.gerrit.repository, 'create'),
+                   patch.object(GerritUtils, 'project_exists'), ]
         with nested(*patches) as (r_create, m_create,
-                                  create_project, rep_create):
+                                  create_project, rep_create,
+                                  project_exists):
+            project_exists.return_value = False
             self.gerrit.project.create('p_name', 'u_name')
             role_calls = [call('u_name',
                                'p_name-core',

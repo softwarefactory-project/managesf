@@ -17,7 +17,7 @@
 
 import logging
 
-from redmine.exceptions import ResourceNotFoundError
+from redmine.exceptions import ResourceNotFoundError, ValidationError
 
 from managesf.services import base
 from managesf.services import exceptions as exc
@@ -52,33 +52,99 @@ class RedmineProjectManager(base.ProjectManager):
                 else project_data['core-group-members'])
         dev = ([] if 'dev-group-members' not in project_data
                else project_data['dev-group-members'])
-        # create the project
-        self._create(project_name, description, private)
+        try:
+            # create the project
+            self._create(project_name, description, private)
+        except ValidationError as e:
+            if e.message == 'Identifier has already been taken':
+                # the project already exists, we assume it is normal
+                msg = '[%s] project %s exists already'
+                logger.debug(msg % (self.plugin.service_name,
+                                    project_name))
+            else:
+                # reraise, we don't know what's happening
+                logger.debug('[%s] %s' % (self.plugin.service_name, e))
+                raise e
         # set memberships
-        self.plugin.membership.create(requestor=username,
-                                      username=username,
-                                      project=project_name,
-                                      groups=['ptl-group'],
-                                      user_is_owner=True)
-        self.plugin.membership.create(requestor=username,
-                                      username=username,
-                                      project=project_name,
-                                      groups=['dev-group'],)
-        for m in ptl:
+        try:
             self.plugin.membership.create(requestor=username,
-                                          username=m,
+                                          username=username,
                                           project=project_name,
-                                          groups=['ptl-group'],)
-        for m in core:
+                                          groups=['ptl-group'],
+                                          user_is_owner=True)
+        except ValidationError as e:
+            if e.message == 'Identifier has already been taken':
+                msg = '[%s] %s is already PTL for %s'
+                logger.debug(msg % (self.plugin.service_name,
+                                    username,
+                                    project_name))
+            else:
+                # reraise, we don't know what's happening
+                logger.debug('[%s] %s' % (self.plugin.service_name, e))
+                raise e
+        try:
             self.plugin.membership.create(requestor=username,
-                                          username=m,
-                                          project=project_name,
-                                          groups=['core-group'],)
-        for m in dev:
-            self.plugin.membership.create(requestor=username,
-                                          username=m,
+                                          username=username,
                                           project=project_name,
                                           groups=['dev-group'],)
+        except ValidationError as e:
+            if e.message == 'Identifier has already been taken':
+                msg = '[%s] %s is already dev for %s'
+                logger.debug(msg % (self.plugin.service_name,
+                                    username,
+                                    project_name))
+            else:
+                # reraise, we don't know what's happening
+                logger.debug('[%s] %s' % (self.plugin.service_name, e))
+                raise e
+        for m in ptl:
+            try:
+                self.plugin.membership.create(requestor=username,
+                                              username=m,
+                                              project=project_name,
+                                              groups=['ptl-group'],)
+            except ValidationError as e:
+                if e.message == 'Identifier has already been taken':
+                    msg = '[%s] %s is already PTL for %s'
+                    logger.debug(msg % (self.plugin.service_name,
+                                        m,
+                                        project_name))
+                else:
+                    # reraise, we don't know what's happening
+                    logger.debug('[%s] %s' % (self.plugin.service_name, e))
+                    raise e
+        for m in core:
+            try:
+                self.plugin.membership.create(requestor=username,
+                                              username=m,
+                                              project=project_name,
+                                              groups=['core-group'],)
+            except ValidationError as e:
+                if e.message == 'Identifier has already been taken':
+                    msg = '[%s] %s is already core for %s'
+                    logger.debug(msg % (self.plugin.service_name,
+                                        m,
+                                        project_name))
+                else:
+                    # reraise, we don't know what's happening
+                    logger.debug('[%s] %s' % (self.plugin.service_name, e))
+                    raise e
+        for m in dev:
+            try:
+                self.plugin.membership.create(requestor=username,
+                                              username=m,
+                                              project=project_name,
+                                              groups=['dev-group'],)
+            except ValidationError as e:
+                if e.message == 'Identifier has already been taken':
+                    msg = '[%s] %s is already dev for %s'
+                    logger.debug(msg % (self.plugin.service_name,
+                                        m,
+                                        project_name))
+                else:
+                    # reraise, we don't know what's happening
+                    logger.debug('[%s] %s' % (self.plugin.service_name, e))
+                    raise e
 
         logger.info('[%s] project %s created' % (self.plugin.service_name,
                                                  project_name))
