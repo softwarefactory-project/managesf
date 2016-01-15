@@ -207,10 +207,9 @@ class GerritRepo(object):
                     branch = line.split('refs/heads/')[-1]
                     if not branch and branch in ['*', 'master']:
                         continue
-                    cmd = 'git checkout %s' % branch
+                    cmd = 'git checkout upstream/%s -b %s' % (branch, branch)
                     self._exec(cmd)
-                    cmd = 'git push -f origin upstream/%s:%s' % (branch,
-                                                                 branch)
+                    cmd = 'git push -f origin %s' % branch
                     self._exec(cmd)
 
     def review_changes(self, commit_msg):
