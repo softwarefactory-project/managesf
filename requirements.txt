@@ -1,5 +1,5 @@
 -e git+https://github.com/redhat-cip/pysflib.git#egg=pysflib
-pecan==1.0.1
+pecan==1.0.3
 WebOb==1.5.0a1
 gerritlib==0.4.0
 python-ldap==2.4.20

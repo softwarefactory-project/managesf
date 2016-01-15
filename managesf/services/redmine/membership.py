@@ -111,8 +111,8 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
         user_roles = self.plugin.role.get(requestor, project_name)
         if group is None:
             # delete every group
-            if ((not self.plugin.role.is_admin(requestor))
-                    and ('Manager' not in user_roles)):
+            if ((not self.plugin.role.is_admin(requestor)) and
+                    ('Manager' not in user_roles)):
                 msg = "[%s] Aborted because %s is not admin or Manager"
                 logger.debug(msg % (self.plugin.service_name, requestor))
                 raise exc.Unauthorized(msg % (self.plugin.service_name,
@@ -135,8 +135,8 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
                                                   requestor))
                 role_id = rm.get_role_id('Developer')
             else:
-                if ((not self.plugin.role.is_admin(requestor))
-                        and ('Manager' not in user_roles)):
+                if ((not self.plugin.role.is_admin(requestor)) and
+                        ('Manager' not in user_roles)):
                     msg = "[%s] Aborted because %s is not admin or Manager"
                     logger.debug(msg % (self.plugin.service_name, requestor))
                     raise exc.Unauthorized(msg % (self.plugin.service_name,
