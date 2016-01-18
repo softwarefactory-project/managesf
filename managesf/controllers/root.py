@@ -820,6 +820,20 @@ class TestsController(RestController):
         return True
 
 
+class ConfigController(RestController):
+    @expose('json')
+    def get(self):
+        permissions = {}
+        user = request.remote_user
+        admin = is_admin(user)
+        admin_only = bool(getattr(conf, 'project_create_administrator_only',
+                                  True))
+        if not admin and admin_only:
+            permissions['create_projects'] = False
+        else:
+            permissions['create_projects'] = True
+        return permissions
+
 load_services()
 
 
@@ -836,3 +850,4 @@ class RootController(object):
     tests = TestsController()
     services_users = ServicesUsersController()
     hooks = HooksController()
+    config = ConfigController()

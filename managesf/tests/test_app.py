@@ -17,7 +17,7 @@ import os
 
 from unittest import TestCase
 from webtest import TestApp
-from pecan import load_app
+from pecan import load_app, set_config
 from contextlib import nested
 from mock import Mock, patch
 
@@ -213,6 +213,26 @@ def project_get(*args, **kwargs):
 
 
 class TestManageSFAppProjectController(FunctionalTest):
+
+    def test_config(self):
+        response = self.app.set_cookie('auth_pubtkt', 'something')
+        # Test that the guest has no permissions
+        response = self.app.get('/config/')
+        self.assertEqual(200, response.status_int)
+        self.assertEqual(False, response.json['create_projects'])
+
+        # Test with an admin user
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        with patch('managesf.controllers.root.is_admin') as gia:
+            gia.return_value = True
+            response = self.app.get('/config/', extra_environ=environ)
+            self.assertEqual(True, response.json['create_projects'])
+            gia.assert_called_with(self.config['admin']['name'])
+
+        # Test with the permissions is set to false
+        set_config({'project_create_administrator_only': False})
+        response = self.app.get('/config/')
+        self.assertEqual(True, response.json['create_projects'])
 
     def test_project_get_all(self):
         ctx = [patch.object(SFGerritProjectManager, 'get'),
