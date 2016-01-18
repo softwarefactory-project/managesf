@@ -189,6 +189,14 @@ class CodeReviewManager(BaseCRUDManager):
     """Abstract class handling code reviews operations for a given
     gerrit-like service."""
 
+    def propose_test_definition(self, **kwargs):
+        """creates a review adding tests in the zuul pipelines for a project"""
+        raise exc.UnavailableActionError()
+
+    def propose_test_scripts(self, **kwargs):
+        """creates a review for template tests scripts on a project"""
+        raise exc.UnavailableActionError()
+
 
 @six.add_metaclass(abc.ABCMeta)
 class RoleManager(BaseCRUDManager):

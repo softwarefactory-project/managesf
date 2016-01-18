@@ -755,7 +755,7 @@ class TestProjectTestsController(FunctionalTest):
     def test_init_project_test(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
         ctx = [patch.object(SFGerritProjectManager, 'get'),
-               patch('managesf.controllers.gerrit.propose_test_definition')]
+               patch.object(SFGerritReviewManager, 'propose_test_definition')]
         with nested(*ctx) as (gp, ptd):
             gp.return_value = 'p1'
             resp = self.app.put_json('/tests/toto', {'project-scripts': False},
@@ -765,8 +765,8 @@ class TestProjectTestsController(FunctionalTest):
     def test_init_project_test_with_project_scripts(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
         ctx = [patch.object(SFGerritProjectManager, 'get'),
-               patch('managesf.controllers.gerrit.propose_test_definition'),
-               patch('managesf.controllers.gerrit.propose_test_scripts')]
+               patch.object(SFGerritReviewManager, 'propose_test_definition'),
+               patch.object(SFGerritReviewManager, 'propose_test_scripts')]
         with nested(*ctx) as (gp, ptd, pts):
             gp.return_value = 'p1'
             resp = self.app.put_json('/tests/toto', {'project-scripts': True},

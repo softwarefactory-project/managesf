@@ -28,6 +28,10 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 
+class LocalProcessError(Exception):
+    pass
+
+
 def _exec(cmd, cwd=None, env=None):
     cmd = shlex.split(cmd)
     ocwd = os.getcwd()
@@ -39,8 +43,10 @@ def _exec(cmd, cwd=None, env=None):
         std_out = subprocess.check_output(cmd, env=env, cwd=cwd,
                                           stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as err:
-        logger.exception(err)
-        raise
+        msg = '"%s" failed with error code %s: %s'
+        logger.exception(msg % (' '.join(cmd), err.returncode, err.output))
+        msg = '"%s" failed with error code %s'
+        raise LocalProcessError(msg % (' '.join(cmd), err.returncode))
 
     logger.info("[gerrit] cmd %s output" % cmd)
     logger.info(std_out)
@@ -90,6 +96,8 @@ class GerritRepo(object):
         # is not a registered user (author can be anything else)
         self.env['GIT_COMMITTER_NAME'] = self.conf.admin['name']
         self.env['GIT_COMMITTER_EMAIL'] = self.conf.admin['email']
+        # This var is used by git-review to set the remote via git review -s
+        self.env['USERNAME'] = self.conf.admin['name']
 
     def _exec(self, cmd):
         return _exec(cmd, cwd=self.infos['localcopy_path'], env=self.env)
@@ -214,7 +222,9 @@ class GerritRepo(object):
                     self._exec(cmd)
 
     def review_changes(self, commit_msg):
-        cmd = 'git review -s'
+        logger.info("[gerrit] Send a review via git review")
+        cmd = "ssh-agent bash -c 'ssh-add %s; git review -s'" %\
+              self.conf.gerrit['sshkey_priv_path']
         self._exec(cmd)
         cmd = "git commit -a --author '%s' -m'%s'" % (self.email,
                                                       commit_msg)

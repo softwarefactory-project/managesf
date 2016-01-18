@@ -24,7 +24,6 @@ from pecan.rest import RestController
 from pecan import request, response
 from stevedore import driver
 
-from managesf.controllers import gerrit as gerrit_controller
 from managesf.controllers import backup, localuser, introspection, htp
 from managesf.services import base, gerrit
 from managesf.services import exceptions
@@ -803,8 +802,10 @@ class TestsController(RestController):
             abort(404)
 
         try:
-            gerrit_controller.propose_test_definition(project_name,
-                                                      request.remote_user)
+            msg = 'Configuring job pipelines for project %s'
+            logger.debug(msg % project_name)
+            code_review.review.propose_test_definition(project_name,
+                                                       request.remote_user)
         except Exception as e:
             abort(500, detail=e.message)
         if request.json:
@@ -812,8 +813,10 @@ class TestsController(RestController):
 
         if project_scripts:
             try:
-                gerrit_controller.propose_test_scripts(project_name,
-                                                       request.remote_user)
+                msg = 'Adding tests to config for project %s'
+                logger.debug(msg % project_name)
+                code_review.review.propose_test_scripts(project_name,
+                                                        request.remote_user)
             except Exception as e:
                 abort(500, detail=e.message)
 
