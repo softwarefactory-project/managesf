@@ -909,7 +909,8 @@ class TestManageSFServicesUserController(FunctionalTest):
 
     def test_delete_user_in_backends_non_admin(self):
         environ = {'REMOTE_USER': 'dio'}
-        response = self.app.delete('/services_users/iggy',
+        params = {'username': 'iggy'}
+        response = self.app.delete('/services_users/', params,
                                    extra_environ=environ, status="*")
         self.assertEqual(response.status_int, 401)
 
@@ -917,10 +918,14 @@ class TestManageSFServicesUserController(FunctionalTest):
         environ = {'REMOTE_USER': self.config['admin']['name']}
         ctx = [patch.object(SFRedmineUserManager, 'delete'), ]
         with nested(*ctx) as (redmine_delete, ):
-            response = self.app.delete('/services_users/iggy',
+            response = self.app.delete('/services_users/?username=iggy',
                                        extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 204)
-            redmine_delete.assert_called_with(username='iggy')
+            redmine_delete.assert_called_with(username='iggy', email=None)
+            response = self.app.delete('/services_users/?email=iggy',
+                                       extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 204)
+            redmine_delete.assert_called_with(username=None, email='iggy')
 
 
 class TestHooksController(FunctionalTest):

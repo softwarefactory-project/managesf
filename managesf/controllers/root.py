@@ -532,24 +532,25 @@ class ServicesUsersController(RestController):
         response.status = 201
 
     @expose('json')
-    def get(self, username):
+    def get(self, **kwargs):
         # Allowed for all authenticated users
         if request.remote_user is None:
             abort(403)
         # TODO(mhu) this must be independent from redmine
         tracker = [s for s in SF_SERVICES
                    if isinstance(s, base.BaseIssueTrackerServicePlugin)][0]
-        return tracker.user.get(username=username)
+        return tracker.user.get(email=kwargs.get('email'),
+                                username=kwargs.get('username'))
 
     @expose()
-    def delete(self, username):
+    def delete(self, email=None, username=None):
         if not is_admin(request.remote_user):
             abort(401,
                   detail='Deleting users is limited to administrators')
         try:
             for service in SF_SERVICES:
                 try:
-                    service.user.delete(username=username)
+                    service.user.delete(email=email, username=username)
                 except exceptions.UnavailableActionError:
                     msg = '[%s] service has no authenticated user backend'
                     logger.debug(msg % service.service_name)
