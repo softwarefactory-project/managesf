@@ -18,11 +18,11 @@
 import json
 import logging
 
+from gerritlib import gerrit as G
 import requests
 import sqlalchemy
 
 from managesf.services import base
-from managesf.services import exceptions as exc
 
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,36 @@ class SFGerritUserManager(base.UserManager):
     def delete(self, email=None, username=None):
         if not (bool(email) != bool(username)):
             raise TypeError('mail OR username needed')
-        # it's ... complicated. Also removing users will screw up reviews they
-        # contributed to
-        msg = 'Gerrit does not support account deletion'
-        raise exc.UnavailableActionError(msg)
+        user_info = self.get(email, username) or {}
+        account_id = user_info.get('_account_id')
+        if not account_id:
+            msg = '[%s] %s not found, skip deletion'
+            logger.debug(msg % (self.plugin.service_name,
+                                email or username))
+        else:
+            # remove project memberships
+            sql = ("DELETE FROM account_group_members "
+                   "WHERE account_id=%s;\n" % account_id)
+            # remove from accounts table
+            sql += ("DELETE FROM accounts "
+                    "WHERE account_id=%s;\n" % account_id)
+            # remove from external ids
+            sql += ("DELETE FROM account_external_ids "
+                    "WHERE account_id=%s;" % account_id)
+        try:
+            self.session.execute(sql)
+            self.session.commit()
+        except Exception as e:
+            msg = "[%s] Could not delete user %s in base: %s"
+            logger.debug(msg % (self.plugin.service_name,
+                                email or username, e.message))
+        # flush gerrit caches
+        ge = G.Gerrit(self.plugin.conf['host'],
+                      self.plugin._full_conf.admin['name'],
+                      keyfile=self.plugin.conf['sshkey_priv_path'])
+        for cache in ('accounts', 'accounts_byemail', 'accounts_byname',
+                      'groups_members'):
+            ge._ssh('gerrit flush-caches --cache %s' % cache)
+        logger.debug('[%s] %s (id %s) deleted' % (self.plugin.service_name,
+                                                  email or username,
+                                                  account_id))

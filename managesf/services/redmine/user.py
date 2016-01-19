@@ -103,3 +103,6 @@ class SFRedmineUserManager(RedmineUserManager):
         rm = self.plugin.get_client()
         user_id = self.get(email, username)
         rm.r.user.delete(user_id)
+        logger.debug('[%s] %s (id %s) deleted' % (self.plugin.service_name,
+                                                  email or username,
+                                                  user_id))

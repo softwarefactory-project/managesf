@@ -149,12 +149,28 @@ class TestSFGerritUserManager(BaseSFGerritService):
         self.assertRaises(TypeError,
                           self.gerrit.user.delete,
                           'mail@address.com', 'username')
-        self.assertRaises(exc.UnavailableActionError,
-                          self.gerrit.user.delete,
-                          'mail@address.com', None)
-        self.assertRaises(exc.UnavailableActionError,
-                          self.gerrit.user.delete,
-                          None, 'username')
+        patches = [patch('managesf.services.gerrit.user.requests.get'),
+                   patch.object(self.gerrit.user, 'session'),
+                   patch('managesf.services.gerrit.user.G.Gerrit._ssh'), ]
+        with nested(*patches) as (get, session, ssh):
+            get.return_value = Mock(status_code=200, content=self.user_data)
+            sql = """DELETE FROM account_group_members WHERE account_id=5;
+DELETE FROM accounts WHERE account_id=5;
+DELETE FROM account_external_ids WHERE account_id=5;"""
+            self.gerrit.user.delete(email='jojo@starplatinum.dom')
+            session.execute.assert_called_with(sql)
+            calls = [call('gerrit flush-caches --cache %s' % c)
+                     for c in ('accounts', 'accounts_byemail',
+                               'accounts_byname', 'groups_members')]
+            ssh.assert_has_calls(calls)
+            session.reset_mock()
+            ssh.reset_mock()
+            self.gerrit.user.delete(username='jojo@starplatinum.dom')
+            session.execute.assert_called_with(sql)
+            calls = [call('gerrit flush-caches --cache %s' % c)
+                     for c in ('accounts', 'accounts_byemail',
+                               'accounts_byname', 'groups_members')]
+            ssh.assert_has_calls(calls)
 
 
 class TestSFGerritBackupManager(BaseSFGerritService):
