@@ -14,6 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from pecan import conf
 from pecan import expose
 from pecan.rest import RestController
 import pkg_resources
@@ -32,7 +33,5 @@ class IntrospectionController(RestController):
             'name': 'managesf',
             'version': self.get_managesf_version(),
             # TODO(mhu) this should not be hardcoded. Wait for plugins!
-            'services': ['zuul', 'jenkins', 'lodgeit',
-                         'etherpad', 'managesf'],
-            'auth_services': ['gerrit', 'redmine'], }}
+            'services': conf.services, }}
         return return_value

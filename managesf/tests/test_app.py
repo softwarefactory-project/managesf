@@ -84,11 +84,8 @@ class TestManageSFIntrospectionController(FunctionalTest):
         response = self.app.get('/about/').json
         self.assertEqual('managesf',
                          response['service']['name'])
-        self.assertEqual(set(['zuul', 'jenkins', 'lodgeit',
-                              'etherpad', 'managesf']),
+        self.assertEqual(set(self.config['services']),
                          set(response['service']['services']))
-        self.assertEqual(set(['gerrit', 'redmine']),
-                         set(response['service']['auth_services']))
 
 
 class TestManageSFAppLocaluserController(FunctionalTest):
