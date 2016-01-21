@@ -15,11 +15,9 @@
 # under the License.
 
 
-import json
 import logging
 
 from gerritlib import gerrit as G
-import requests
 import sqlalchemy
 
 from managesf.services import base
@@ -41,19 +39,18 @@ class SFGerritUserManager(base.UserManager):
         Session = sqlalchemy.orm.sessionmaker(bind=engine)
         self.session = Session()
 
-    def _add_sshkeys(self, username, keys, cookie):
+    def _add_sshkeys(self, username, keys):
         """add keys for username."""
-        url = "%s/r/a/accounts/%s/sshkeys" % (self.plugin.conf['url'],
-                                              username)
+        g_client = self.plugin.get_client()
         for key in keys:
             msg = "[%s] Adding key %s for user %s"
             logger.debug(msg % (self.plugin.service_name,
                                 key.get('key'),
                                 username))
-            resp = requests.post(url, data=key.get('key'),
-                                 cookies=cookie)
-            if resp.status_code > 399:
-                logger.debug('Could not add key: %s' % resp.content)
+            try:
+                g_client.add_pubkey(key.get('key'), user=username)
+            except Exception as e:
+                logger.debug('Could not add key: %s' % e)
 
     def _add_account_as_external(self, account_id, username):
         sql = ("INSERT IGNORE INTO account_external_ids VALUES"
@@ -71,35 +68,24 @@ class SFGerritUserManager(base.UserManager):
 
     def create(self, username, email, full_name, ssh_keys=None, **kwargs):
         _user = {"name": unicode(full_name), "email": str(email)}
-        data = json.dumps(_user, default=lambda o: o.__dict__)
-        # get our cookie from the gerrit client
         g_client = self.plugin.get_client()
-        cookie = g_client.g.kwargs['cookies']
-        headers = {"Content-type": "application/json"}
-        url = "%s/r/a/accounts/%s" % (self.plugin.conf['url'],
-                                      username)
-        requests.put(url, data=data, headers=headers,
-                     cookies=cookie)
-
-        resp = requests.get(url, headers=headers,
-                            cookies=cookie)
-        data = resp.content[4:]  # there is some garbage at the beginning
+        user = g_client.create_account(username, _user)
         try:
-            account_id = json.loads(data).get('_account_id')
-        except:
+            account_id = user.get('_account_id')
+        except Exception as e:
             account_id = None
             msg = "[%s] could not create user %s, service returned: %s"
             logger.error(msg % (self.plugin.service_name,
-                                username, resp.content))
+                                username, e))
             raise Exception(msg % (self.plugin.service_name,
-                                   username, resp.content))
+                                   username, e))
 
         fetch_ssh_keys = False
         if account_id:
             fetch_ssh_keys = self._add_account_as_external(account_id,
                                                            username)
         if ssh_keys and fetch_ssh_keys:
-            self._add_sshkeys(username, ssh_keys, cookie)
+            self._add_sshkeys(username, ssh_keys)
         logger.debug('[%s] user %s created' % (self.plugin.service_name,
                                                username))
 
@@ -111,14 +97,8 @@ class SFGerritUserManager(base.UserManager):
         else:
             query = email
         g_client = self.plugin.get_client()
-        cookie = g_client.g.kwargs['cookies']
-        url = "%s/r/a/accounts/%s" % (self.plugin.conf['url'],
-                                      query)
-        headers = {"Content-type": "application/json"}
-        resp = requests.get(url, headers=headers,
-                            cookies=cookie)
         try:
-            return json.loads(resp.content[4:])
+            return g_client.get_account(query)
         except:
             return None
         return None
@@ -132,16 +112,16 @@ class SFGerritUserManager(base.UserManager):
             msg = '[%s] %s not found, skip deletion'
             logger.debug(msg % (self.plugin.service_name,
                                 email or username))
-        else:
-            # remove project memberships
-            sql = ("DELETE FROM account_group_members "
-                   "WHERE account_id=%s;\n" % account_id)
-            # remove from accounts table
-            sql += ("DELETE FROM accounts "
-                    "WHERE account_id=%s;\n" % account_id)
-            # remove from external ids
-            sql += ("DELETE FROM account_external_ids "
-                    "WHERE account_id=%s;" % account_id)
+            return
+        # remove project memberships
+        sql = ("DELETE FROM account_group_members "
+               "WHERE account_id=%s;\n" % account_id)
+        # remove from accounts table
+        sql += ("DELETE FROM accounts "
+                "WHERE account_id=%s;\n" % account_id)
+        # remove from external ids
+        sql += ("DELETE FROM account_external_ids "
+                "WHERE account_id=%s;" % account_id)
         try:
             self.session.execute(sql)
             self.session.commit()

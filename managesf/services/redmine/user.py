@@ -102,7 +102,17 @@ class SFRedmineUserManager(RedmineUserManager):
             raise TypeError('mail OR username needed')
         rm = self.plugin.get_client()
         user_id = self.get(email, username)
-        rm.r.user.delete(user_id)
-        logger.debug('[%s] %s (id %s) deleted' % (self.plugin.service_name,
-                                                  email or username,
-                                                  user_id))
+        if not user_id:
+            msg = '[%s] %s not found, skip deletion'
+            logger.debug(msg % (self.plugin.service_name,
+                                email or username))
+        else:
+            try:
+                rm.r.user.delete(user_id)
+            except ResourceNotFoundError:
+                msg = '[%s] %s not found, skip deletion'
+                logger.debug(msg % (self.plugin.service_name,
+                                    email or username))
+            logger.debug('[%s] %s (id %s) deleted' % (self.plugin.service_name,
+                                                      email or username,
+                                                      user_id))

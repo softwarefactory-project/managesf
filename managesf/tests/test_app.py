@@ -19,7 +19,7 @@ from unittest import TestCase
 from webtest import TestApp
 from pecan import load_app, set_config
 from contextlib import nested
-from mock import Mock, patch
+from mock import patch
 
 from basicauth import encode
 from redmine.exceptions import ValidationError
@@ -802,8 +802,7 @@ class TestManageSFServicesUserController(FunctionalTest):
                       patch.object(g_user.SFGerritUserManager, '_add_sshkeys'),
                       patch.object(g_user.SFGerritUserManager,
                                    '_add_account_as_external'),
-                      patch('managesf.services.gerrit.user.requests.put'),
-                      patch('managesf.services.gerrit.user.requests.get'),
+                      patch('pysflib.sfgerrit.GerritUtils.create_account'),
                       patch.object(SFRedmineUserManager, 'get'),
                       patch.object(g_user.SFGerritUserManager, 'get'), ]
         with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
@@ -822,26 +821,18 @@ class TestManageSFServicesUserController(FunctionalTest):
                                              ssh_keys=infos['ssh_keys'])
 
         with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
-                                     external, put, get,
+                                     external, create_account,
                                      r_get, g_get, ):
             get_cookie.return_value = 'admin_cookie'
             r_get.return_value = None
             g_get.return_value = None
-            created = ''')]}\'
-{
-  "_account_id": 5,
-  "name": "Jotaro Kujoh",
-  "email": "jojo@starplatinum.dom",
-  "username": "jojo",
-  "avatars": [
-    {
-      "url": "meh",
-      "height": 26
-    }
-  ]
-}'''
-            get.return_value = Mock(status_code=200, content=created)
-
+            created = {"_account_id": 5,
+                       "name": "Jotaro Kujoh",
+                       "email": "jojo@starplatinum.dom",
+                       "username": "jojo",
+                       "avatars": [{"url": "meh",
+                                    "height": 26}]}
+            create_account.return_value = created
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
@@ -858,7 +849,7 @@ class TestManageSFServicesUserController(FunctionalTest):
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
         with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
-                                     external, put, get,
+                                     external, create_account,
                                      r_get, g_get, ):
             get_cookie.return_value = 'admin_cookie'
             # assert that user already existing in backend won't fail
@@ -871,7 +862,7 @@ class TestManageSFServicesUserController(FunctionalTest):
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
         with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
-                                     external, put, get,
+                                     external, create_account,
                                      r_get, g_get, ):
             get_cookie.return_value = 'admin_cookie'
             # assert that user found in backend will skip gracefully
