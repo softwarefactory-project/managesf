@@ -67,7 +67,8 @@ class SFGerritProjectManager(base.ProjectManager):
                 'upstream-ssh-key': False,
                 'private': False,
                 'description': '',
-                'add-branches': False}
+                'add-branches': False,
+                'readonly': False}
         data.update(project_data)
 
         msg = "[%s] Init project: %s"
@@ -116,7 +117,8 @@ class SFGerritProjectManager(base.ProjectManager):
                                           data['upstream'],
                                           data['private'],
                                           data['upstream-ssh-key'],
-                                          data['add-branches'])
+                                          data['add-branches'],
+                                          data['readonly'])
             msg = "[%s] project %s created"
             logger.info(msg % (self.plugin.service_name, project_name))
 

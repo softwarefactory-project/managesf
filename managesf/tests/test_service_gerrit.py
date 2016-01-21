@@ -220,6 +220,39 @@ defaultbranch=master
             master_paths = {'.gitreview': gitreview}
             push_master.assert_called_with(master_paths)
 
+    def test_create_readonly(self):
+        patches = [patch.object(GerritUtils,
+                                'get_group_id'),
+                   patch.object(utils.GerritRepo,
+                                'clone'),
+                   patch.object(utils.GerritRepo,
+                                'push_config'),
+                   patch.object(utils.GerritRepo,
+                                'push_master')]
+
+        def ggi(prj):
+            return {'ore': 1, 'ptl': 2, 'dev': 3}.get(prj[-3:], 0)
+
+        with nested(*patches) as (get_group_id,
+                                  clone,
+                                  push_config,
+                                  push_master):
+            get_group_id.side_effect = ggi
+            self.gerrit.repository.create('proj', 'proj description',
+                                          None,
+                                          False,
+                                          readonly=True)
+            config = push_config.call_args[0][0]['project.config']
+            workflows = [
+                "label-Workflow = -1..+0 group proj-core",
+                "label-Workflow = -1..+0 group proj-ptl",
+                "label-Workflow = -1..+0 group Administrators",
+                "label-Workflow = -1..+0 group Project Owners",
+                "label-Workflow = -1..+0 group Registered Users"]
+            for workflow in workflows:
+                self.assertTrue(workflow in config)
+            self.assertFalse('label-Workflow = -1..+1' in config)
+
 
 def ggi_side_effect(grp_name):
     return {'testproject-ptl': 'ptl_gid',
@@ -455,7 +488,7 @@ class TestSFGerritProjectManager(BaseSFGerritService):
             r_create.assert_has_calls(role_calls)
             create_project.assert_called_with('p_name', '', ['p_name-ptl'])
             rep_create.assert_called_with('p_name', '', None, False, False,
-                                          False)
+                                          False, False)
             r_create.reset_mock()
             create_project.reset_mock()
             rep_create.reset_mock()

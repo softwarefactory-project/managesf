@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class SFGerritRepositoryManager(base.RepositoryManager):
 
     def create(self, prj_name, prj_desc, upstream, private, ssh_key=None,
-               add_branches=False):
+               add_branches=False, readonly=False):
         logger.info("[%s] Init project repo: %s" % (self.plugin.service_name,
                                                     prj_name))
         ge = self.plugin.get_client()
@@ -51,6 +51,8 @@ class SFGerritRepositoryManager(base.RepositoryManager):
         prefix = ''
         if private:
             prefix = 'private-'
+        if readonly:
+            prefix = 'readonly-%s' % prefix
         paths['project.config'] = file(template(prefix +
                                        'project.config')).read() % grps
         paths['groups'] = file(template(prefix + 'groups')).read() % grps
