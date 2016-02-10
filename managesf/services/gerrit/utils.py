@@ -17,7 +17,7 @@
 
 import os
 import re
-import shutil
+# import shutil
 import shlex
 import stat
 import logging
@@ -83,8 +83,10 @@ class GerritRepo(object):
         self.infos = {}
         self.infos['localcopy_path'] = os.path.join(
             tempfile.mkdtemp(), 'clone-%s' % prj_name)
-        if os.path.isdir(self.infos['localcopy_path']):
-            shutil.rmtree(self.infos['localcopy_path'])
+        try:
+            os.makedirs(self.infos['localcopy_path'])
+        except OSError:
+            pass
         self.email = "%(admin)s <%(email)s>" % \
                      {'admin': self.conf.admin['name'],
                       'email': self.conf.admin['email']}
@@ -112,7 +114,7 @@ class GerritRepo(object):
                'name': self.prj_name,
                'localcopy_path': self.infos['localcopy_path']
                }
-        _exec(cmd, env=self.env)
+        self._exec(cmd)
 
     @staticmethod
     def check_upstream(remote, ssh_key=None):
