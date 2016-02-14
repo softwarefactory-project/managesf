@@ -26,6 +26,7 @@ from pecan import request, response
 from stevedore import driver
 
 from managesf.controllers import backup, localuser, introspection, htp, pages
+from managesf.controllers import SFuser
 from managesf.services import base, gerrit
 from managesf.services import exceptions
 
@@ -78,6 +79,13 @@ def _decode_project_name(name):
         except Exception:
             return name[3:]
     return name
+
+
+class SFManager:
+    user = SFuser.SFUserManager()
+
+
+sfmanager = SFManager()
 
 
 def is_admin(user):
@@ -613,6 +621,21 @@ class ServicesUsersController(RestController):
         if not infos or not infos.get('username'):
             abort(400, detail='Incomplete user information: %r' % infos)
         try:
+            # In this version we cannot lookup just with cauth_id
+            known_user = sfmanager.user.get(username=infos['username'],
+                                            email=infos['email'],
+                                            fullname=infos['full_name'])
+            # if we have this user and a bogus cauth_id, update it
+            if known_user:
+                if infos.get('external_id') and \
+                   (infos.get('external_id') != known_user['cauth_id']):
+                    sfmanager.user.reset_cauth_id(known_user['id'],
+                                                  infos['external_id'])
+            else:
+                sfmanager.user.create(username=infos['username'],
+                                      email=infos['email'],
+                                      fullname=infos['full_name'],
+                                      cauth_id=infos.get('external_id'))
             for service in SF_SERVICES:
                 try:
                     if service.user.get(username=infos.get('username')) or\
@@ -637,14 +660,10 @@ class ServicesUsersController(RestController):
         # Allowed for all authenticated users
         if request.remote_user is None:
             abort(403)
-        # TODO(mhu) this must be independent from redmine
-        tracker = [s for s in SF_SERVICES
-                   if isinstance(s, base.BaseIssueTrackerServicePlugin)][0]
-        return tracker.user.get(email=kwargs.get('email'),
-                                username=kwargs.get('username'))
+        return sfmanager.user.get(**kwargs)
 
     @expose()
-    def delete(self, email=None, username=None):
+    def delete(self, id=None, email=None, username=None):
         if not is_admin(request.remote_user):
             abort(401,
                   detail='Deleting users is limited to administrators')
@@ -655,6 +674,7 @@ class ServicesUsersController(RestController):
                 except exceptions.UnavailableActionError:
                     msg = '[%s] service has no authenticated user backend'
                     logger.debug(msg % service.service_name)
+            sfmanager.user.delete(id=id, email=email, username=username)
         except Exception as e:
             return report_unhandled_error(e)
         response.status = 204

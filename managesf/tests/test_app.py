@@ -876,9 +876,6 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos = {'email': 'jojo@starplatinum.dom',
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
-#        ctx = [patch.object(SFRedmineUserManager, 'create'),
-#               patch.object(RedmineUtils, 'create_user'), ]
-#        with nested(*ctx) as (redmine_create, create_user, ):
         response = self.app.post_json('/services_users/', infos,
                                       extra_environ=environ, status="*")
         self.assertEqual(response.status_int, 401)
@@ -1012,6 +1009,67 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertEqual(response.status_int, 204)
             redmine_delete.assert_called_with(username=None, email='iggy')
             gerrit_delete.assert_called_with(username=None, email='iggy')
+            # deleted from SF backend too
+            iggy = self.app.get('/services_users/?username=iggy',
+                                extra_environ=environ, status="*")
+            self.assertEqual({}, iggy.json)
+
+    def test_get_user(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos_jojo = {'email': 'jojo@starplatinum.dom',
+                      'ssh_keys': ['ora', 'oraora'],
+                      'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
+        infos_poln = {'email': 'polnareff@chariot.dom',
+                      'ssh_keys': ['ora', 'oraora'],
+                      'full_name': 'Polnareff', 'username': 'chariot'}
+        ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(g_user.SFGerritUserManager, 'create'),
+               patch.object(SFRedmineUserManager, 'get'),
+               patch.object(g_user.SFGerritUserManager, 'get'), ]
+        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+            r_get.return_value = None
+            g_get.return_value = None
+            response = self.app.post_json('/services_users/', infos_jojo,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+            response = self.app.post_json('/services_users/', infos_poln,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+            # endpoint allowed to all authenticated users
+            environ = {'REMOTE_USER': 'dio'}
+            jojo = self.app.get('/services_users/?username=jojo',
+                                extra_environ=environ, status="*")
+            self.assertEqual(200, jojo.status_int)
+            self.assertEqual('Jotaro Kujoh', jojo.json.get('fullname'))
+            self.assertTrue('id' in jojo.json.keys())
+            self.assertEqual('-1', jojo.json.get('cauth_id'))
+            jojo = self.app.get('/services_users/?fullname=Jotaro%20Kujoh',
+                                extra_environ=environ, status="*")
+            self.assertEqual(200, jojo.status_int)
+            self.assertEqual('Jotaro Kujoh', jojo.json.get('fullname'))
+            self.assertTrue('id' in jojo.json.keys())
+            self.assertEqual('-1', jojo.json.get('cauth_id'))
+            # no user
+            jojo = self.app.get('/services_users/?username=dio',
+                                extra_environ=environ, status="*")
+            self.assertEqual(200, jojo.status_int)
+            self.assertEqual({}, jojo.json)
+            # retrieve all users
+            jojo = self.app.get('/services_users/',
+                                extra_environ=environ, status="*")
+            self.assertEqual(200, jojo.status_int)
+            self.assertEqual(2, len(jojo.json))
+            # update external id
+            infos_jojo = {'email': 'jojo@starplatinum.dom',
+                          'ssh_keys': ['ora', 'oraora'],
+                          'full_name': 'Jotaro Kujoh', 'username': 'jojo',
+                          'external_id': 99}
+            environ = {'REMOTE_USER': self.config['admin']['name']}
+            response = self.app.post_json('/services_users/', infos_jojo,
+                                          extra_environ=environ, status="*")
+            jojo = self.app.get('/services_users/?username=jojo',
+                                extra_environ=environ, status="*")
+            self.assertEqual('99', jojo.json.get('cauth_id'))
 
 
 class TestHooksController(FunctionalTest):

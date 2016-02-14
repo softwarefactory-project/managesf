@@ -13,15 +13,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import logging
+
 from pecan import conf  # noqa
-from sqlalchemy import create_engine, Column, String, exc, event
+from sqlalchemy import create_engine, Column, String, Integer, exc, event
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.ext.declarative import declarative_base
 
 
 Base = declarative_base()
 engine = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def row2dict(row):
@@ -54,6 +59,109 @@ def checkout_listener(dbapi_con, con_record, con_proxy):
             raise exc.DisconnectionError()
         else:
             raise
+
+
+class SFUser(Base):
+    __tablename__ = 'SF_USERS'
+    id = Column(Integer(), primary_key=True)
+    username = Column(String(255), nullable=False, unique=True)
+    fullname = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=False, unique=True)
+    cauth_id = Column(Integer(), nullable=False)
+
+
+class SFUserCRUD:
+    def get(self, id=None, username=None, email=None,
+            fullname=None, cauth_id=None):
+        session = start_session()
+        if (id or username or email or fullname or cauth_id):
+            filtering = {}
+            if id:
+                filtering['id'] = id
+            if username:
+                filtering['username'] = username
+            if email:
+                filtering['email'] = email
+            if fullname:
+                filtering['fullname'] = fullname
+            if cauth_id:
+                filtering['cauth_id'] = cauth_id
+            try:
+                ret = session.query(SFUser).filter_by(**filtering).one()
+                return row2dict(ret)
+            except MultipleResultsFound:
+                # TODO(mhu) find a better Error
+                raise KeyError('search returned more than one result')
+            except NoResultFound:
+                return {}
+        else:
+            # all()
+            return [row2dict(ret) for ret in session.query(SFUser)]
+
+    def update(self, id, username=None, email=None,
+               fullname=None, cauth_id=None):
+        session = start_session()
+        try:
+            ret = session.query(SFUser).filter_by(id=id).one()
+            if username:
+                ret.username = username
+            if email:
+                ret.email = email
+            if fullname:
+                ret.fullname = fullname
+            if cauth_id:
+                ret.cauth_id = cauth_id
+            session.commit()
+        except MultipleResultsFound:
+            # TODO(mhu) find a better Error
+            raise KeyError('search returned more than one result')
+        except NoResultFound:
+            logger.warn("Could not update user %s: not found" % id)
+            return
+
+    def create(self, username, email,
+               fullname, cauth_id=None):
+        session = start_session()
+        if username and email and fullname:
+            # assign a dummy value in case we lack the information
+            # as is likely to happen when migrating from a previous version.
+            # TODO(mhu) remove these for version n+2
+            cid = cauth_id or -1
+            user = SFUser(username=username,
+                          email=email,
+                          fullname=fullname,
+                          cauth_id=cid)
+            session.add(user)
+            session.commit()
+            return user.id
+        else:
+            msg = "Missing info required for user creation: %s|%s|%s"
+            raise KeyError(msg % (username, email, fullname))
+
+    def delete(self, id=None, username=None, email=None,
+               fullname=None, cauth_id=None):
+        session = start_session()
+        filtering = {}
+        if id:
+            filtering['id'] = id
+        if username:
+            filtering['username'] = username
+        if email:
+            filtering['email'] = email
+        if fullname:
+            filtering['fullname'] = fullname
+        if cauth_id:
+            filtering['cauth_id'] = cauth_id
+        try:
+            ret = session.query(SFUser).filter_by(**filtering).one()
+            session.delete(ret)
+            session.commit()
+            return True
+        except MultipleResultsFound:
+            # TODO(mhu) find a better Error
+            raise KeyError('Too many candidates for deletion')
+        except NoResultFound:
+            return False
 
 
 def init_model():
