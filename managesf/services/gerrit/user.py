@@ -88,6 +88,7 @@ class SFGerritUserManager(base.UserManager):
             self._add_sshkeys(username, ssh_keys)
         logger.debug('[%s] user %s created' % (self.plugin.service_name,
                                                username))
+        return account_id
 
     def get(self, email=None, username=None):
         if not (bool(email) != bool(username)):

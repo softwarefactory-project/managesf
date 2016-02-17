@@ -649,6 +649,40 @@ class LocalUserBindController(RestController):
 
 class ServicesUsersController(RestController):
 
+    def _update(self, user_id, infos):
+        sfmanager.user.update(user_id,
+                              username=infos.get('username'),
+                              email=infos.get('email'),
+                              fullname=infos.get('full_name'))
+        for service in SF_SERVICES:
+            s_id = sfmanager.user.mapping.get_service_mapping(
+                service.service_name,
+                user_id)
+            if s_id:
+                # TODO(mhu) Update calls are not implemented in the service
+                # plugins; this will be done in a future US/patch
+                try:
+                    service.user.update(uid=s_id, **infos)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] cannot update user data: unavailable action'
+                    logger.debug(msg % service.service_name)
+            else:
+                full_name = infos.get('full_name')
+                username = infos.get('username')
+                ssh_keys = infos.get('ssh_keys', [])
+                email = infos.get('email')
+                try:
+                    s_id = service.user.create(username=username,
+                                               email=email,
+                                               full_name=full_name,
+                                               ssh_keys=ssh_keys)
+                    sfmanager.user.mapping.set(user_id,
+                                               service.service_name,
+                                               s_id)
+                except exceptions.UnavailableActionError:
+                    msg = '[%s] has no authenticated user backend'
+                    logger.debug(msg % service.service_name)
+
     @expose()
     def post(self):
         if not is_admin(request.remote_user):
@@ -664,33 +698,90 @@ class ServicesUsersController(RestController):
                                             fullname=infos['full_name'])
             # if we have this user and a bogus cauth_id, update it
             if known_user:
-                if infos.get('external_id') and \
-                   (infos.get('external_id') != known_user['cauth_id']):
+                msg = 'found user #%(id)s %(username)s (%(email)s)'
+                logger.debug(msg % known_user)
+                e_id = infos.get('external_id')
+                if e_id and int(e_id) != int(known_user['cauth_id']):
+                    logger.debug('Update cauth ID - This is normal if'
+                                 'cauth was reinitialized')
                     sfmanager.user.reset_cauth_id(known_user['id'],
-                                                  infos['external_id'])
-            else:
-                sfmanager.user.create(username=infos['username'],
-                                      email=infos['email'],
-                                      fullname=infos['full_name'],
-                                      cauth_id=infos.get('external_id'))
-            for service in SF_SERVICES:
-                try:
-                    if service.user.get(username=infos.get('username')) or\
-                       service.user.get(username=infos.get('email')):
-                        msg = '[%s] user %s exists, skipping creation'
-                        logger.debug(msg % (service.service_name,
-                                            infos.get('username')))
-                        continue
-                    service.user.create(username=infos.get('username'),
-                                        email=infos.get('email'),
-                                        full_name=infos.get('full_name'),
-                                        ssh_keys=infos.get('ssh_keys', []))
-                except exceptions.UnavailableActionError:
-                    msg = '[%s] service has no authenticated user backend'
-                    logger.debug(msg % service.service_name)
+                                                  e_id)
+                u = known_user['id']
+                self._update(u, infos)
+            # maybe we know this user by cauth_id but her details changed
+            elif not known_user and infos.get('external_id', -1) != -1:
+                known_user = sfmanager.user.get(cauth_id=infos['external_id'])
+                if known_user:
+                    msg = ('found user #%(id)s %(username)s (%(email)s) '
+                           'by cauth ID #%(cauth_id)s, user needs update')
+                    logger.debug(msg % known_user)
+                    u = known_user['id']
+                    self._update(u, infos)
+            # if we still cannot find it, let's create it
+            if not known_user:
+                u = sfmanager.user.create(username=infos['username'],
+                                          email=infos['email'],
+                                          fullname=infos['full_name'],
+                                          cauth_id=infos.get('external_id'))
+                self._create_user_in_services(u, infos)
         except Exception as e:
             return report_unhandled_error(e)
         response.status = 201
+
+    def _create_user_in_services(self, user_id, infos):
+        for service in SF_SERVICES:
+            try:
+                s_id = (service.user.get(username=infos.get('username')) or
+                        service.user.get(username=infos.get('email')))
+                if s_id:
+                    msg = '[%s] user %s exists, skipping creation'
+                    logger.debug(msg % (service.service_name,
+                                        infos.get('username')))
+                    mapped = sfmanager.user.mapping.get_user_mapping(
+                        service.service_name,
+                        s_id)
+                    if not mapped:
+                        sfmanager.user.mapping.set(user_id,
+                                                   service.service_name,
+                                                   s_id)
+                        msg = '[%s] user %s mapped to id %s'
+                        logger.debug(msg % (service.service_name,
+                                            infos.get('username'),
+                                            s_id))
+                else:
+                    full_name = infos.get('full_name')
+                    username = infos.get('username')
+                    ssh_keys = infos.get('ssh_keys', [])
+                    email = infos.get('email')
+                    s_id = service.user.create(username=username,
+                                               email=email,
+                                               full_name=full_name,
+                                               ssh_keys=ssh_keys)
+                    # we might have a mapping, but to a wrong user id in the
+                    # service (because the user existed before but was removed
+                    # directly from the service, for example)
+                    mapped = sfmanager.user.mapping.get_service_mapping(
+                        service.service_name,
+                        user_id)
+                    if mapped and mapped != s_id:
+                        msg = '[%s] user %s wrongly mapped to id %s, removing'
+                        logger.debug(msg % (service.service_name,
+                                            infos.get('username'),
+                                            mapped))
+                        sfmanager.user.mapping.delete(user_id,
+                                                      service.service_name,
+                                                      mapped)
+                    sfmanager.user.mapping.set(user_id,
+                                               service.service_name,
+                                               s_id)
+                    msg = '[%s] user %s mapped to %s id %s'
+                    logger.debug(msg % (service.service_name,
+                                        infos.get('username'),
+                                        service.service_name,
+                                        s_id))
+            except exceptions.UnavailableActionError:
+                msg = '[%s] service has no authenticated user backend'
+                logger.debug(msg % service.service_name)
 
     @expose('json')
     def get(self, **kwargs):
@@ -704,14 +795,25 @@ class ServicesUsersController(RestController):
         if not is_admin(request.remote_user):
             abort(401,
                   detail='Deleting users is limited to administrators')
+        d_id = id
+        if not d_id and (email or username):
+            logger.debug('looking for %s %s' % (email, username))
+            d_id = sfmanager.user.get(username=username,
+                                      email=email).get('id')
+            logger.debug(d_id)
+        if not d_id:
+            response.status = 404
+            return
         try:
             for service in SF_SERVICES:
                 try:
                     service.user.delete(email=email, username=username)
+                    sfmanager.user.mapping.delete(d_id,
+                                                  service.service_name)
                 except exceptions.UnavailableActionError:
                     msg = '[%s] service has no authenticated user backend'
                     logger.debug(msg % service.service_name)
-            sfmanager.user.delete(id=id, email=email, username=username)
+            sfmanager.user.delete(id=d_id)
         except Exception as e:
             return report_unhandled_error(e)
         response.status = 204

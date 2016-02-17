@@ -24,10 +24,31 @@ logger = logging.getLogger(__name__)
 crud = model.SFUserCRUD()
 
 
+class SFUserMapper:
+    def set(self, sf_user_id, service, service_user_id):
+        crud.set_service_mapping(sf_user_id, service, service_user_id)
+
+    def get_service_mapping(self, service, sf_user_id):
+        """Returns the service uid of user sf_user_id in service."""
+        return crud.get_service_mapping(service, sf_user_id)
+
+    def get_user_mapping(self, service, service_user_id):
+        """Returns the managesf uid of user service_user_id in service."""
+        return crud.get_user_mapping(service, service_user_id)
+
+    def delete(self, sf_user_id, service=None, service_user_id=None):
+        return crud.delete_service_mapping(sf_user_id,
+                                           service,
+                                           service_user_id)
+
+
 class SFUserManager:
+    mapping = SFUserMapper()
+
     def get(self, id=None, username=None, email=None,
             fullname=None, cauth_id=None):
-        return crud.get(id, username, email, fullname, cauth_id)
+        return crud.get(id=id, username=username, email=email,
+                        fullname=fullname, cauth_id=cauth_id)
 
     def all(self):
         return self.get()
