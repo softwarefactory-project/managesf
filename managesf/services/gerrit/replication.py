@@ -65,6 +65,9 @@ class SFGerritReplicationManager(base.ReplicationManager):
         config = {}
         for line in lines:
             setting, value = line.split("=")
+            if setting.split(".")[0] == "gerrit":
+                # Skip additional settings of replication.config
+                continue
             section = setting.split(".")[1]
             setting = setting.split(".")[2]
             if setting == 'projects':
