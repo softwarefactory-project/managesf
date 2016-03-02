@@ -53,7 +53,8 @@ class SFGerritReplicationManager(base.ReplicationManager):
             msg = "[%s] Reading config file err %s"
             logger.info(msg % (self.plugin.service_name,
                                err))
-            logger.info("[%s] --[\n%s\n]--" % out)
+            logger.info("[%s] --[\n%s\n]--" % (self.plugin.service_name,
+                                               out))
             raise Exception(msg % (self.plugin.service_name,
                                    err))
         elif out:
