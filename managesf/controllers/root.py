@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import base64
 import time
 import logging
 import os.path
@@ -350,25 +351,47 @@ class ProjectController(RestController):
         self._reload_cache()
         return self.get_cache()
 
-    @expose('json')
-    def get_one(self, project_id):
-        projects = self.get_cache()
-        try:
-            if projects:
-                return projects[project_id]
+    @staticmethod
+    def _decode_project_name(name):
+        if name.startswith('==='):
+            try:
+                n = base64.urlsafe_b64decode(name.encode()[3:])
+                return n.decode('utf8')
+            except Exception:
+                return name
+        return name
+
+    def _find_project(self, name):
+        cache = self.get_cache()
+        if not cache:
             self._reload_cache()
-            return self.get_cache()[project_id]
-        except KeyError as exp:
-            logger.exception(exp)
-            return abort(400)
+            cache = self.get_cache()
+
+        return cache.get(name)
 
     @expose('json')
-    def put(self, name=None):
+    def get_one(self, project_id):
+        name = self._decode_project_name(project_id)
+        project = self._find_project(name)
+        if not project:
+            logger.exception("Project %s does not exists" % project_id)
+            return abort(400)
+        return project
+
+    @expose('json')
+    def put(self, name):
         if getattr(conf, "project_create_administrator_only", True):
             if not is_admin(request.remote_user):
                 abort(401)
 
         if not name:
+            logger.exception("Project name required")
+            abort(400)
+
+        name = self._decode_project_name(name)
+        project = self._find_project(name)
+        if project:
+            logger.exception("Project %s already exists" % name)
             abort(400)
         try:
             # create project
@@ -405,11 +428,14 @@ class ProjectController(RestController):
             return report_unhandled_error(e)
 
     @expose('json')
-    def delete(self, name=None):
+    def delete(self, name):
+        name = self._decode_project_name(name)
+        project = self._find_project(name)
         if name == 'config':
             response.status = 400
             return "Deletion of config project denied"
-        if not name:
+        if not project:
+            logger.exception("Project %s does not exist" % name)
             abort(400)
         user = request.remote_user
         try:

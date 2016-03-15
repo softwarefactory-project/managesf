@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import base64
 import json
 import os
 
@@ -44,6 +45,9 @@ from managesf.services.redmine import SoftwareFactoryRedmine
 from managesf.services.redmine.membership import SFRedmineMembershipManager
 from managesf.services.redmine.project import SFRedmineProjectManager
 from managesf.services.redmine.user import SFRedmineUserManager
+
+
+FIND_PROJECT_PATH = 'managesf.controllers.root.ProjectController._find_project'
 
 
 def raiseexc(*args, **kwargs):
@@ -276,7 +280,8 @@ class TestManageSFAppProjectController(FunctionalTest):
             r_get.return_value = [{'project': 'p1'}, ]
             goi.return_value = {'issues': [{'project': {'name': 'p1'}}]}
             response = self.app.set_cookie('auth_pubtkt', 'something')
-            response = self.app.get('/project/p1')
+            name = '===' + base64.urlsafe_b64encode('p1')
+            response = self.app.get('/project/%s/' % name)
             self.assertEqual(200, response.status_int)
             self.assertTrue('"open_issues": 1', response.body)
             self.assertTrue('"admin": 1', response.body)
@@ -286,7 +291,7 @@ class TestManageSFAppProjectController(FunctionalTest):
         # Create a project with no name
         with patch('managesf.controllers.root.is_admin') as gia:
             response = self.app.put('/project/', status="*")
-            self.assertEqual(response.status_int, 400)
+            self.assertEqual(response.status_int, 500)
         # Create a project with name, but without administrator status
         with patch('managesf.controllers.root.is_admin') as gia:
             gia.return_value = False
@@ -295,8 +300,10 @@ class TestManageSFAppProjectController(FunctionalTest):
         # Create a project with name
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
                patch('managesf.controllers.root.is_admin'),
-               patch.object(SFRedmineProjectManager, 'create')]
-        with nested(*ctx) as (gip, gia, rip):
+               patch.object(SFRedmineProjectManager, 'create'),
+               patch(FIND_PROJECT_PATH)]
+        with nested(*ctx) as (gip, gia, rip, pfn):
+            pfn.return_value = {}
             response = self.app.put('/project/p1', status="*",
                                     extra_environ={'REMOTE_USER': 'bob'})
             self.assertTupleEqual(('p1', 'bob', {}), gip.mock_calls[0][1])
@@ -307,10 +314,11 @@ class TestManageSFAppProjectController(FunctionalTest):
         # Create a project with name - an error occurs
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
                patch('managesf.controllers.root.is_admin'),
-               patch.object(SFRedmineProjectManager,
-                            'create',
-                            side_effect=raiseexc)]
-        with nested(*ctx) as (gip, gia, rip):
+               patch.object(SFRedmineProjectManager, 'create',
+                            side_effect=raiseexc),
+               patch(FIND_PROJECT_PATH)]
+        with nested(*ctx) as (gip, gia, rip, fpn):
+            fpn.return_value = {}
             response = self.app.put('/project/p1', status="*",
                                     extra_environ={'REMOTE_USER': 'bob'})
             self.assertEqual(response.status_int, 500)
@@ -323,8 +331,10 @@ class TestManageSFAppProjectController(FunctionalTest):
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
                patch('managesf.controllers.root.is_admin'),
                patch.object(SFRedmineProjectManager, 'create'),
-               patch.object(utils.GerritRepo, 'check_upstream')]
-        with nested(*ctx) as (gip, gia, rip, cu):
+               patch.object(utils.GerritRepo, 'check_upstream'),
+               patch(FIND_PROJECT_PATH)]
+        with nested(*ctx) as (gip, gia, rip, cu, pfn):
+            pfn.return_value = {}
             cu.return_value = [False, "fatal: unable to access remote"]
             response = self.app.put_json(
                 '/project/p1',
@@ -346,8 +356,10 @@ class TestManageSFAppProjectController(FunctionalTest):
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
                patch('managesf.controllers.root.is_admin'),
                patch.object(SFRedmineProjectManager, 'create'),
-               patch.object(utils.GerritRepo, 'check_upstream')]
-        with nested(*ctx) as (gip, gia, rip, cu):
+               patch.object(utils.GerritRepo, 'check_upstream'),
+               patch(FIND_PROJECT_PATH)]
+        with nested(*ctx) as (gip, gia, rip, cu, pfn):
+            pfn.return_value = {}
             cu.return_value = [True, None]
             data = {'upstream': 'git@github.com/account/repo.git',
                     'add-branches': True}
@@ -360,15 +372,18 @@ class TestManageSFAppProjectController(FunctionalTest):
     def test_project_delete(self):
         # Delete a project with no name
         response = self.app.delete('/project/', status="*")
-        self.assertEqual(response.status_int, 400)
+        self.assertEqual(response.status_int, 500)
         # Deletion of config project is not possible
         response = self.app.delete('/project/config', status="*")
-        self.assertEqual(response.status_int, 400)
+        self.assertEqual(response.status_int, 500)
         # Delete a project with name
         ctx = [patch.object(SFGerritProjectManager, 'delete'),
-               patch.object(SFRedmineProjectManager, 'delete')]
-        with nested(*ctx) as (gdp, rdp):
-            response = self.app.delete('/project/p1', status="*",
+               patch.object(SFRedmineProjectManager, 'delete'),
+               patch(FIND_PROJECT_PATH)]
+        with nested(*ctx) as (gdp, rdp, pfn):
+            pfn.return_value = {'name': 'p1'}
+            name = '===' + base64.urlsafe_b64encode('p1')
+            response = self.app.delete('/project/%s/' % name, status="*",
                                        extra_environ={'REMOTE_USER': 'testy'})
             self.assertTupleEqual(('p1', 'testy'), gdp.mock_calls[0][1])
             self.assertTupleEqual(('p1', 'testy'), rdp.mock_calls[0][1])
@@ -378,8 +393,10 @@ class TestManageSFAppProjectController(FunctionalTest):
         # Delete a project with name - an error occurs
         ctx = [patch.object(SFGerritProjectManager, 'delete'),
                patch.object(SFRedmineProjectManager, 'delete',
-                            side_effect=raiseexc)]
-        with nested(*ctx) as (gip, rip):
+                            side_effect=raiseexc),
+               patch(FIND_PROJECT_PATH)]
+        with nested(*ctx) as (gip, rip, pfn):
+            pfn.return_value = ('p1', None)
             response = self.app.delete('/project/p1', status="*")
             self.assertEqual(response.status_int, 500)
             self.assertEqual(json.loads(response.body),
