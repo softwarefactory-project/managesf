@@ -70,6 +70,16 @@ def load_services():
             logger.error('Could not load service %s: %s' % (service, e))
 
 
+def _decode_project_name(name):
+    if name.startswith('==='):
+        try:
+            n = base64.urlsafe_b64decode(name.encode()[3:])
+            return n.decode('utf8')
+        except Exception:
+            return name[3:]
+    return name
+
+
 def is_admin(user):
     return base.RoleManager.is_admin(user)
 
@@ -242,6 +252,7 @@ class MembershipController(RestController):
             response.status = 400
             return "User must be identified by its email address"
         requestor = request.remote_user
+        project = _decode_project_name(project)
         try:
             # Add/update user for the project groups
             for service in SF_SERVICES:
@@ -265,6 +276,7 @@ class MembershipController(RestController):
             response.status = 400
             return "User must be identified by its email address"
         requestor = request.remote_user
+        project = _decode_project_name(project)
         try:
             # delete user from all project groups
             for service in SF_SERVICES:
@@ -351,16 +363,6 @@ class ProjectController(RestController):
         self._reload_cache()
         return self.get_cache()
 
-    @staticmethod
-    def _decode_project_name(name):
-        if name.startswith('==='):
-            try:
-                n = base64.urlsafe_b64decode(name.encode()[3:])
-                return n.decode('utf8')
-            except Exception:
-                return name
-        return name
-
     def _find_project(self, name):
         cache = self.get_cache()
         if not cache:
@@ -371,7 +373,7 @@ class ProjectController(RestController):
 
     @expose('json')
     def get_one(self, project_id):
-        name = self._decode_project_name(project_id)
+        name = _decode_project_name(project_id)
         project = self._find_project(name)
         if not project:
             logger.exception("Project %s does not exists" % project_id)
@@ -388,7 +390,7 @@ class ProjectController(RestController):
             logger.exception("Project name required")
             abort(400)
 
-        name = self._decode_project_name(name)
+        name = _decode_project_name(name)
         project = self._find_project(name)
         if project:
             logger.exception("Project %s already exists" % name)
@@ -429,7 +431,7 @@ class ProjectController(RestController):
 
     @expose('json')
     def delete(self, name):
-        name = self._decode_project_name(name)
+        name = _decode_project_name(name)
         project = self._find_project(name)
         if name == 'config':
             response.status = 400

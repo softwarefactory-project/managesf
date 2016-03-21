@@ -36,6 +36,9 @@ class RedmineMembershipManager(base.MembershipManager):
             uid = self.plugin.user.get(email=username)
         return uid
 
+    def _clean_name(self, name):
+        return name.replace('/', '_')
+
 
 class SFRedmineMembershipManager(RedmineMembershipManager):
     """Management of users memberships in projects."""
@@ -44,6 +47,7 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
                groups, user_is_owner=False, **kwargs):
         """Add user to project groups"""
         rm = self.plugin.get_client()
+        project = self._clean_name(project)
         for g in groups:
             if g not in ['ptl-group', 'core-group', 'dev-group']:
                 raise exc.UnavailableActionError('Unknown group %s' % g)
@@ -84,11 +88,13 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
     def get(self, username, project_name):
         """get a user's membership for project_name"""
         rm = self.plugin.get_client()
+        project_name = self._clean_name(project_name)
         uid = self._get_uid(username=username)
         return rm.get_project_membership_for_user(project_name, uid)
 
     def update(self, username, project_name, role_ids):
         rm = self.plugin.get_client()
+        project_name = self._clean_name(project_name)
         uid = self._get_uid(username=username)
         membership_id = rm.get_project_membership_for_user(project_name, uid)
         return self.update_membership(membership_id, role_ids)
@@ -99,11 +105,13 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
 
     def update_project_membership(self, project_name, memberships):
         rm = self.plugin.get_client()
+        project_name = self._clean_name(project_name)
         return rm.update_project_membership(project_name, memberships)
 
     def delete(self, requestor, username, project_name, group=None):
         """remove username's membership to group from project_name"""
         rm = self.plugin.get_client()
+        project_name = self._clean_name(project_name)
         uid = self._get_uid(username=username)
         m = self.get(username, project_name)
         if not m:

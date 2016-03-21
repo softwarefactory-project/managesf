@@ -494,8 +494,9 @@ class TestManageSFAppMembershipController(FunctionalTest):
                patch.object(SFGerritMembershipManager,
                             'create')]
         with nested(*ctx) as (gaupg, raupg):
+            project_name = '===' + base64.urlsafe_b64encode('p1')
             response = self.app.put_json(
-                '/project/p1/membership/john@tests.dom',
+                '/project/%s/membership/john@tests.dom' % project_name,
                 {'groups': ['ptl-group', 'core-group']},
                 status="*")
             self.assertEqual(response.status_int, 201)
@@ -518,7 +519,9 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
     def test_delete(self):
-        response = self.app.delete('/project/p1/membership/john', status="*")
+        project_name = '===' + base64.urlsafe_b64encode('p1')
+        response = self.app.delete('/project/%s/membership/john' % (
+                                   project_name), status="*")
         self.assertEqual(response.status_int, 400)
         ctx = [
             patch.object(SFGerritMembershipManager,

@@ -35,6 +35,7 @@ class RedmineProjectManager(base.ProjectManager):
                           is_public='false' if private else 'true')
 
     def create(self, project_name, username, project_data=None):
+        project_name = self._clean_name(project_name)
         debug_args = (self.plugin.service_name,
                       project_name,
                       username)
@@ -157,6 +158,7 @@ class RedmineProjectManager(base.ProjectManager):
             return None
 
     def delete(self, project_name, username):
+        project_name = self._clean_name(project_name)
         if (not self.plugin.role.is_admin(username) and
             'Manager' not in self.plugin.role.get(username,
                                                   project_name=project_name)):
@@ -166,6 +168,7 @@ class RedmineProjectManager(base.ProjectManager):
 
     def get(self, requestor, user=None, project_name=None):
         rm = self.plugin.get_client()
+        project_name = self._clean_name(project_name)
         if project_name:
             return rm.project.get(project_name)
         else:
@@ -175,21 +178,28 @@ class RedmineProjectManager(base.ProjectManager):
         # TODO(mhu) but not used/exposed yet in managesf
         raise NotImplementedError
 
+    @staticmethod
+    def _clean_name(name):
+        return name.replace('/', '_')
+
 
 class SFRedmineProjectManager(RedmineProjectManager):
     """specific project manager for Redmine as deployed with Software Factory,
     as the pysflib API differs a bit from the regular python-redmine one."""
     def _create(self, project_name, description, private):
         rm = self.plugin.get_client()
-        rm.create_project(project_name, description, private)
+        name = self._clean_name(project_name)
+        rm.create_project(name, description, private)
 
     def _delete(self, project_name):
         rm = self.plugin.get_client()
-        rm.delete_project(project_name)
+        name = self._clean_name(project_name)
+        rm.delete_project(name)
 
     def get(self, project_name=None):
         rm = self.plugin.get_client()
         if project_name:
-            return rm.r.project.get(project_name)
+            name = self._clean_name(project_name)
+            return rm.r.project.get(name)
         else:
             return rm.r.project.all()

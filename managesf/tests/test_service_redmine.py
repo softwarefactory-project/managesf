@@ -423,7 +423,8 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
             g.return_value = ['p_test', ]
             a.return_value = ['p1', 'p2']
             self.assertEqual(['p_test', ],
-                             self.redmine.project.get('p_test'))
+                             self.redmine.project.get('p/test'))
+            g.assert_called_with('p_test')
             self.assertEqual(['p1', 'p2'],
                              self.redmine.project.get())
 
@@ -431,16 +432,16 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
         patches = [patch.object(self.redmine.project, '_create'),
                    patch.object(self.redmine.membership, 'create'), ]
         with nested(*patches) as (_c, m_c):
-            self.redmine.project.create('p', 'u')
-            _c.assert_called_with('p', '', False)
+            self.redmine.project.create('ns/prj', 'u')
+            _c.assert_called_with('ns_prj', '', False)
             membership_calls = [call(requestor='u',
                                      username='u',
-                                     project='p',
+                                     project='ns_prj',
                                      groups=['ptl-group'],
                                      user_is_owner=True),
                                 call(requestor='u',
                                      username='u',
-                                     project='p',
+                                     project='ns_prj',
                                      groups=['dev-group'])]
             m_c.assert_has_calls(membership_calls)
             m_c.reset_mock()
@@ -516,5 +517,5 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
                    patch.object(self.redmine.project, '_delete'), ]
         with nested(*patches) as (g, d):
             g.return_value = ['Manager', ]
-            self.redmine.project.delete('p', 'u')
-            d.assert_called_with('p')
+            self.redmine.project.delete('nss/proj1', 'u')
+            d.assert_called_with('nss_proj1')

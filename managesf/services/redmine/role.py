@@ -68,6 +68,9 @@ class RedmineRoleManager(base.RoleManager):
     def update(self, **kwargs):
         raise exc.UnavailableActionError
 
+    def _clean_name(self, name):
+        return name.replace('/', '_')
+
 
 class SFRedmineRoleManager(RedmineRoleManager):
     """specific role manager for Redmine as deployed with Software Factory,
@@ -75,6 +78,7 @@ class SFRedmineRoleManager(RedmineRoleManager):
     def get(self, username, project_name):
         rm = self.plugin.get_client()
         user_id = rm.get_user_id_by_username(username)
+        project_name = self._clean_name(project_name)
         return rm.get_project_roles_for_user(project_name,
                                              user_id)
 
