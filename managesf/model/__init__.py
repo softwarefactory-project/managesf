@@ -14,7 +14,7 @@
 # under the License.
 
 from pecan import conf  # noqa
-from sqlalchemy import create_engine, Column, String, exc
+from sqlalchemy import create_engine, Column, String, exc, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
@@ -33,17 +33,35 @@ def row2dict(row):
 
 class User(Base):
     __tablename__ = 'users'
-    username = Column(String(), primary_key=True)
-    fullname = Column(String(), nullable=False)
-    email = Column(String(), nullable=False)
-    hashed_password = Column(String(), nullable=False)
-    sshkey = Column(String(), nullable=True)
+    username = Column(String(255), primary_key=True)
+    fullname = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    sshkey = Column(String(1023), nullable=True)
+
+
+def checkout_listener(dbapi_con, con_record, con_proxy):
+    try:
+        try:
+            dbapi_con.ping(False)
+        except TypeError:
+            dbapi_con.ping()
+    except dbapi_con.OperationalError as e:
+        if e.args[0] in (2006,   # MySQL server has gone away
+                         2013,   # Lost connection to server during query
+                         2055):  # Lost connection to server
+            # caught by pool, which will retry with a new connection
+            raise exc.DisconnectionError()
+        else:
+            raise
 
 
 def init_model():
     c = dict(conf.sqlalchemy)
     url = c.pop('url')
-    globals()['engine'] = create_engine(url, **c)
+    globals()['engine'] = create_engine(url, pool_recycle=600, **c)
+    if url.startswith('mysql'):
+        event.listen(engine, 'checkout', checkout_listener)
     Base.metadata.create_all(engine)
 
 

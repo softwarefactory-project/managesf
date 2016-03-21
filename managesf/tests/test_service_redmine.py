@@ -14,8 +14,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+
 from unittest import TestCase
-from mock import patch, call
+from mock import patch, call, MagicMock
 from contextlib import nested
 from redmine import managers
 from redmine.exceptions import ValidationError
@@ -35,6 +36,34 @@ class BaseSFRedmineService(TestCase):
     @classmethod
     def tearDownClass(cls):
         pass
+
+
+class TestSFRedmineGetAPIKey(BaseSFRedmineService):
+    @classmethod
+    def setupClass(cls):
+        cls.conf = dummy_conf()
+        cls.redmine = redmine.SoftwareFactoryRedmine(cls.conf)
+        cls.api_key = cls.conf.redmine['api_key']
+
+    def test_get_api_key_from_conf(self):
+        self.assertEqual(self.conf.redmine['api_key'],
+                         self.redmine._get_api_key())
+
+    @patch('managesf.services.redmine.create_engine')
+    def test_get_api_key_from_db(self, c_e):
+        engine = MagicMock()
+        engine.execute.return_value = ((('value', 'abcd'),),)
+        c_e.return_value = engine
+        del self.conf.redmine['api_key']
+        self.conf.redmine['db_url'] = 'mocksql://..'
+        red = redmine.SoftwareFactoryRedmine(self.conf)
+        self.assertEqual('abcd',
+                         red._get_api_key())
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.conf.redmine['api_key'] = cls.api_key
+        del cls.conf.redmine['db_url']
 
 
 class TestSFRedmineHooksManager(BaseSFRedmineService):

@@ -14,6 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from sqlalchemy import create_engine
 
 from pysflib.sfredmine import RedmineUtils
 from redmine import Redmine as RM
@@ -72,5 +73,18 @@ class SoftwareFactoryRedmine(Redmine):
         self.hooks = hooks.RedmineHooksManager(self)
 
     def get_client(self, cookie=None):
+        api_key = self._get_api_key()
         return RedmineUtils(self.conf['url'],
-                            key=self.conf['api_key'])
+                            key=api_key)
+
+    def _get_api_key(self):
+        if self.conf.get('api_key'):
+            return self.conf['api_key']
+        if self.conf.get('db_url'):
+            query = ("select value from tokens where action = 'api' and "
+                     "user_id in (select id from users where login='admin')")
+            e = create_engine(self.conf['db_url'])
+            for row in e.execute(query):
+                return dict(row)['value']
+            del e
+        raise Exception("Redmine API key not found")
