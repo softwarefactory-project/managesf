@@ -186,7 +186,9 @@ class ReplicationController(RestController):
 class BackupController(RestController):
     @expose('json')
     def get(self):
-        filepath = '/var/www/managesf/sf_backup.tar.gz'
+        filepath = os.path.join(conf.managesf.get('backup_dir',
+                                                  '/var/www/managesf/'),
+                                'sf_backup.tar.gz')
         if not os.path.isfile(filepath):
             abort(404)
         response.body_file = open(filepath, 'rb')
@@ -213,7 +215,9 @@ class BackupController(RestController):
 class RestoreController(RestController):
     @expose('json')
     def post(self):
-        filepath = '/var/www/managesf/sf_backup.tar.gz'
+        filepath = os.path.join(conf.managesf.get('backup_dir',
+                                                  '/var/www/managesf/'),
+                                'sf_backup.tar.gz')
         with open(filepath, 'wb+') as f:
             f.write(request.POST['file'].file.read())
         try:

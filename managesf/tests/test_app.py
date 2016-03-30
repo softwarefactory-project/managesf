@@ -406,10 +406,14 @@ class TestManageSFAppProjectController(FunctionalTest):
 
 class TestManageSFAppRestoreController(FunctionalTest):
     def tearDown(self):
-        if os.path.isfile('/var/www/managesf/sf_backup.tar.gz'):
-            os.unlink('/var/www/managesf/sf_backup.tar.gz')
+        bkp = os.path.join(self.config['managesf']['backup_dir'],
+                           'sf_backup.tar.gz')
+        if os.path.isfile(bkp):
+            os.unlink(bkp)
 
     def test_restore_post(self):
+        bkp = os.path.join(self.config['managesf']['backup_dir'],
+                           'sf_backup.tar.gz')
         files = [('file', 'useless', 'backup content')]
         # restore a provided backup
         ctx = [patch('managesf.controllers.backup.backup_restore'),
@@ -419,8 +423,7 @@ class TestManageSFAppRestoreController(FunctionalTest):
         with nested(*ctx) as (backup_restore, backup_unpack, restore):
             response = self.app.post('/restore', status="*",
                                      upload_files=files)
-            self.assertTrue(os.path.isfile(
-                '/var/www/managesf/sf_backup.tar.gz'))
+            self.assertTrue(os.path.isfile(bkp))
             self.assertTrue(backup_unpack.called)
             self.assertTrue(backup_restore.called)
             self.assertEqual(len(dummy_conf.services),
@@ -431,8 +434,7 @@ class TestManageSFAppRestoreController(FunctionalTest):
             backup_restore.side_effect = raiseexc
             response = self.app.post('/restore', status="*",
                                      upload_files=files)
-            self.assertTrue(os.path.isfile(
-                '/var/www/managesf/sf_backup.tar.gz'))
+            self.assertTrue(os.path.isfile(bkp))
             self.assertEqual(response.status_int, 500)
             self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
@@ -441,14 +443,18 @@ class TestManageSFAppRestoreController(FunctionalTest):
 
 class TestManageSFAppBackupController(FunctionalTest):
     def tearDown(self):
-        if os.path.isfile('/var/www/managesf/sf_backup.tar.gz'):
-            os.unlink('/var/www/managesf/sf_backup.tar.gz')
+        bkp = os.path.join(self.config['managesf']['backup_dir'],
+                           'sf_backup.tar.gz')
+        if os.path.isfile(bkp):
+            os.unlink(bkp)
 
     def test_backup_get(self):
-        file('/var/www/managesf/sf_backup.tar.gz', 'w').write('backup content')
+        bkp = os.path.join(self.config['managesf']['backup_dir'],
+                           'sf_backup.tar.gz')
+        file(bkp, 'w').write('backup content')
         response = self.app.get('/backup', status="*")
         self.assertEqual(response.body, 'backup content')
-        os.unlink('/var/www/managesf/sf_backup.tar.gz')
+        os.unlink(bkp)
         response = self.app.get('/backup', status="*")
         self.assertEqual(response.status_int, 404)
 

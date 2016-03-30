@@ -17,6 +17,7 @@ from pecan import conf
 import logging
 from utils import RemoteUser
 import time
+import os.path
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +46,19 @@ class Backup(object):
         p = self.msqlru._ssh('/root/backup_mysql.sh')
         logger.info("-> Mysql backup ended with code: %d" % p.returncode)
 
-        logger.debug("generate backup")
+        bkp_dir = conf.managesf.get('backup_dir', '/var/www/managesf/')
+        logger.debug("generate backup in %s" % bkp_dir)
+        bkp = os.path.join(bkp_dir, 'sf_backup.tar.gz')
         self.mru._ssh(
             'tar --absolute-names -czPf ' +
-            '/var/www/managesf/sf_backup.tar.gz /root/.bup /root/*db.sql.gz')
-        self.mru._ssh('chmod 0400 /var/www/managesf/sf_backup.tar.gz')
-        self.mru._ssh('chown apache:apache /var/www/managesf/sf_backup.tar.gz')
+            '%s /root/.bup /root/*db.sql.gz' % bkp)
+        self.mru._ssh('chmod 0400 %s' % bkp)
+        self.mru._ssh('chown apache:apache %s' % bkp)
 
     def unpack(self):
-        self.mru._ssh('tar -xzPf /var/www/managesf/sf_backup.tar.gz')
+        bkp_dir = conf.managesf.get('backup_dir', '/var/www/managesf/')
+        bkp = os.path.join(bkp_dir, 'sf_backup.tar.gz')
+        self.mru._ssh('tar -xzPf %s' % bkp)
 
     def restore(self):
         p = self.msqlru._ssh('/root/restore_mysql.sh')

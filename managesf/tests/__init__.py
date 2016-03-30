@@ -47,6 +47,7 @@ class dummy_conf():
     managesf = {
         'host': 'managesf.tests.dom',
         'sshkey_priv_path': '/tmp/id_rsa',
+        'backup_dir': '/tmp',
     }
     jenkins = {
         'host': 'jenkins.test.dom',
