@@ -238,54 +238,89 @@ class TestManageSFAppProjectController(FunctionalTest):
 
     def test_project_get_all(self):
         ctx = [patch.object(SFGerritProjectManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_groups'),
                patch.object(SFGerritReviewManager, 'get'),
+               patch.object(SFGerritProjectManager, 'get_user_groups'),
+               patch.object(SFGerritProjectManager, 'get_projects_groups_id'),
+               patch.object(SFGerritProjectManager, 'get_groups_details'),
                patch.object(SoftwareFactoryRedmine,
                             'get_open_issues')]
-        with nested(*ctx) as (p_get, get_groups, r_get, goi):
+        with nested(*ctx) as (p_get, r_get, get_user_groups,
+                              get_projects_groups_id,
+                              get_groups_details, goi):
             p_get.side_effect = project_get
-            r_get.return_value = [{'project': 'p1'}]
-            goi.return_value = {'issues': [{'project': {'name': 'p1'}}]}
-            get_groups.return_value = [{'name': 'p0-ptl'}, {'name': 'p0-dev'}]
+            r_get.return_value = [{'project': 'p0'}, ]
+            get_user_groups.return_value = [{'id': 1, 'name': 'p0-ptl'},
+                                            {'id': 3, 'name': 'p2-ptl'}]
+            get_groups_details.return_value = {'p0-ptl': {'id': 1,
+                                                          'members': ['u1']}}
+            get_projects_groups_id.return_value = {'p0': {'others': [],
+                                                          'owners': [1]},
+                                                   'p1': {'others': [],
+                                                          'owners': [2]}}
+            goi.return_value = {'issues': [{'project': {'name': 'p0'}}]}
             # Cookie is only required for the internal cache
             response = self.app.set_cookie('auth_pubtkt', 'something')
             response = self.app.get('/project/')
             self.assertEqual(200, response.status_int)
             body = json.loads(response.body)
-            self.assertIn('p0', body)
-            self.assertTrue(body['p1']['open_reviews'] and
-                            body['p1']['open_issues'])
-            self.assertEqual({'ptl': {'name': 'p0-ptl'},
-                              'dev': {'name': 'p0-dev'}},
-                             body['p0']['groups'])
-            for _mock in (p_get, get_groups, r_get, goi):
+            expected = {u'p0': {u'open_issues': 1,
+                                u'open_reviews': 1,
+                                u'admin': 1,
+                                u'groups': {u'ptl': {u'members': [u'u1'],
+                                                     u'id': 1}}},
+                        u'p1': {u'open_issues': 0,
+                                u'open_reviews': 0,
+                                u'admin': 0,
+                                u'groups': {}}
+                        }
+            self.assertDictEqual(body, expected)
+            for _mock in (p_get, r_get, get_user_groups,
+                          get_projects_groups_id,
+                          get_groups_details, goi):
                 self.assertTrue(_mock.called)
 
             # Second request, will be cached - no internal calls
-            for _mock in (p_get, get_groups, r_get, goi):
+            for _mock in (p_get, r_get, get_user_groups,
+                          get_projects_groups_id,
+                          get_groups_details, goi):
                 _mock.reset_mock()
             response = self.app.get('/project/')
-            for _mock in (p_get, get_groups, r_get, goi):
+            for _mock in (p_get, r_get, get_user_groups,
+                          get_projects_groups_id,
+                          get_groups_details, goi):
                 self.assertFalse(_mock.called)
             self.assertEqual(200, response.status_int)
 
     def test_project_get_one(self):
         ctx = [patch.object(SFGerritProjectManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_groups'),
                patch.object(SFGerritReviewManager, 'get'),
+               patch.object(SFGerritProjectManager, 'get_user_groups'),
+               patch.object(SFGerritProjectManager, 'get_projects_groups_id'),
+               patch.object(SFGerritProjectManager, 'get_groups_details'),
                patch.object(SoftwareFactoryRedmine,
                             'get_open_issues')]
-        with nested(*ctx) as (p_get, get_groups, r_get, goi):
+        with nested(*ctx) as (p_get, r_get, get_user_groups,
+                              get_projects_groups_id,
+                              get_groups_details, goi):
             p_get.side_effect = project_get
-            r_get.return_value = [{'project': 'p1'}, ]
-            goi.return_value = {'issues': [{'project': {'name': 'p1'}}]}
+            r_get.return_value = [{'project': 'p0'}, ]
+            get_user_groups.return_value = [{'id': 1, 'name': 'p0-ptl'}]
+            get_groups_details.return_value = {'p0-ptl': {'id': 1,
+                                                          'members': ['u1']}}
+            get_projects_groups_id.return_value = {'p0': {'others': [],
+                                                          'owners': [1]},
+                                                   'p1': {'others': [],
+                                                          'owners': [2]}}
+            goi.return_value = {'issues': [{'project': {'name': 'p0'}}]}
             response = self.app.set_cookie('auth_pubtkt', 'something')
-            name = '===' + base64.urlsafe_b64encode('p1')
+            name = '===' + base64.urlsafe_b64encode('p0')
             response = self.app.get('/project/%s/' % name)
-            self.assertEqual(200, response.status_int)
-            self.assertTrue('"open_issues": 1', response.body)
-            self.assertTrue('"admin": 1', response.body)
-            self.assertTrue('"open_reviews": 1', response.body)
+        self.assertEqual(200, response.status_int)
+        expected = {u'open_issues': 1, u'open_reviews': 1,
+                    u'groups': {u'ptl': {u'id': 1,
+                                         u'members': [u'u1']}},
+                    u'admin': 1}
+        self.assertDictEqual(response.json, expected)
 
     def test_project_put(self):
         # Create a project with no name

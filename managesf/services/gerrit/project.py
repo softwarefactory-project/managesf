@@ -64,6 +64,36 @@ class SFGerritProjectManager(base.ProjectManager):
             groups = []
         return groups
 
+    def get_groups_details(self, groups):
+        client = self.plugin.get_client()
+        groups = client.get_groups_details(groups)
+        if isinstance(groups, bool):
+            logger.info("[%s] Could not find groups %s" % (
+                self.plugin.service_name, groups))
+            groups = {}
+        return groups
+
+    def get_user_groups(self, user):
+        client = self.plugin.get_client()
+        groups = client.get_user_groups(user)
+        if isinstance(groups, bool):
+            logger.info("[%s] Could not find user groups %s: %s" % (
+                self.plugin.service_name, user, str(groups)))
+            groups = []
+        return groups
+
+    def get_projects_groups_id(self, projects):
+        """ Return list of groups (id) for requested projects.
+        The groups ids are in categories owners or others
+        """
+        client = self.plugin.get_client()
+        projects_groups = client.get_project_groups_id(projects)
+        if isinstance(projects_groups, bool):
+            logger.info("[%s] Could not find projects owners for prjs %s" % (
+                self.plugin.service_name, projects))
+            projects_groups = {}
+        return projects_groups
+
     def create(self, project_name, username, project_data=None):
         if not project_data:
             project_data = {}

@@ -330,35 +330,68 @@ class ProjectController(RestController):
         return {}
 
     def _reload_cache(self):
+        """ Build the cache. This is done by requesting services
+        API.
+        """
         projects = {}
 
         # TODO(mhu) this must be independent from gerrit
         code_review = [s for s in SF_SERVICES
                        if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
-        for p in code_review.project.get():
+        requestor = request.remote_user
+
+        # Get my groups (1 request)
+        my_groups = code_review.project.get_user_groups(requestor)
+        my_groups_id = [g['id'] for g in my_groups]
+
+        # Get the list of projects (1 request)
+        projects_list = code_review.project.get()
+
+        # Initiate resp struct by project name
+        for p in projects_list:
             projects[p] = {'open_reviews': 0,
                            'open_issues': 0,
                            'admin': 0,
                            'groups': {}}
-            groups = code_review.project.get_groups(p)
-            for group in groups:
-                if group['name'].endswith(('-ptl', '-core', '-dev')):
-                    grp = group['name'].split('-')[-1]
-                    projects[p]['groups'][grp] = group
 
-        requestor = request.remote_user
-        for p in code_review.project.get(requestor=requestor,
-                                         by_user=True):
-            projects[p]['admin'] = 1
+        # Get list of groups of projects (1 request)
+        # This returns all groups id of projects as well as the owner groups
+        projects_groups = code_review.project.get_projects_groups_id(
+            projects_list)
+
+        # Consult requestor groups list and define projects with admin rights
+        # for the requestor
+        for p in projects_list:
+            # Verify that group is one of those owned by the requestor
+            for gid in my_groups_id:
+                if gid in projects_groups[p]['owners']:
+                    projects[p]['admin'] = 1
+
+        # Filter can be done by name but not by id. So request the full
+        # list of groups + members details (1 request)
+        all_groups_details = code_review.project.get_groups_details([])
+
+        # Fill group details for projects where user is admin
+        for p in projects_list:
+            if projects[p]['admin'] == 1:
+                pg_ids = projects_groups[p]['owners'] + \
+                    projects_groups[p]['others']
+                for group_name, details in all_groups_details.items():
+                    if details['id'] in pg_ids:
+                        if group_name.endswith(('-ptl', '-core', '-dev')):
+                            group_type = group_name.split('-')[-1]
+                            projects[p]['groups'][group_type] = details
 
         # This is okay here :)
         tracker = [s for s in SF_SERVICES
                    if isinstance(s, base.BaseIssueTrackerServicePlugin)][0]
+        # 1 or more requests (depends on the amount of issue and pagination
         for issue in tracker.get_open_issues().get('issues'):
             prj = issue.get('project').get('name')
             if prj in projects:
                 projects[prj]['open_issues'] += 1
 
+        # Done in 1 requests
         for review in code_review.review.get():
             prj = review.get('project')
             if prj in projects:
