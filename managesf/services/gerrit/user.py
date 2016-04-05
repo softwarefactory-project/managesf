@@ -21,12 +21,15 @@ from gerritlib import gerrit as G
 import sqlalchemy
 
 from managesf.services import base
+from managesf.services import exceptions as exc
 
 
 logger = logging.getLogger(__name__)
 
 
 class SFGerritUserManager(base.UserManager):
+
+    _immutable_fields_ = ['username', ]
 
     def __init__(self, plugin):
         super(SFGerritUserManager, self).__init__(plugin)
@@ -103,6 +106,16 @@ class SFGerritUserManager(base.UserManager):
         except:
             return None
         return None
+
+    def update(self, uid, **kwargs):
+        f = self.check_forbidden_fields(**kwargs)
+        if f:
+            msg = '[%s] fields %s cannot be updated'
+            raise exc.UnavailableActionError(msg % (self.plugin.service_name,
+                                                    str(f)))
+        g_client = self.plugin.get_client()
+        return g_client.update_account(id=uid, no_email_confirmation=True,
+                                       **kwargs)
 
     def delete(self, email=None, username=None):
         if not (bool(email) != bool(username)):

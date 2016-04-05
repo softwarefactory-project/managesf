@@ -95,6 +95,26 @@ class SFRedmineUserManager(RedmineUserManager):
         else:
             raise exc.UnavailableActionError('must specify mail OR username')
 
+    def update(self, uid, full_name=None, username=None, email=None,
+               **kwargs):
+        rm = self.plugin.get_client()
+        try:
+            u = rm.r.user.get(uid)
+        except ResourceNotFoundError:
+            msg = '[%s] %s not found, cannot update'
+            logger.debug(msg % (self.plugin.service_name,
+                                uid))
+            return False
+        if u:
+            if full_name:
+                u.lastname = full_name
+            if username:
+                u.login = username
+            if email:
+                u.mail = email
+            u.save()
+            return True
+
     def delete(self, email=None, username=None):
         if not (bool(email) != bool(username)):
             raise TypeError('mail OR username needed')

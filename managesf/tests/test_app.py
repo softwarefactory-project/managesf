@@ -941,7 +941,9 @@ class TestManageSFServicesUserController(FunctionalTest):
                                    '_add_account_as_external'),
                       patch('pysflib.sfgerrit.GerritUtils.create_account'),
                       patch.object(SFRedmineUserManager, 'get'),
-                      patch.object(g_user.SFGerritUserManager, 'get'), ]
+                      patch.object(g_user.SFGerritUserManager, 'get'),
+                      patch('pysflib.sfgerrit.GerritUtils.update_account'),
+                      patch.object(SFRedmineUserManager, 'update'), ]
         rm_user = MagicMock()
         rm_user.id = 9
         gerrit_created = {"_account_id": 5,
@@ -987,7 +989,7 @@ class TestManageSFServicesUserController(FunctionalTest):
         # mock at a lower level
         with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
                                      external, create_account,
-                                     r_get, g_get, ):
+                                     r_get, g_get, g_update, r_update):
             get_cookie.return_value = 'admin_cookie'
 
             rm_create_user.return_value = rm_user2
@@ -1014,7 +1016,7 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertEqual(response.status_int, 201)
         with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
                                      external, create_account,
-                                     r_get, g_get, ):
+                                     r_get, g_get, g_update, r_update):
             get_cookie.return_value = 'admin_cookie'
             # assert that user already existing in backend won't fail
 
@@ -1029,7 +1031,7 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertEqual(response.status_int, 201)
         with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
                                      external, create_account,
-                                     r_get, g_get, ):
+                                     r_get, g_get, g_update, r_update):
             get_cookie.return_value = 'admin_cookie'
             # assert that user found in backend will skip gracefully
             r_get.return_value = rm_user.id
@@ -1181,6 +1183,126 @@ class TestManageSFServicesUserController(FunctionalTest):
             jojo = self.app.get('/services_users/?username=jojo',
                                 extra_environ=environ, status="*")
             self.assertEqual('99', jojo.json.get('cauth_id'))
+
+    def test_update_user(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos_jojo = {'email': 'jojo@starplatinum.dom',
+                      'ssh_keys': ['ora', 'oraora'],
+                      'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
+        ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(g_user.SFGerritUserManager, 'create'),
+               patch.object(SFRedmineUserManager, 'update'),
+               patch.object(g_user.SFGerritUserManager, 'update'),
+               patch.object(SFRedmineUserManager, 'get'),
+               patch.object(g_user.SFGerritUserManager, 'get'), ]
+        with nested(*ctx) as (redmine_create, gerrit_create,
+                              redmine_update, gerrit_update,
+                              r_get, g_get, ):
+            r_get.return_value = None
+            g_get.return_value = None
+            redmine_create.return_value = 12
+            gerrit_create.return_value = 13
+            response = self.app.post_json('/services_users/', infos_jojo,
+                                          extra_environ=environ, status="*")
+            response = self.app.get('/services_users/?username=jojo',
+                                    extra_environ=environ, status="*")
+            jojo_id = response.json.get('id')
+            # try to update as someone else
+            environ = {'REMOTE_USER': 'dio'}
+            payload = {'full_name': 'Dio Brando'}
+            resp = self.app.put_json('/services_users/?username=jojo',
+                                     payload,
+                                     extra_environ=environ, status="*")
+            self.assertEqual(401, resp.status_int)
+            resp = self.app.put_json(
+                '/services_users/?email=jojo@starplatinum.dom',
+                payload, extra_environ=environ, status="*")
+            self.assertEqual(401, resp.status_int)
+            resp = self.app.put_json(
+                '/services_users/?id=%s' % jojo_id,
+                payload, extra_environ=environ, status="*")
+            self.assertEqual(401, resp.status_int)
+            # try wrong payload
+            for i in (self.config['admin']['name'], infos_jojo['username']):
+                environ = {'REMOTE_USER': i}
+                payload = {'username': 'dio'}
+                resp = self.app.put_json('/services_users/?username=jojo',
+                                         payload,
+                                         extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+                self.assertTrue('You tried to update immutable fields' in
+                                resp.body)
+                resp = self.app.put_json(
+                    '/services_users/?email=jojo@starplatinum.dom',
+                    payload, extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+                self.assertTrue('You tried to update immutable fields' in
+                                resp.body)
+                resp = self.app.put_json(
+                    '/services_users/?id=%s' % jojo_id,
+                    payload, extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+                self.assertTrue('You tried to update immutable fields' in
+                                resp.body)
+            # try empty payload
+            for i in (self.config['admin']['name'], infos_jojo['username']):
+                environ = {'REMOTE_USER': i}
+                payload = {}
+                resp = self.app.put_json('/services_users/?username=jojo',
+                                         payload,
+                                         extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+                self.assertTrue('Nothing to do' in resp.body)
+                resp = self.app.put_json(
+                    '/services_users/?email=jojo@starplatinum.dom',
+                    payload, extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+                self.assertTrue('Nothing to do' in resp.body)
+                resp = self.app.put_json(
+                    '/services_users/?id=%s' % jojo_id,
+                    payload, extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+                self.assertTrue('Nothing to do' in resp.body)
+            # try doing it right
+            c = 0
+            for i in (self.config['admin']['name'], infos_jojo['username']):
+                environ = {'REMOTE_USER': i}
+                payload = {'full_name': '%i' % c}
+                resp = self.app.put_json('/services_users/?username=jojo',
+                                         payload,
+                                         extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                self.assertEqual({'updated_fields': payload},
+                                 resp.json)
+                response = self.app.get('/services_users/?username=jojo',
+                                        extra_environ=environ, status="*")
+                self.assertEqual(payload['full_name'],
+                                 response.json.get('fullname'))
+                c += 1
+                payload = {'full_name': '%i' % c}
+                resp = self.app.put_json(
+                    '/services_users/?email=jojo@starplatinum.dom',
+                    payload, extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                self.assertEqual({'updated_fields': payload},
+                                 resp.json)
+                response = self.app.get('/services_users/?username=jojo',
+                                        extra_environ=environ, status="*")
+                self.assertEqual(payload['full_name'],
+                                 response.json.get('fullname'))
+                c += 1
+                payload = {'full_name': '%i' % c}
+                resp = self.app.put_json(
+                    '/services_users/?id=%s' % jojo_id,
+                    payload, extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                self.assertEqual({'updated_fields': payload},
+                                 resp.json)
+                response = self.app.get('/services_users/?username=jojo',
+                                        extra_environ=environ, status="*")
+                self.assertEqual(payload['full_name'],
+                                 response.json.get('fullname'))
+                c += 1
 
 
 class TestHooksController(FunctionalTest):

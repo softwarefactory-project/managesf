@@ -649,6 +649,14 @@ class LocalUserBindController(RestController):
 
 class ServicesUsersController(RestController):
 
+    def _remove_non_updatable_fields(self, infos):
+        forbidden = sum([s.user.check_forbidden_fields(**infos)
+                         for s in SF_SERVICES], [])
+        msg = 'The following fields cannot be updated: %s, discarding them'
+        logger.debug(msg % str(forbidden))
+        return dict((u, infos[u]) for u in infos.keys()
+                    if u not in forbidden and infos[u])
+
     def _update(self, user_id, infos):
         sfmanager.user.update(user_id,
                               username=infos.get('username'),
@@ -659,13 +667,10 @@ class ServicesUsersController(RestController):
                 service.service_name,
                 user_id)
             if s_id:
-                # TODO(mhu) Update calls are not implemented in the service
-                # plugins; this will be done in a future US/patch
                 try:
                     service.user.update(uid=s_id, **infos)
-                except exceptions.UnavailableActionError:
-                    msg = '[%s] cannot update user data: unavailable action'
-                    logger.debug(msg % service.service_name)
+                except exceptions.UnavailableActionError as e:
+                    logger.debug(e)
             else:
                 full_name = infos.get('full_name')
                 username = infos.get('username')
@@ -683,7 +688,45 @@ class ServicesUsersController(RestController):
                     msg = '[%s] has no authenticated user backend'
                     logger.debug(msg % service.service_name)
 
-    @expose()
+    @expose('json')
+    def put(self, id=None, email=None, username=None):
+        infos = request.json if request.content_length else {}
+        # the JSON payload is only for data to update.
+        _email = request.GET.get('email')
+        _username = request.GET.get('username')
+        d_id = request.GET.get('id')
+        if not d_id and (_email or _username):
+            logger.debug('[update] looking for %s %s ...' % (_email,
+                                                             _username))
+            d_id = sfmanager.user.get(username=_username,
+                                      email=_email).get('id')
+            logger.debug('found %s %s with id %s' % (_email, _username, d_id))
+        if not d_id:
+            response.status = 404
+            return
+        u = _username or sfmanager.user.get(d_id).get('username')
+        if not (is_admin(request.remote_user) or
+                u == request.remote_user):
+            abort(401,
+                  detail='Updates only allowed by self or administrator')
+        sanitized = self._remove_non_updatable_fields(infos)
+        logger.debug('[update] sanitized request %r to %r' % (infos,
+                                                              sanitized))
+        if not sanitized:
+            if sanitized != infos:
+                msg = 'You tried to update immutable fields'
+            else:
+                msg = 'Nothing to do'
+            abort(400,
+                  detail=msg)
+        try:
+            self._update(d_id, sanitized)
+            response.status = 200
+            return {'updated_fields': sanitized}
+        except Exception as e:
+            return report_unhandled_error(e)
+
+    @expose('json')
     def post(self):
         if not is_admin(request.remote_user):
             abort(401,
@@ -707,7 +750,8 @@ class ServicesUsersController(RestController):
                     sfmanager.user.reset_cauth_id(known_user['id'],
                                                   e_id)
                 u = known_user['id']
-                self._update(u, infos)
+                clean_infos = self._remove_non_updatable_fields(infos)
+                self._update(u, clean_infos)
             # maybe we know this user by cauth_id but her details changed
             elif not known_user and infos.get('external_id', -1) != -1:
                 known_user = sfmanager.user.get(cauth_id=infos['external_id'])
@@ -716,7 +760,8 @@ class ServicesUsersController(RestController):
                            'by cauth ID #%(cauth_id)s, user needs update')
                     logger.debug(msg % known_user)
                     u = known_user['id']
-                    self._update(u, infos)
+                    clean_infos = self._remove_non_updatable_fields(infos)
+                    self._update(u, clean_infos)
             # if we still cannot find it, let's create it
             if not known_user:
                 u = sfmanager.user.create(username=infos['username'],
@@ -726,6 +771,7 @@ class ServicesUsersController(RestController):
                 self._create_user_in_services(u, infos)
         except Exception as e:
             return report_unhandled_error(e)
+        # TODO(mhu) later, this should return the local id and the user data
         response.status = 201
 
     def _create_user_in_services(self, user_id, infos):
@@ -797,13 +843,13 @@ class ServicesUsersController(RestController):
                   detail='Deleting users is limited to administrators')
         d_id = id
         if not d_id and (email or username):
-            logger.debug('looking for %s %s' % (email, username))
+            logger.debug('[delete] looking for %s %s' % (email, username))
             d_id = sfmanager.user.get(username=username,
                                       email=email).get('id')
-            logger.debug(d_id)
         if not d_id:
             response.status = 404
             return
+        logger.debug('found %s %s with id %s' % (email, username, d_id))
         try:
             for service in SF_SERVICES:
                 try:
