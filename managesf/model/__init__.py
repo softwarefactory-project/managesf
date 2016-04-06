@@ -91,12 +91,16 @@ class SFUserCRUD:
                 return row2dict(ret)
             except MultipleResultsFound:
                 # TODO(mhu) find a better Error
+                session.close()
                 raise KeyError('search returned more than one result')
             except NoResultFound:
+                session.close()
                 return {}
         else:
             # all()
-            return [row2dict(ret) for ret in session.query(SFUser)]
+            all = [row2dict(ret) for ret in session.query(SFUser)]
+            session.close()
+            return all
 
     def update(self, id, username=None, email=None,
                fullname=None, cauth_id=None):
@@ -114,8 +118,10 @@ class SFUserCRUD:
             session.commit()
         except MultipleResultsFound:
             # TODO(mhu) find a better Error
+            session.close()
             raise KeyError('search returned more than one result')
         except NoResultFound:
+            session.close()
             logger.warn("Could not update user %s: not found" % id)
             return
 
@@ -159,8 +165,10 @@ class SFUserCRUD:
             return True
         except MultipleResultsFound:
             # TODO(mhu) find a better Error
+            session.close()
             raise KeyError('Too many candidates for deletion')
         except NoResultFound:
+            session.close()
             return False
 
 
@@ -191,6 +199,7 @@ def add_user(user):
         session.commit()
         return True, None
     except exc.IntegrityError as e:
+        session.close()
         return False, e.message
 
 
@@ -202,7 +211,9 @@ def get_user(username):
     try:
         ret = session.query(User).filter(User.username == username).one()
     except NoResultFound:
+        session.close()
         return False
+    session.close()
     return row2dict(ret)
 
 
