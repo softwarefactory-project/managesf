@@ -46,13 +46,17 @@ class Backup(object):
         p = self.msqlru._ssh('/root/backup_mysql.sh')
         logger.info("-> Mysql backup ended with code: %d" % p.returncode)
 
+        logger.debug("start backup of SF hiera files")
+        p = self.mru._ssh('/root/backup_backup.sh')
+        logger.info("-> SF hiera backup ended with code: %d" % p.returncode)
+
         bkp_dir = conf.managesf.get('backup_dir', '/var/www/managesf/')
         logger.debug("generate backup in %s" % bkp_dir)
         bkp = os.path.join(bkp_dir, 'sf_backup.tar.gz')
         self.mru._ssh(
             'tar --absolute-names -czPf ' +
             '%s /root/.bup /root/*db.sql.gz' % bkp)
-        self.mru._ssh('chmod 0400 %s' % bkp)
+        self.mru._ssh('chmod 0600 %s' % bkp)
         self.mru._ssh('chown apache:apache %s' % bkp)
 
     def unpack(self):
@@ -63,6 +67,8 @@ class Backup(object):
     def restore(self):
         p = self.msqlru._ssh('/root/restore_mysql.sh')
         logger.info("Mysql restoration ended with code: %d" % p.returncode)
+        p = self.mru._ssh('/root/restore_backup.sh')
+        logger.info("SF hiera restoration ended with code: %d" % p.returncode)
 
 
 def backup_start():

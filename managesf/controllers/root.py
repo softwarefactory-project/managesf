@@ -194,6 +194,8 @@ class ReplicationController(RestController):
 class BackupController(RestController):
     @expose('json')
     def get(self):
+        if not is_admin(request.remote_user):
+            abort(401)
         filepath = os.path.join(conf.managesf.get('backup_dir',
                                                   '/var/www/managesf/'),
                                 'sf_backup.tar.gz')
@@ -223,6 +225,8 @@ class BackupController(RestController):
 class RestoreController(RestController):
     @expose('json')
     def post(self):
+        if not is_admin(request.remote_user):
+            abort(401)
         filepath = os.path.join(conf.managesf.get('backup_dir',
                                                   '/var/www/managesf/'),
                                 'sf_backup.tar.gz')
