@@ -525,13 +525,30 @@ class TestManageSFAppBackupController(FunctionalTest):
 
 class TestManageSFAppMembershipController(FunctionalTest):
     def test_get_all_users(self):
-        with patch.object(SoftwareFactoryRedmine,
-                          'get_active_users') as au:
-            au.return_value = [[1, "a"], [2, "b"]]
-            response = self.app.get('/project/membership/', status="*")
-            self.assertEqual(200, response.status_int)
-            body = json.loads(response.body)
-            self.assertEqual([[1, "a"], [2, "b"]], body)
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        users = [{'email': 'u%i@bip.dom' % x,
+                  'ssh_keys': ['ora', 'oraora'],
+                  'full_name': 'User %i' % x,
+                  'username': 'user%i' % x} for x in range(10)]
+        ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(g_user.SFGerritUserManager, 'create'),
+               patch.object(SFRedmineUserManager, 'get'),
+               patch.object(g_user.SFGerritUserManager, 'get'), ]
+        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+            r_get.return_value = None
+            g_get.return_value = None
+            for x in range(10):
+                redmine_create.return_value = x
+                gerrit_create.return_value = x
+                response = self.app.post_json('/services_users/', users[x],
+                                              extra_environ=environ,
+                                              status="*")
+                self.assertEqual(response.status_int, 201)
+            user_list = self.app.get('/project/membership/', status="*").json
+            for u in users:
+                u_info = [u['username'], u['email'], u['full_name']]
+                self.assertTrue(u_info in user_list,
+                                '%s not in %s' % (u_info, user_list))
 
     def test_put_empty_values(self):
         response = self.app.put_json('/project/membership/', {}, status="*")
@@ -1122,6 +1139,30 @@ class TestManageSFServicesUserController(FunctionalTest):
             iggy = self.app.get('/services_users/?username=iggy',
                                 extra_environ=environ, status="*")
             self.assertEqual({}, iggy.json)
+
+    def test_all(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos_kira = {'email': 'kira@jojolion.dom',
+                      'ssh_keys': ['ora', 'oraora'],
+                      'full_name': 'yoshikage kira', 'username': 'kira'}
+        ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(g_user.SFGerritUserManager, 'create'),
+               patch.object(SFRedmineUserManager, 'get'),
+               patch.object(g_user.SFGerritUserManager, 'get'), ]
+        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+            r_get.return_value = None
+            g_get.return_value = None
+            redmine_create.return_value = 12
+            gerrit_create.return_value = 13
+            response = self.app.post_json('/services_users/', infos_kira,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+            response = self.app.get('/services_users/',
+                                    extra_environ=environ, status="*")
+            user_list = response.json
+            self.assertTrue(len(user_list) >= 1,
+                            user_list)
+            self.assertTrue(any(x['username'] == 'kira' for x in user_list))
 
     def test_get_user(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}

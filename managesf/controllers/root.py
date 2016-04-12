@@ -249,13 +249,8 @@ class RestoreController(RestController):
 class MembershipController(RestController):
     @expose('json')
     def get(self):
-        try:
-            # TODO(mhu) this must be independent from redmine
-            tracker = [s for s in SF_SERVICES
-                       if isinstance(s, base.BaseIssueTrackerServicePlugin)][0]
-            return tracker.get_active_users()
-        except Exception as e:
-            return report_unhandled_error(e)
+        return [(x['username'], x['email'], x['fullname'])
+                for x in sfmanager.user.all()]
 
     @expose('json')
     def put(self, project=None, user=None):
