@@ -38,7 +38,6 @@ from managesf.services.gerrit import project
 from managesf.services.gerrit import utils
 from managesf.services.gerrit.membership import SFGerritMembershipManager
 from managesf.services.gerrit.project import SFGerritProjectManager
-from managesf.services.gerrit.replication import SFGerritReplicationManager
 from managesf.services.gerrit.review import SFGerritReviewManager
 from managesf.services.gerrit import user as g_user
 from managesf.services.redmine import SoftwareFactoryRedmine
@@ -636,82 +635,6 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
 
-class TestManageSFAppReplicationController(FunctionalTest):
-    def test_put(self):
-        response = self.app.put_json('/replication/', {}, status="*")
-        self.assertEqual(response.status_int, 400)
-        response = self.app.put_json('/replication/repl', {}, status="*")
-        self.assertEqual(response.status_int, 400)
-        with patch.object(SFGerritReplicationManager, 'apply_config'):
-            response = self.app.put_json(
-                '/replication/repl', {'value': 'val'}, status="*")
-            self.assertEqual(response.status_int, 204)
-        with patch.object(SFGerritReplicationManager, 'apply_config',
-                          side_effect=raiseexc):
-            response = self.app.put_json(
-                '/replication/repl', {'value': 'val'}, status="*")
-            self.assertEqual(response.status_int, 500)
-            msg = json.loads(response.body)
-            self.assertEqual(msg,
-                             'Unable to process your request, failed '
-                             'with unhandled error (server side): FakeExcMsg')
-
-    def test_delete(self):
-        response = self.app.delete('/replication/', status="*")
-        self.assertEqual(response.status_int, 400)
-        with patch.object(SFGerritReplicationManager, 'apply_config'):
-            response = self.app.delete(
-                '/replication/repl', status="*")
-            self.assertEqual(response.status_int, 204)
-        with patch.object(SFGerritReplicationManager, 'apply_config',
-                          side_effect=raiseexc):
-            response = self.app.delete(
-                '/replication/repl', status="*")
-            self.assertEqual(response.status_int, 500)
-            msg = json.loads(response.body)
-            self.assertEqual(msg,
-                             'Unable to process your request, failed '
-                             'with unhandled error (server side): FakeExcMsg')
-
-    def test_get(self):
-        with patch.object(SFGerritReplicationManager, 'get_config') \
-                as rgc:
-            rgc.return_value = 'ret val'
-            response = self.app.get('/replication/', status="*")
-            self.assertEqual(response.status_int, 200)
-            response = self.app.get(
-                '/replication/repl/', status="*")
-            self.assertEqual(response.status_int, 200)
-            msg = json.loads(response.body)
-            self.assertEqual(msg, 'ret val')
-        with patch.object(SFGerritReplicationManager, 'get_config',
-                          side_effect=raiseexc):
-            response = self.app.get(
-                '/replication/repl/', status="*")
-            self.assertEqual(response.status_int, 500)
-            msg = json.loads(response.body)
-            self.assertEqual(msg,
-                             'Unable to process your request, failed '
-                             'with unhandled error (server side): FakeExcMsg')
-
-    def test_post(self):
-        with patch.object(SFGerritReplicationManager, 'trigger'):
-            response = self.app.post_json(
-                '/replication/',
-                {},
-                status="*")
-            self.assertEqual(response.status_int, 204)
-        with patch.object(SFGerritReplicationManager, 'trigger',
-                          side_effect=raiseexc):
-            response = self.app.post_json(
-                '/replication/', status="*")
-            self.assertEqual(response.status_int, 500)
-            msg = json.loads(response.body)
-            self.assertEqual(msg,
-                             'Unable to process your request, failed '
-                             'with unhandled error (server side): FakeExcMsg')
-
-
 class TestManageSFPagesController(FunctionalTest):
     def test_unauthenticated(self):
         resp = self.app.get('/pages/p1', status="*")
@@ -846,69 +769,6 @@ class TestManageSFHtpasswdController(FunctionalTest):
 
         resp = self.app.delete('/htpasswd/', extra_environ=env, status="*")
         self.assertEqual(resp.status_int, 406)
-
-
-class TestManageSFSSHConfigController(FunctionalTest):
-    def setUp(self, *args, **kwargs):
-        super(TestManageSFSSHConfigController, self).setUp(*args, **kwargs)
-        self.adminenv = {'REMOTE_USER': self.config['admin']['name']}
-        self.sample_config = {
-            'hostname': 'Hostname',
-            'identityfile_content': 'TheActualKeyOfTheHost',
-            'userknownhostsfile': 'UserKnownHostsFile',
-            'preferredauthentications': 'PreferredAuthentications',
-            'stricthostkeychecking': 'StrictHostKeyChecking',
-            'username': 'Username'
-        }
-        self.reference = """Host "firsthost"
-    Hostname Hostname
-    IdentityFile ~/.ssh/firsthost.key
-    PreferredAuthentications PreferredAuthentications
-    StrictHostKeyChecking StrictHostKeyChecking
-    UserKnownHostsFile UserKnownHostsFile
-    Username Username
-
-"""
-        confdir = self.config['sshconfig']['confdir']
-        self.filename = os.path.join(confdir, "config")
-        with open(self.filename, "w") as outf:
-            outf.write(self.reference)
-
-    def test_unauthenticated(self):
-        resp = self.app.put_json('/sshconfig/name/', {}, status="*")
-        self.assertEqual(resp.status_int, 403)
-
-        resp = self.app.get('/sshconfig/name/', {}, status="*")
-        self.assertEqual(resp.status_int, 403)
-
-        resp = self.app.delete('/sshconfig/name/', {}, status="*")
-        self.assertEqual(resp.status_int, 403)
-
-    def test_add_entry(self):
-        c2g = 'managesf.controllers.root.SSHConfigController._copy2gerrit'
-        with patch(c2g):
-            resp = self.app.put_json('/sshconfig/secondhost',
-                                     self.sample_config,
-                                     extra_environ=self.adminenv, status="*")
-
-        self.assertEqual(resp.status_int, 201)
-
-        with open(self.filename) as inf:
-            content = inf.read()
-
-        secondhost = self.reference.replace("firsthost", "secondhost")
-        self.assertTrue(self.reference in content)
-        self.assertTrue(secondhost in content)
-
-    def test_delete_entry(self):
-        resp = self.app.delete('/sshconfig/firsthost',
-                               extra_environ=self.adminenv, status="*")
-
-        self.assertEqual(resp.status_int, 204)
-
-        with open(self.filename) as inf:
-            content = inf.read()
-        self.assertEqual("", content)
 
 
 class TestProjectTestsController(FunctionalTest):
