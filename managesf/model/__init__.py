@@ -261,14 +261,12 @@ def add_user(user):
     """ Add a user in the database
         return Boolean
     """
-    session = start_session()
-    u = User(**user)
-    session.add(u)
     try:
-        session.commit()
-        return True, None
+        with session_scope() as session:
+            u = User(**user)
+            session.add(u)
+            return True, None
     except exc.IntegrityError as e:
-        session.close()
         return False, e.message
 
 
@@ -276,24 +274,21 @@ def get_user(username):
     """ Fetch a user by its username
         return user dict or False if not found
     """
-    session = start_session()
     try:
-        ret = session.query(User).filter(User.username == username).one()
+        with session_scope() as session:
+            ret = session.query(User).filter(User.username == username).one()
+            return row2dict(ret)
     except NoResultFound:
-        session.close()
         return False
-    session.close()
-    return row2dict(ret)
 
 
 def delete_user(username):
     """ Delete a user by its username
         return True if deleted or False if not found
     """
-    session = start_session()
-    ret = session.query(User).filter(User.username == username).delete()
-    session.commit()
-    return bool(ret)
+    with session_scope() as session:
+        ret = session.query(User).filter(User.username == username).delete()
+        return bool(ret)
 
 
 def update_user(username, infos):
@@ -301,7 +296,7 @@ def update_user(username, infos):
         arg infos: Dict
         return True if deleted or False if not found
     """
-    session = start_session()
-    ret = session.query(User).filter(User.username == username).update(infos)
-    session.commit()
-    return bool(ret)
+    with session_scope() as session:
+        user = session.query(User)
+        ret = user.filter(User.username == username).update(infos)
+        return bool(ret)
