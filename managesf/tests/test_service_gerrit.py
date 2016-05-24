@@ -493,10 +493,7 @@ class TestSFGerritProjectManager(BaseSFGerritService):
             create_project.reset_mock()
             rep_create.reset_mock()
             proj_data = {'description': 'eh',
-                         'ptl-group-members': ['a', 'b'],
-                         'private': True,
-                         'core-group-members': ['b', 'c'],
-                         'dev-group-members': ['d', 'e']}
+                         'private': True}
             self.gerrit.project.create('p', 'u', proj_data)
             role_calls = [call('u',
                                'p-core',
@@ -508,31 +505,6 @@ class TestSFGerritProjectManager(BaseSFGerritService):
                                'p-dev',
                                'Developers for project p'), ]
             r_create.assert_has_calls(role_calls)
-            membership_calls = [call('u',
-                                     'b',
-                                     'p',
-                                     ['core-group']),
-                                call('u',
-                                     'c',
-                                     'p',
-                                     ['core-group']),
-                                call('u',
-                                     'a',
-                                     'p',
-                                     ['ptl-group']),
-                                call('u',
-                                     'b',
-                                     'p',
-                                     ['ptl-group']),
-                                call('u',
-                                     'd',
-                                     'p',
-                                     ['dev-group']),
-                                call('u',
-                                     'e',
-                                     'p',
-                                     ['dev-group']), ]
-            m_create.assert_has_calls(membership_calls)
 
     def test_delete(self):
         patches = [patch.object(GerritUtils, 'get_project_owner'),

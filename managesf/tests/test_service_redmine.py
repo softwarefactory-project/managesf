@@ -447,46 +447,9 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
             m_c.reset_mock()
             _c.reset_mock()
             proj_data = {'description': 'eh',
-                         'ptl-group-members': ['a', 'b'],
-                         'private': True,
-                         'core-group-members': ['b', 'c'],
-                         'dev-group-members': ['d', 'e']}
+                         'private': True}
             self.redmine.project.create('p', 'u', proj_data)
             _c.assert_called_with('p', 'eh', True)
-            membership_calls = [call(requestor='u',
-                                     username='u',
-                                     project='p',
-                                     groups=['ptl-group'],
-                                     user_is_owner=True),
-                                call(requestor='u',
-                                     username='u',
-                                     project='p',
-                                     groups=['dev-group']),
-                                call(requestor='u',
-                                     username='a',
-                                     project='p',
-                                     groups=['ptl-group']),
-                                call(requestor='u',
-                                     username='b',
-                                     project='p',
-                                     groups=['ptl-group']),
-                                call(requestor='u',
-                                     username='b',
-                                     project='p',
-                                     groups=['core-group']),
-                                call(requestor='u',
-                                     username='c',
-                                     project='p',
-                                     groups=['core-group']),
-                                call(requestor='u',
-                                     username='d',
-                                     project='p',
-                                     groups=['dev-group']),
-                                call(requestor='u',
-                                     username='e',
-                                     project='p',
-                                     groups=['dev-group']), ]
-            m_c.assert_has_calls(membership_calls)
 
     def test_create_project_exists(self):
         patches = [patch.object(self.redmine.project, '_create'),

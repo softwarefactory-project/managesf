@@ -112,34 +112,14 @@ class SFGerritProjectManager(base.ProjectManager):
         core = "%s-core" % project_name
         core_desc = "Core developers for project " + project_name
         self.plugin.role.create(username, core, core_desc)
-        if 'core-group-members' in project_data:
-            for m in project_data['core-group-members']:
-                self.plugin.membership.create(username,
-                                              m,
-                                              project_name,
-                                              ["core-group"])
-
         ptl = "%s-ptl" % project_name
         ptl_desc = "Project team lead for project " + project_name
         self.plugin.role.create(username, ptl, ptl_desc)
-        if 'ptl-group-members' in project_data:
-            for m in project_data['ptl-group-members']:
-                self.plugin.membership.create(username,
-                                              m,
-                                              project_name,
-                                              ["ptl-group"])
 
         if data['private']:
             dev = "%s-dev" % project_name
             dev_desc = "Developers for project " + project_name
             self.plugin.role.create(username, dev, dev_desc)
-            if 'dev-group-members' in project_data:
-                for m in project_data['dev-group-members']:
-                    if m != username:
-                        self.plugin.membership.create(username,
-                                                      m,
-                                                      project_name,
-                                                      ["dev-group"])
 
         owner = [ptl]
         if client.project_exists(project_name):

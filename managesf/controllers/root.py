@@ -347,12 +347,6 @@ class ProjectController(RestController):
             # create project
             inp = request.json if request.content_length else {}
             user = request.remote_user
-            for gn in ('ptl-group-members', 'core-group-members',
-                       'dev-group-members'):
-                for u in inp.get(gn, []):
-                    if '@' not in u:
-                        response.status = 400
-                        return "User must be identified by its email address"
 
             # Early check of upstream availability
             if 'upstream' in inp:
