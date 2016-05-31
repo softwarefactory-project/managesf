@@ -109,9 +109,27 @@ class UserManager(BaseCRUDManager):
 
 
 @six.add_metaclass(abc.ABCMeta)
+class GroupManager(BaseCRUDManager):
+    """Abstract class handling CRUD operations on groups in Software
+    Factory, if the service has a notion of groups."""
+
+    # list of fields that cannot be updated. For example, it is not allowed
+    # to change the group name in gerrit.
+    _immutable_fields_ = []
+
+    @classmethod
+    def check_forbidden_fields(cls, **kwargs):
+        return list(set(cls._immutable_fields_) & set(kwargs.keys()))
+
+    def update(self, uid, *args, **kwargs):
+        """Update operation"""
+        raise exc.UnavailableActionError()
+
+
+@six.add_metaclass(abc.ABCMeta)
 class MembershipManager(BaseCRUDManager):
-    """Abstract class handling membership operations between users and
-    projects in Software Factory"""
+    """Abstract class handling membership operations between
+    users/standalone groups and projects in Software Factory"""
 
 
 @six.add_metaclass(abc.ABCMeta)

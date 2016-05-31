@@ -14,6 +14,7 @@
 
 import base64
 import time
+import urllib
 import logging
 import os.path
 
@@ -395,6 +396,149 @@ class ProjectController(RestController):
             return "Project %s has been deleted." % name
         except Exception as e:
             return report_unhandled_error(e)
+
+
+class GroupController(RestController):
+
+    def sort_services(self):
+        sorted_services = [s for s in SF_SERVICES
+                           if isinstance(s, base.BaseCodeReviewServicePlugin)]
+        for service in SF_SERVICES:
+            if not isinstance(service,
+                              base.BaseCodeReviewServicePlugin):
+                sorted_services.append(service)
+        return sorted_services
+
+    def check_authorized(self, groupname):
+        # Abort and return Forbidden if requestor is not part of
+        # of the group.
+        user_email = sfmanager.user.get(
+            username=request.remote_user).get('email')
+        ex_members = self.get(groupname)[groupname]
+        if user_email not in [user['email'] for user in ex_members]:
+            abort(403, "Requestor is not part of %s" % groupname)
+
+    @user_login_required
+    @expose()
+    def put(self, groupname):
+        groupname = urllib.unquote_plus(groupname)
+        infos = request.json if request.content_length else {}
+        desc = infos.get('description', None)
+        # Force action to be executed on Gerrit first
+        sorted_services = self.sort_services()
+        # Fetch requestor email
+        user_email = sfmanager.user.get(
+            username=request.remote_user).get('email')
+        for service in sorted_services:
+            try:
+                if hasattr(service, "group"):
+                    service.group.create(groupname, user_email, desc)
+            except exceptions.UnavailableActionError:
+                msg = '[%s] group create is not an available action'
+                logger.debug(msg % service.service_name)
+            except exceptions.CreateGroupException, e:
+                # Gerrit is the reference, abort if the group
+                # can't be create in Gerrit
+                if isinstance(service,
+                              base.BaseCodeReviewServicePlugin):
+                    abort(409, detail=e.message)
+                else:
+                    # For other services just warn via logs
+                    logger.info("group %s create on %s was unsuccessful" % (
+                                groupname, service))
+            except Exception as e:
+                return report_unhandled_error(e)
+            response.status = 201
+
+    @user_login_required
+    @expose()
+    def post(self, groupname):
+        groupname = urllib.unquote_plus(groupname)
+        infos = request.json if request.content_length else {}
+        members = infos.get("members", [])
+        # Force action to be executed on Gerrit first
+        sorted_services = self.sort_services()
+
+        # Be sure the user is part of that group
+        self.check_authorized(groupname)
+
+        for service in sorted_services:
+            try:
+                if hasattr(service, "group"):
+                        service.group.update(groupname, members)
+            except exceptions.UnavailableActionError:
+                msg = '[%s] group update is not an available action'
+                logger.debug(msg % service.service_name)
+            except (exceptions.UpdateGroupException,
+                    exceptions.GroupNotFoundException), e:
+                # Gerrit is the reference, abort if the group
+                # can't be updated in Gerrit
+                if isinstance(service,
+                              base.BaseCodeReviewServicePlugin):
+                    abort(404, detail=e.message)
+                else:
+                    # For other services just warn via logs
+                    logger.info("group %s post on %s was unsuccessful" % (
+                                groupname, service))
+            except Exception as e:
+                return report_unhandled_error(e)
+
+    @user_login_required
+    @expose('json')
+    def get(self, groupname):
+        if groupname:
+            groupname = urllib.unquote_plus(groupname)
+        for service in SF_SERVICES:
+            try:
+                if isinstance(service,
+                              base.BaseCodeReviewServicePlugin):
+                    return service.group.get(groupname)
+            except exceptions.UnavailableActionError:
+                msg = '[%s] group get is not an available action'
+                logger.debug(msg % service.service_name)
+            except exceptions.GroupNotFoundException, e:
+                abort(404, detail=e.message)
+            except Exception as e:
+                return report_unhandled_error(e)
+
+    @user_login_required
+    @expose('json')
+    def get_all(self):
+        return self.get(None)
+
+    @user_login_required
+    @expose()
+    def delete(self, groupname):
+        groupname = urllib.unquote_plus(groupname)
+        # Force action to be executed on Gerrit first
+        sorted_services = self.sort_services()
+
+        # Be sure the user is part of that group
+        self.check_authorized(groupname)
+
+        for service in sorted_services:
+            try:
+                if isinstance(service,
+                              base.BaseCodeReviewServicePlugin):
+                    service.group.get(groupname)
+                    service.role.delete(groupname)
+                else:
+                    if hasattr(service, "group"):
+                        service.group.delete(groupname)
+            except exceptions.GroupNotFoundException, e:
+                if isinstance(service,
+                              base.BaseCodeReviewServicePlugin):
+                    # Abort if action not possible on Gerrit
+                    abort(404, detail=e.message)
+                else:
+                    # For other services just warn via logs
+                    logger.info("group %s delete on %s was unsuccessful" % (
+                                groupname, service))
+            except exceptions.UnavailableActionError:
+                msg = '[%s] group delete is not an available action'
+                logger.debug(msg % service.service_name)
+            except Exception as e:
+                return report_unhandled_error(e)
 
 
 class PagesController(RestController):
@@ -879,6 +1023,7 @@ class RootController(object):
     restore = RestoreController()
     user = LocalUserController()
     bind = LocalUserBindController()
+    group = GroupController()
     htpasswd = HtpasswdController()
     about = introspection.IntrospectionController()
     tests = TestsController()

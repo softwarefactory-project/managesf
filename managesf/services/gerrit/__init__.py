@@ -29,6 +29,7 @@ from managesf.services.gerrit import role
 from managesf.services.gerrit import user
 from managesf.services.gerrit import review
 from managesf.services.gerrit import repository
+from managesf.services.gerrit import group
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ class Gerrit(base.BaseCodeReviewServicePlugin):
         self.backup = None
         self.repository = None
         self.review = None
+        self.group = None
 
     def get_client(self, cookie=None):
         raise NotImplementedError
@@ -71,6 +73,7 @@ class SoftwareFactoryGerrit(Gerrit):
         self.backup.heartbeat_cmd = 'wget --spider http://localhost:8000/r/'
         self.repository = repository.SFGerritRepositoryManager(self)
         self.review = review.SFGerritReviewManager(self)
+        self.group = group.SFGerritGroupManager(self)
 
     def get_client(self, cookie=None):
         if not cookie:

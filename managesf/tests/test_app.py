@@ -31,6 +31,8 @@ from managesf.tests import dummy_conf
 from managesf.services.base import BackupManager, BaseHooksManager
 from managesf.services import exceptions as exc
 
+from managesf.controllers.SFuser import SFUserManager
+
 # plugins imports
 # TODO: should be done dynamically depending on what plugins we want
 
@@ -39,12 +41,15 @@ from managesf.services.gerrit import utils
 from managesf.services.gerrit.membership import SFGerritMembershipManager
 from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit.review import SFGerritReviewManager
+from managesf.services.gerrit.group import SFGerritGroupManager
+from managesf.services.gerrit.role import SFGerritRoleManager
 from managesf.services.gerrit import user as g_user
 from managesf.services.redmine import SoftwareFactoryRedmine
 from managesf.services.redmine.membership import SFRedmineMembershipManager
 from managesf.services.redmine.project import SFRedmineProjectManager
 from managesf.services.redmine.user import SFRedmineUserManager
 from managesf.services.storyboard.user import StoryboardUserManager
+from managesf.services.redmine.group import RedmineGroupManager
 
 
 FIND_PROJECT_PATH = 'managesf.controllers.root.ProjectController._find_project'
@@ -645,6 +650,107 @@ class TestManageSFAppMembershipController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
+
+
+class TestGroupController(FunctionalTest):
+
+    def exc1(*args, **kwargs):
+        raise exc.CreateGroupException('FakeExcMsg')
+
+    def exc2(*args, **kwargs):
+        raise exc.UpdateGroupException('FakeExcMsg')
+
+    def exc23(*args, **kwargs):
+        raise exc.GroupNotFoundException('FakeExcMsg')
+
+    def test_create_group(self):
+        env = {'REMOTE_USER': 'user1'}
+        ctx = [patch.object(SFGerritGroupManager, 'create'),
+               patch.object(RedmineGroupManager, 'create'),
+               patch.object(SFUserManager, 'get')]
+        with nested(*ctx) as (sgm, rgm, sfum):
+            sfum.return_value = {'email': "user1@sftests.com"}
+            resp = self.app.put_json('/group/grp1',
+                                     {'description': 'Nice dev team'},
+                                     extra_environ=env,
+                                     status="*")
+            sgm.assert_called_with('grp1', 'user1@sftests.com',
+                                   'Nice dev team')
+            rgm.assert_called_with('grp1', 'user1@sftests.com',
+                                   'Nice dev team')
+        self.assertEqual(resp.status_int, 201)
+        with nested(*ctx) as (sgm, rgm, sfum):
+            sgm.side_effect = self.exc1
+            sfum.return_value = {'email': "user1@sftests.com"}
+            resp = self.app.put_json('/group/grp1',
+                                     {'description': 'Nice dev team'},
+                                     extra_environ=env,
+                                     status="*")
+            sgm.assert_called_with('grp1', 'user1@sftests.com',
+                                   'Nice dev team')
+            rgm.assert_not_called()
+        self.assertEqual(resp.status_int, 409)
+        with nested(*ctx) as (sgm, rgm, sfum):
+            rgm.side_effect = self.exc1
+            sfum.return_value = {'email': "user1@sftests.com"}
+            resp = self.app.put_json('/group/grp1',
+                                     {'description': 'Nice dev team'},
+                                     extra_environ=env,
+                                     status="*")
+            sgm.assert_called_with('grp1', 'user1@sftests.com',
+                                   'Nice dev team')
+            rgm.assert_called_with('grp1', 'user1@sftests.com',
+                                   'Nice dev team')
+        # We consider other services than Gerrit shouldn't
+        # return an error if at least Gerrit changes pass
+        self.assertEqual(resp.status_int, 201)
+
+    def test_delete_group(self):
+        env = {'REMOTE_USER': 'user1'}
+        ctx = [patch.object(SFGerritRoleManager, 'delete'),
+               patch.object(RedmineGroupManager, 'delete'),
+               patch.object(SFGerritGroupManager, 'get'),
+               patch.object(SFUserManager, 'get')]
+        with nested(*ctx) as (srm, rgm, sgg, sfum):
+            sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
+            resp = self.app.delete('/group/grp1',
+                                   extra_environ=env,
+                                   status="*")
+            srm.assert_not_called()
+            rgm.assert_not_called()
+        # user is not part of the group
+        self.assertEqual(resp.status_int, 403)
+        with nested(*ctx) as (srm, rgm, sgg, sfum):
+            sfum.return_value = {'email': 'user1@sftests.com'}
+            sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
+            resp = self.app.delete('/group/grp1',
+                                   extra_environ=env,
+                                   status="*")
+            srm.assert_called_with('grp1')
+            rgm.assert_called_with('grp1')
+        # user is part of the group so delete is accepted
+        self.assertEqual(resp.status_int, 204)
+
+    def test_get_group(self):
+        env = {'REMOTE_USER': 'user1'}
+        with patch.object(SFGerritGroupManager, 'get') as sgg:
+            sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
+            resp = self.app.get('/group/grp1',
+                                extra_environ=env,
+                                status="*")
+            sgg.assert_called_with('grp1')
+        self.assertEqual(resp.status_int, 200)
+        self.assertDictEqual(resp.json, sgg.return_value)
+
+        with patch.object(SFGerritGroupManager, 'get') as sgg:
+            sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}],
+                                'grp2': [{'email': 'user2@sftests.com'}]}
+            resp = self.app.get('/group/',
+                                extra_environ=env,
+                                status="*")
+            sgg.assert_called_with(None)
+        self.assertEqual(resp.status_int, 200)
+        self.assertDictEqual(resp.json, sgg.return_value)
 
 
 class TestManageSFPagesController(FunctionalTest):

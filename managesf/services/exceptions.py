@@ -28,3 +28,18 @@ class UnavailableActionError(Exception):
 class Unauthorized(Exception):
     """Raised if an action is unauthorized on the service"""
     pass
+
+
+class CreateGroupException(Exception):
+    """Raised if a group creation failed"""
+    pass
+
+
+class UpdateGroupException(Exception):
+    """Raised if a group update failed"""
+    pass
+
+
+class GroupNotFoundException(Exception):
+    """Raised if a group lookup failed"""
+    pass
