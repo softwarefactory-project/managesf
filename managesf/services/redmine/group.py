@@ -36,7 +36,7 @@ class RedmineGroupManager(base.GroupManager):
         logger.info("[%s] create group %s" % (self.plugin.service_name,
                                               groupname))
         if not client.create_group(groupname):
-            raise exc.CreateGroupException("Unable to craete group due "
+            raise exc.CreateGroupException("Unable to create group due "
                                            "to a conflict")
         # Add the requestor as inital user
         gid = client.get_group_id(groupname)

@@ -535,3 +535,48 @@ class TestSFGerritProjectManager(BaseSFGerritService):
                             call('p-ptl'),
                             call('p-dev'), ]
             role_delete.assert_has_calls(delete_calls)
+
+
+class TestSFGerritGroupManager(BaseSFGerritService):
+    def test_get(self):
+        patches = [patch.object(GerritUtils, 'get_project_groups_id'),
+                   patch.object(GerritUtils, 'get_projects'),
+                   patch.object(GerritUtils, 'get_group_id'),
+                   patch.object(GerritUtils, 'get_group_members'),
+                   patch.object(GerritUtils, 'get_groups')]
+        with nested(*patches) as (a, b, c, d, e):
+            a.return_value = {'p1': {'owners': ['1'],
+                                     'others': ['2']}}
+            c.return_value = 3
+            d.return_value = ['user1@sftests.com']
+            ret = self.gerrit.group.get('grp1')
+            self.assertIn('user1@sftests.com', ret['grp1'])
+
+    def test_create(self):
+        patches = [patch.object(GerritUtils, 'create_group'),
+                   patch.object(GerritUtils, 'delete_group_member'),
+                   patch.object(GerritUtils, 'add_group_member')]
+        with nested(*patches) as (a, b, c):
+            self.gerrit.group.create('grp1', 'user1@sftests.com',
+                                     'Group desc')
+            a.assert_called_with('grp1', 'Group desc')
+            b.assert_called_with('grp1', 'admin')
+            c.assert_called_with('user1@sftests.com', 'grp1')
+
+    def test_update(self):
+        patches = [patch.object(GerritUtils, 'get_project_groups_id'),
+                   patch.object(GerritUtils, 'get_projects'),
+                   patch.object(GerritUtils, 'get_group_id'),
+                   patch.object(GerritUtils, 'get_group_members'),
+                   patch.object(GerritUtils, 'add_group_member'),
+                   patch.object(GerritUtils, 'delete_group_member')]
+        with nested(*patches) as (a, b, c, d, e, f):
+            a.return_value = {'p1': {'owners': ['1'],
+                                     'others': ['2']}}
+            c.return_value = 3
+            d.return_value = [{'email': 'user1@sftests.com'}]
+            self.gerrit.group.update('grp1', ['user2@sftests.com'])
+            # user 2 is added
+            e.assert_called_with('user2@sftests.com', 'grp1')
+            # user 1 is removed
+            f.assert_called_with('grp1', 'user1@sftests.com')

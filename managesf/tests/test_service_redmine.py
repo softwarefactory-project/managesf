@@ -482,3 +482,53 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
             g.return_value = ['Manager', ]
             self.redmine.project.delete('nss/proj1', 'u')
             d.assert_called_with('nss_proj1')
+
+
+class TestRedmineGroupManager(BaseSFRedmineService):
+    def test_create(self):
+        patches = [patch.object(RedmineUtils, 'create_group'),
+                   patch.object(RedmineUtils, 'get_group_id'),
+                   patch.object(RedmineUtils, 'get_user_id'),
+                   patch.object(RedmineUtils, 'set_group_members')]
+        with nested(*patches) as (a, b, c, d):
+            a.return_value = True
+            b.return_value = 1
+            c.return_value = 2
+            self.redmine.group.create('grp1', 'user1@sftests.com')
+            a.assert_called_with('grp1')
+            d.assert_called_with(1, [2])
+        with nested(*patches) as (a, b, c, d):
+            a.return_value = None
+            self.assertRaises(exc.CreateGroupException,
+                              self.redmine.group.create, 'grp1',
+                              'user1@sftests.com')
+
+    def test_update(self):
+        patches = [patch.object(RedmineUtils, 'get_group_id'),
+                   patch.object(RedmineUtils, 'get_user_id'),
+                   patch.object(RedmineUtils, 'set_group_members')]
+        with nested(*patches) as (a, b, c):
+            a.return_value = 1
+            b.side_effect = [10, 11]
+            self.redmine.group.update('grp1', ['user1@sftests.com',
+                                               'user2@sftests.com'])
+            c.assert_called_with(1, [10, 11])
+        with nested(*patches) as (a, b, c):
+            a.return_value = None
+            self.assertRaises(exc.GroupNotFoundException,
+                              self.redmine.group.update,
+                              'grp1',
+                              ['user1@sftests.com',
+                               'user2@sftests.com'])
+
+    def test_delete(self):
+        patches = [patch.object(RedmineUtils, 'get_group_id'),
+                   patch.object(RedmineUtils, 'delete_group')]
+        with nested(*patches) as (a, b):
+            a.return_value = 1
+            self.redmine.group.delete('grp1')
+            b.assert_called_with(1)
+        with nested(*patches) as (a, b):
+            a.return_value = None
+            self.assertRaises(exc.GroupNotFoundException,
+                              self.redmine.group.delete, 'grp1')
