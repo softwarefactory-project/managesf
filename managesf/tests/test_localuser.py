@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2015 Red Hat, Inc.
 #
@@ -204,3 +205,22 @@ class TestLocaluserController(TestCase):
         authorization = encode('denis', "abc")
         self.assertRaises(localuser.UserNotFound,
                           lambda: localuser.bind_user(authorization))
+
+    @patch('managesf.controllers.localuser.request')
+    def test_unicode_user(self, request_mock):
+        request_mock.remote_user = self.conf.admin['name']
+        infos = {'fullname': u'うずまきナルト',
+                 'email': 'hokage@konoha',
+                 'password': "abc"}
+        localuser.update_user(u'七代目火影4lyf', infos)
+        expected = {'username': u'七代目火影4lyf',
+                    'fullname': u'うずまきナルト',
+                    'email': 'hokage@konoha',
+                    'sshkey': 'None'}
+        ret = localuser.model.get_user(u'七代目火影4lyf')
+        del ret['hashed_password']
+        self.assertDictEqual(ret, expected)
+        authorization = encode(u'七代目火影4lyf'.encode('utf8'), "abc")
+        self.assertDictEqual(expected,
+                             localuser.bind_user(authorization),
+                             localuser.bind_user(authorization))

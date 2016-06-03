@@ -46,7 +46,7 @@ class SFGerritUserManager(base.UserManager):
         """add keys for username."""
         g_client = self.plugin.get_client()
         for key in keys:
-            msg = "[%s] Adding key %s for user %s"
+            msg = u"[%s] Adding key %s for user %s"
             logger.debug(msg % (self.plugin.service_name,
                                 key.get('key'),
                                 username))
@@ -56,15 +56,15 @@ class SFGerritUserManager(base.UserManager):
                 logger.debug('Could not add key: %s' % e)
 
     def _add_account_as_external(self, account_id, username):
-        sql = ("INSERT IGNORE INTO account_external_ids VALUES"
-               "(%d, NULL, NULL, 'gerrit:%s');" %
+        sql = (u"INSERT IGNORE INTO account_external_ids VALUES"
+               u"(%d, NULL, NULL, 'gerrit:%s');" %
                (account_id, username))
         try:
             self.session.execute(sql)
             self.session.commit()
             return True
         except Exception as e:
-            msg = "[%s] Could not insert user %s in account_external_ids: %s"
+            msg = u"[%s] Could not insert user %s in account_external_ids: %s"
             logger.debug(msg % (self.plugin.service_name,
                                 username, e.message))
             return False
@@ -77,7 +77,7 @@ class SFGerritUserManager(base.UserManager):
             account_id = user.get('_account_id')
         except Exception as e:
             account_id = None
-            msg = "[%s] could not create user %s, service returned: %s"
+            msg = u"[%s] could not create user %s, service returned: %s"
             logger.error(msg % (self.plugin.service_name,
                                 username, e))
             raise Exception(msg % (self.plugin.service_name,
@@ -89,8 +89,8 @@ class SFGerritUserManager(base.UserManager):
                                                            username)
         if ssh_keys and fetch_ssh_keys:
             self._add_sshkeys(username, ssh_keys)
-        logger.debug('[%s] user %s created' % (self.plugin.service_name,
-                                               username))
+        logger.debug(u'[%s] user %s created' % (self.plugin.service_name,
+                                                username))
         return account_id
 
     def get(self, email=None, username=None):
@@ -110,9 +110,9 @@ class SFGerritUserManager(base.UserManager):
     def update(self, uid, **kwargs):
         f = self.check_forbidden_fields(**kwargs)
         if f:
-            msg = '[%s] fields %s cannot be updated'
+            msg = u'[%s] fields %s cannot be updated'
             raise exc.UnavailableActionError(msg % (self.plugin.service_name,
-                                                    str(f)))
+                                                    ', '.join(f)))
         g_client = self.plugin.get_client()
         return g_client.update_account(id=uid, no_email_confirmation=True,
                                        **kwargs)
@@ -123,7 +123,7 @@ class SFGerritUserManager(base.UserManager):
         user_info = self.get(email, username) or {}
         account_id = user_info.get('_account_id')
         if not account_id:
-            msg = '[%s] %s not found, skip deletion'
+            msg = u'[%s] %s not found, skip deletion'
             logger.debug(msg % (self.plugin.service_name,
                                 email or username))
             return
@@ -140,7 +140,7 @@ class SFGerritUserManager(base.UserManager):
             self.session.execute(sql)
             self.session.commit()
         except Exception as e:
-            msg = "[%s] Could not delete user %s in base: %s"
+            msg = u"[%s] Could not delete user %s in base: %s"
             logger.debug(msg % (self.plugin.service_name,
                                 email or username, e.message))
         # flush gerrit caches
@@ -150,6 +150,6 @@ class SFGerritUserManager(base.UserManager):
         for cache in ('accounts', 'accounts_byemail', 'accounts_byname',
                       'groups_members'):
             ge._ssh('gerrit flush-caches --cache %s' % cache)
-        logger.debug('[%s] %s (id %s) deleted' % (self.plugin.service_name,
-                                                  email or username,
-                                                  account_id))
+        logger.debug(u'[%s] %s (id %s) deleted' % (self.plugin.service_name,
+                                                   email or username,
+                                                   account_id))

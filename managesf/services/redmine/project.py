@@ -39,7 +39,7 @@ class RedmineProjectManager(base.ProjectManager):
         debug_args = (self.plugin.service_name,
                       project_name,
                       username)
-        logger.debug('[%s] creating project %s for %s' % debug_args)
+        logger.debug(u'[%s] creating project %s for %s' % debug_args)
 
         if not project_data:
             project_data = {}
@@ -69,13 +69,13 @@ class RedmineProjectManager(base.ProjectManager):
                                           user_is_owner=True)
         except ValidationError as e:
             if e.message == 'Identifier has already been taken':
-                msg = '[%s] %s is already PTL for %s'
+                msg = u'[%s] %s is already PTL for %s'
                 logger.debug(msg % (self.plugin.service_name,
                                     username,
                                     project_name))
             else:
                 # reraise, we don't know what's happening
-                logger.debug('[%s] %s' % (self.plugin.service_name, e))
+                logger.debug(u'[%s] %s' % (self.plugin.service_name, e))
                 raise e
         try:
             self.plugin.membership.create(requestor=username,
@@ -84,13 +84,13 @@ class RedmineProjectManager(base.ProjectManager):
                                           groups=['dev-group'],)
         except ValidationError as e:
             if e.message == 'Identifier has already been taken':
-                msg = '[%s] %s is already dev for %s'
+                msg = u'[%s] %s is already dev for %s'
                 logger.debug(msg % (self.plugin.service_name,
                                     username,
                                     project_name))
             else:
                 # reraise, we don't know what's happening
-                logger.debug('[%s] %s' % (self.plugin.service_name, e))
+                logger.debug(u'[%s] %s' % (self.plugin.service_name, e))
                 raise e
 
         logger.info('[%s] project %s created' % (self.plugin.service_name,
@@ -108,7 +108,7 @@ class RedmineProjectManager(base.ProjectManager):
         if (not self.plugin.role.is_admin(username) and
             'Manager' not in self.plugin.role.get(username,
                                                   project_name=project_name)):
-            msg = '%s must be admin or project manager on project %s'
+            msg = u'%s must be admin or project manager on project %s'
             raise exc.Unauthorized(msg % (username, project_name))
         self._delete(project_name)
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2016 Red Hat, Inc.
 #
@@ -214,3 +215,16 @@ class SFuserController(TestCase):
         u.delete(cauth_id=23, email='Bubblegum')
         self.assertEqual({},
                          u.get(username='Bonnibel'))
+
+    def test_unicode(self):
+        """create and get a non ascii user"""
+        u = SFuser.SFUserManager()
+        id = u.create(username=u'七代目火影4lyf',
+                      email='datte@bayo',
+                      fullname=u'うずまきナルト',
+                      cauth_id=999)
+        self.assertEqual(u'うずまきナルト',
+                         SFuser.crud.get(id=id).get('fullname'))
+        by_username = SFuser.crud.get(username=u'七代目火影4lyf')
+        self.assertEqual(u'うずまきナルト',
+                         by_username.get('fullname'))

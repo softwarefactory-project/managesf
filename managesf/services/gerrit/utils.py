@@ -43,9 +43,9 @@ def _exec(cmd, cwd=None, env=None):
         std_out = subprocess.check_output(cmd, env=env, cwd=cwd,
                                           stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as err:
-        msg = '"%s" failed with error code %s: %s'
+        msg = u'"%s" failed with error code %s: %s'
         logger.exception(msg % (' '.join(cmd), err.returncode, err.output))
-        msg = '"%s" failed with error code %s'
+        msg = u'"%s" failed with error code %s'
         raise LocalProcessError(msg % (' '.join(cmd), err.returncode))
 
     logger.info("[gerrit] cmd %s output" % cmd)

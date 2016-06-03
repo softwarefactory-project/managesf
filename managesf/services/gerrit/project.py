@@ -77,7 +77,7 @@ class SFGerritProjectManager(base.ProjectManager):
         client = self.plugin.get_client()
         groups = client.get_user_groups(user)
         if isinstance(groups, bool):
-            logger.info("[%s] Could not find user groups %s: %s" % (
+            logger.info(u"[%s] Could not find user groups %s: %s" % (
                 self.plugin.service_name, user, str(groups)))
             groups = []
         return groups
@@ -143,8 +143,8 @@ class SFGerritProjectManager(base.ProjectManager):
         client = self.plugin.get_client()
         user_owns_project = self.user_owns_project(requestor, project_name)
         if not user_owns_project and not self.plugin.role.is_admin(requestor):
-            msg = ("[%s] User is neither an Administrator "
-                   "nor project %s's owner")
+            msg = (u"[%s] User is neither an Administrator "
+                   u"nor project %s's owner")
             logger.debug(msg % (self.plugin.service_name, project_name))
             raise exc.Unauthorized(msg % (self.plugin.service_name,
                                           project_name))

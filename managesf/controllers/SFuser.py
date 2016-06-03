@@ -55,7 +55,7 @@ class SFUserManager:
 
     def create(self, username, email,
                fullname, cauth_id=None):
-        msg = 'Creating user: username=%s, email=%s, full name=%s'
+        msg = u'Creating user: username=%s, email=%s, full name=%s'
         if cauth_id:
             msg += ', cauth_id=%s' % cauth_id
         logger.info(msg % (username, email, fullname))
@@ -63,7 +63,7 @@ class SFUserManager:
         if cauth_id and cauth_id > 0:
             user = crud.get(cauth_id=cauth_id)
             if user:
-                msg = 'Found user %s with cauth_id=%s, updating instead'
+                msg = u'Found user %s with cauth_id=%s, updating instead'
                 logger.info(msg % (repr(user), cauth_id))
                 crud.update(user['id'], username=username,
                             email=email, fullname=fullname)
@@ -72,48 +72,48 @@ class SFUserManager:
         user = crud.get(username=username, email=email, fullname=fullname)
         if user:
             if cauth_id and cauth_id != user.get('cauth_id'):
-                msg = 'Found user %s, resetting cauth_id instead'
+                msg = u'Found user %s, resetting cauth_id instead'
                 msg += (' (this is normal if the SSO has been reset or the'
                         ' user has been recreated in the Identity Provider)')
                 logger.info(msg % repr(user))
                 self.reset_cauth_id(user['id'], cauth_id)
             else:
-                msg = 'User %s already exists, doing nothing'
+                msg = u'User %s already exists, doing nothing'
                 logger.info(msg % repr(user))
             return user['id']
         return crud.create(username, email, fullname, cauth_id)
 
     def update(self, id, username=None, email=None, fullname=None):
-        msg = 'Updating user info (id %s):' % id
+        msg = u'Updating user info (id %s):' % id
         if username:
-            msg += ' username=%s,' % username
+            msg += u' username=%s,' % username
         if email:
-            msg += ' email=%s,' % email
+            msg += u' email=%s,' % email
         if fullname:
-            msg += ' full name=%s' % fullname
+            msg += u' full name=%s' % fullname
         logger.info(msg)
         return crud.update(id, username=username,
                            email=email, fullname=fullname)
 
     def reset_cauth_id(self, id, cauth_id):
-        msg = 'Updating user info (id %s): cauth_id=%s'
+        msg = u'Updating user info (id %s): cauth_id=%s'
         logger.info(msg % (id, cauth_id))
         return crud.update(id, cauth_id=cauth_id)
 
     def delete(self, id=None, username=None,
                email=None, fullname=None, cauth_id=None):
-        msg = 'Deleting user'
+        msg = u'Deleting user'
         if id:
-            msg += ' (id %s):' % id
+            msg += u' (id %s):' % id
         else:
-            msg += ':'
+            msg += u':'
         if username:
-            msg += ' username=%s,' % username
+            msg += u' username=%s,' % username
         if email:
-            msg += ' email=%s,' % email
+            msg += u' email=%s,' % email
         if fullname:
-            msg += ' full name=%s' % fullname
+            msg += u' full name=%s' % fullname
         if cauth_id:
-            msg += ', cauth_id=%s' % cauth_id
+            msg += u', cauth_id=%s' % cauth_id
         logger.info(msg)
         return crud.delete(id, username, email, fullname, cauth_id)

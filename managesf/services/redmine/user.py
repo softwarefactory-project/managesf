@@ -33,8 +33,8 @@ class RedmineUserManager(base.UserManager):
                        firstname=username,
                        mail=email,
                        lastname=lastname)
-        logger.debug('[%s] user %s created' % (self.plugin.service_name,
-                                               username))
+        logger.debug(u'[%s] user %s created' % (self.plugin.service_name,
+                                                username))
 
     def get(self, mail=None, username=None):
         """get user id by mail or username"""
@@ -71,14 +71,14 @@ class SFRedmineUserManager(RedmineUserManager):
         rm = self.plugin.get_client()
         try:
             u = rm.create_user(username, email, full_name)
-            logger.debug('[%s] user %s created' % (self.plugin.service_name,
-                                                   username))
+            logger.debug(u'[%s] user %s created' % (self.plugin.service_name,
+                                                    username))
             return u.id
         except ValidationError as e:
             # not optimal but python-redmine does not differentiate this case
             if ('Resource already exists' in e.message) or\
                ('has already been taken' in e.message):
-                msg = '[%s] user %s already exists, skipping creation'
+                msg = u'[%s] user %s already exists, skipping creation'
                 logger.info(msg % (self.plugin.service_name,
                                    username))
                 return self.get(email=email) or self.get(username=username)
@@ -121,16 +121,17 @@ class SFRedmineUserManager(RedmineUserManager):
         rm = self.plugin.get_client()
         user_id = self.get(email, username)
         if not user_id:
-            msg = '[%s] %s not found, skip deletion'
+            msg = u'[%s] %s not found, skip deletion'
             logger.debug(msg % (self.plugin.service_name,
                                 email or username))
         else:
             try:
                 rm.r.user.delete(user_id)
             except ResourceNotFoundError:
-                msg = '[%s] %s not found, skip deletion'
+                msg = u'[%s] %s not found, skip deletion'
                 logger.debug(msg % (self.plugin.service_name,
                                     email or username))
-            logger.debug('[%s] %s (id %s) deleted' % (self.plugin.service_name,
-                                                      email or username,
-                                                      user_id))
+            msg = u'[%s] %s (id %s) deleted'
+            logger.debug(msg % (self.plugin.service_name,
+                                email or username,
+                                user_id))

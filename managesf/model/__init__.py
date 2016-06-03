@@ -16,7 +16,8 @@
 import logging
 
 from pecan import conf  # noqa
-from sqlalchemy import create_engine, Column, String, Integer, exc, event
+from sqlalchemy import create_engine, Column, String, Unicode
+from sqlalchemy import Integer, exc, event
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
@@ -34,14 +35,16 @@ logger = logging.getLogger(__name__)
 def row2dict(row):
     ret = {}
     for column in row.__table__.columns:
-        ret[column.name] = str(getattr(row, column.name))
+        ret[column.name] = getattr(row, column.name)
+        if not isinstance(ret[column.name], basestring):
+            ret[column.name] = str(ret[column.name])
     return ret
 
 
 class User(Base):
     __tablename__ = 'users'
-    username = Column(String(255), primary_key=True)
-    fullname = Column(String(255), nullable=False)
+    username = Column(Unicode(255), primary_key=True)
+    fullname = Column(Unicode(255), nullable=False)
     email = Column(String(255), nullable=False)
     hashed_password = Column(String(255), nullable=False)
     sshkey = Column(String(1023), nullable=True)
@@ -66,8 +69,8 @@ def checkout_listener(dbapi_con, con_record, con_proxy):
 class SFUser(Base):
     __tablename__ = 'SF_USERS'
     id = Column(Integer(), primary_key=True)
-    username = Column(String(255), nullable=False, unique=True)
-    fullname = Column(String(255), nullable=True)
+    username = Column(Unicode(255), nullable=False, unique=True)
+    fullname = Column(Unicode(255), nullable=True)
     # Gerrit requires email unicity
     email = Column(String(255), nullable=False, unique=True)
     cauth_id = Column(Integer(), nullable=False)
@@ -231,6 +234,8 @@ class SFUserCRUD:
 def init_model():
     c = dict(conf.sqlalchemy)
     url = c.pop('url')
+    if url.startswith('mysql') and not url.endswith('?charset=utf8'):
+        url += '?charset=utf8'
     globals()['engine'] = create_engine(url, pool_recycle=600, **c)
     if url.startswith('mysql'):
         event.listen(engine, 'checkout', checkout_listener)
@@ -276,7 +281,7 @@ def get_user(username):
     """
     try:
         with session_scope() as session:
-            ret = session.query(User).filter(User.username == username).one()
+            ret = session.query(User).filter_by(username=username).one()
             return row2dict(ret)
     except NoResultFound:
         return False
@@ -287,7 +292,7 @@ def delete_user(username):
         return True if deleted or False if not found
     """
     with session_scope() as session:
-        ret = session.query(User).filter(User.username == username).delete()
+        ret = session.query(User).filter_by(username=username).delete()
         return bool(ret)
 
 
@@ -298,5 +303,5 @@ def update_user(username, infos):
     """
     with session_scope() as session:
         user = session.query(User)
-        ret = user.filter(User.username == username).update(infos)
+        ret = user.filter_by(username=username).update(infos)
         return bool(ret)

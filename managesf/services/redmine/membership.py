@@ -52,7 +52,7 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
             if g not in ['ptl-group', 'core-group', 'dev-group']:
                 raise exc.UnavailableActionError('Unknown group %s' % g)
         roles = self.plugin.role.get(requestor, project)
-        logger.info("[%s] %s adding user %s in groups %s from project %s" %
+        logger.info(u"[%s] %s adding user %s in groups %s from project %s" %
                     (self.plugin.service_name, requestor, username,
                      str(groups), project))
         role_id = []
@@ -121,7 +121,7 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
             # delete every group
             if ((not self.plugin.role.is_admin(requestor)) and
                     ('Manager' not in user_roles)):
-                msg = "[%s] Aborted because %s is not admin or Manager"
+                msg = u"[%s] Aborted because %s is not admin or Manager"
                 logger.debug(msg % (self.plugin.service_name, requestor))
                 raise exc.Unauthorized(msg % (self.plugin.service_name,
                                               username))
@@ -136,8 +136,8 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
                 if (not self.plugin.role.is_admin(requestor) and
                    ('Manager' not in user_roles) and
                    ('Developer' not in user_roles)):
-                    msg = "[%s] Aborted because %s is not admin, Manager"
-                    msg += ", Developer"
+                    msg = u"[%s] Aborted because %s is not admin, Manager"
+                    msg += u", Developer"
                     logger.debug(msg % (self.plugin.service_name, requestor))
                     raise exc.Unauthorized(msg % (self.plugin.service_name,
                                                   requestor))
@@ -145,7 +145,7 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
             else:
                 if ((not self.plugin.role.is_admin(requestor)) and
                         ('Manager' not in user_roles)):
-                    msg = "[%s] Aborted because %s is not admin or Manager"
+                    msg = u"[%s] Aborted because %s is not admin or Manager"
                     logger.debug(msg % (self.plugin.service_name, requestor))
                     raise exc.Unauthorized(msg % (self.plugin.service_name,
                                                   requestor))

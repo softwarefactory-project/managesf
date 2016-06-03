@@ -612,7 +612,7 @@ class ServicesUsersController(RestController):
     def post(self):
         infos = request.json if request.content_length else {}
         if not infos or not infos.get('username'):
-            abort(400, detail='Incomplete user information: %r' % infos)
+            abort(400, detail=u'Incomplete user information: %r' % infos)
         try:
             # In this version we cannot lookup just with cauth_id
             known_user = sfmanager.user.get(username=infos['username'],
@@ -620,7 +620,7 @@ class ServicesUsersController(RestController):
                                             fullname=infos['full_name'])
             # if we have this user and a bogus cauth_id, update it
             if known_user:
-                msg = 'found user #%(id)s %(username)s (%(email)s)'
+                msg = u'found user #%(id)s %(username)s (%(email)s)'
                 logger.debug(msg % known_user)
                 e_id = infos.get('external_id')
                 if e_id and int(e_id) != int(known_user['cauth_id']):
@@ -635,8 +635,8 @@ class ServicesUsersController(RestController):
             elif not known_user and infos.get('external_id', -1) != -1:
                 known_user = sfmanager.user.get(cauth_id=infos['external_id'])
                 if known_user:
-                    msg = ('found user #%(id)s %(username)s (%(email)s) '
-                           'by cauth ID #%(cauth_id)s, user needs update')
+                    msg = (u'found user #%(id)s %(username)s (%(email)s) '
+                           u'by cauth ID #%(cauth_id)s, user needs update')
                     logger.debug(msg % known_user)
                     u = known_user['id']
                     clean_infos = self._remove_non_updatable_fields(infos)
@@ -659,7 +659,7 @@ class ServicesUsersController(RestController):
                 s_id = (service.user.get(username=infos.get('username')) or
                         service.user.get(username=infos.get('email')))
                 if s_id:
-                    msg = '[%s] user %s exists, skipping creation'
+                    msg = u'[%s] user %s exists, skipping creation'
                     logger.debug(msg % (service.service_name,
                                         infos.get('username')))
                     mapped = sfmanager.user.mapping.get_user_mapping(
@@ -669,7 +669,7 @@ class ServicesUsersController(RestController):
                         sfmanager.user.mapping.set(user_id,
                                                    service.service_name,
                                                    s_id)
-                        msg = '[%s] user %s mapped to id %s'
+                        msg = u'[%s] user %s mapped to id %s'
                         logger.debug(msg % (service.service_name,
                                             infos.get('username'),
                                             s_id))
@@ -689,7 +689,7 @@ class ServicesUsersController(RestController):
                         service.service_name,
                         user_id)
                     if mapped and mapped != s_id:
-                        msg = '[%s] user %s wrongly mapped to id %s, removing'
+                        msg = u'[%s] user %s wrongly mapped to id %s, removing'
                         logger.debug(msg % (service.service_name,
                                             infos.get('username'),
                                             mapped))
@@ -699,7 +699,7 @@ class ServicesUsersController(RestController):
                     sfmanager.user.mapping.set(user_id,
                                                service.service_name,
                                                s_id)
-                    msg = '[%s] user %s mapped to %s id %s'
+                    msg = u'[%s] user %s mapped to %s id %s'
                     logger.debug(msg % (service.service_name,
                                         infos.get('username'),
                                         service.service_name,
@@ -718,13 +718,13 @@ class ServicesUsersController(RestController):
     def delete(self, id=None, email=None, username=None):
         d_id = id
         if not d_id and (email or username):
-            logger.debug('[delete] looking for %s %s' % (email, username))
+            logger.debug(u'[delete] looking for %s %s' % (email, username))
             d_id = sfmanager.user.get(username=username,
                                       email=email).get('id')
         if not d_id:
             response.status = 404
             return
-        logger.debug('found %s %s with id %s' % (email, username, d_id))
+        logger.debug(u'found %s %s with id %s' % (email, username, d_id))
         try:
             for service in SF_SERVICES:
                 try:
