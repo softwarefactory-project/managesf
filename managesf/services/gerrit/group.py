@@ -23,27 +23,35 @@ logger = logging.getLogger(__name__)
 
 class SFGerritGroupManager(base.GroupManager):
 
-    def get(self, groupname=None):
-        client = self.plugin.get_client()
-        logger.info("[%s] Get group %s" % (self.plugin.service_name,
-                                           groupname or "All groups"))
-        ret = {}
-
-        # We want to be sure the group is not a project group
-        # referenced in refs.meta.config
+    def get_project_group_ids(self, client):
         project_groups = client.get_project_groups_id(client.get_projects())
         project_groups_ids = []
         for groups in project_groups.values():
             project_groups_ids.extend(groups['owners'])
             project_groups_ids.extend(groups['others'])
+        return project_groups_ids
+
+    def get(self, groupname=None, discard_pgroups=True):
+        client = self.plugin.get_client()
+        logger.info("[%s] Get group %s" % (self.plugin.service_name,
+                                           groupname or "All groups"))
+        ret = {}
 
         if groupname:
             gid = client.get_group_id(groupname)
-            if not gid or gid in project_groups_ids:
+            if not gid:
                 raise exc.GroupNotFoundException("Unable to find group %s"
                                                  % groupname)
+            if discard_pgroups:
+                # We want to be sure the group is not a project group
+                # referenced in refs.meta.config
+                project_groups_ids = self.get_project_group_ids(client)
+                if gid in project_groups_ids:
+                    raise exc.GroupNotFoundException("Unable to find group %s"
+                                                     % groupname)
             ret[groupname] = client.get_group_members(gid)
         else:
+            project_groups_ids = self.get_project_group_ids(client)
             for groupname, details in client.get_groups().items():
                 if details['id'] not in project_groups_ids:
                     ret[groupname] = {

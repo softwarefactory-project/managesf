@@ -579,8 +579,10 @@ class TestManageSFAppMembershipController(FunctionalTest):
         ctx = [patch.object(SFRedmineMembershipManager,
                             'create'),
                patch.object(SFGerritMembershipManager,
-                            'create')]
-        with nested(*ctx) as (gaupg, raupg):
+                            'create'),
+               patch.object(SFUserManager, 'get')]
+        with nested(*ctx) as (gaupg, raupg, c):
+            c.return_value = {'email': 'john@tests.dom'}
             project_name = '===' + base64.urlsafe_b64encode('p1')
             response = self.app.put_json(
                 '/project/%s/membership/john@tests.dom' % project_name,
@@ -591,11 +593,13 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              "User john@tests.dom has been added in group(s):"
                              " ptl-group, core-group for project p1")
         ctx = [patch.object(SFGerritMembershipManager,
-                            'create'),
-               patch.object(SFRedmineMembershipManager,
                             'create',
-                            side_effect=raiseexc)]
-        with nested(*ctx) as (gaupg, raupg):
+                            side_effect=raiseexc),
+               patch.object(SFRedmineMembershipManager,
+                            'create'),
+               patch.object(SFUserManager, 'get')]
+        with nested(*ctx) as (gaupg, raupg, c):
+            c.return_value = {'email': 'john@tests.dom'}
             response = self.app.put_json(
                 '/project/p1/membership/john@tests.dom',
                 {'groups': ['ptl-group', 'core-group']},
@@ -606,22 +610,35 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              'with unhandled error (server side): FakeExcMsg')
 
     def test_delete(self):
+        def notfound(*args, **kwargs):
+            raise exc.GroupNotFoundException
+
+        def err(*args, **kwargs):
+            raise Exception
+
         project_name = '===' + base64.urlsafe_b64encode('p1')
-        response = self.app.delete('/project/%s/membership/john' % (
-                                   project_name), status="*")
-        self.assertEqual(response.status_int, 400)
+        ctx = [patch.object(SFGerritGroupManager, 'get'),
+               patch.object(SFUserManager, 'get')]
+        with nested(*ctx) as (a, b):
+            b.return_value = {}
+            a.side_effect = notfound
+            response = self.app.delete('/project/%s/membership/john' % (
+                                       project_name), status="*")
+            self.assertEqual(response.status_int, 400)
         ctx = [
             patch.object(SFGerritMembershipManager,
                          'delete'),
             patch.object(SFRedmineMembershipManager,
-                         'delete')]
-        with nested(*ctx) as (gdupg, rdupg):
+                         'delete'),
+            patch.object(SFUserManager, 'get'),
+            patch.object(SFGerritGroupManager, 'get')]
+        with nested(*ctx) as (gdupg, rdupg, c, d):
+            c.return_value = {}
             response = self.app.delete(
-                '/project/p1/membership/john',
+                '/project/p1/membership/grp1',
                 status="*")
-            self.assertEqual(response.status_int, 400)
-            self.assertEqual(json.loads(response.body),
-                             "User must be identified by its email address")
+            self.assertEqual(response.status_int, 200)
+            c.return_value = {'email': 'john@tests.dom'}
             response = self.app.delete(
                 '/project/p1/membership/john@tests.dom',
                 status="*")
@@ -638,11 +655,14 @@ class TestManageSFAppMembershipController(FunctionalTest):
                              "core-group for project p1.")
         ctx = [
             patch.object(SFGerritMembershipManager,
-                         'delete'),
-            patch.object(SFRedmineMembershipManager,
                          'delete',
-                         side_effect=raiseexc)]
-        with nested(*ctx) as (gdupg, rdupg):
+                         side_effect=raiseexc),
+            patch.object(SFRedmineMembershipManager,
+                         'delete'),
+            patch.object(SFUserManager, 'get'),
+            patch.object(SFGerritGroupManager, 'get')]
+        with nested(*ctx) as (gdupg, rdupg, c, d):
+            c.return_value = {'email': 'john@tests.dom'}
             response = self.app.delete(
                 '/project/p1/membership/john@tests.dom',
                 status="*")

@@ -292,7 +292,7 @@ class TestSFRedmineMembershipManager(BaseSFRedmineService):
                                 '_get_uid'),
                    patch.object(RedmineUtils,
                                 'get_project_membership_for_user'),
-                   patch.object(self.redmine.membership,
+                   patch.object(RedmineUtils,
                                 'update_project_membership'), ]
         with nested(*patches) as (role_get,
                                   role_id_get,
@@ -336,7 +336,7 @@ class TestSFRedmineMembershipManager(BaseSFRedmineService):
                                 'get_project_membership_for_user'),
                    patch.object(RedmineUtils,
                                 'get_project_roles_for_user'),
-                   patch.object(self.redmine.membership,
+                   patch.object(RedmineUtils,
                                 'update_membership'), ]
         with nested(*patches) as (role_get,
                                   role_id_get,
@@ -366,40 +366,20 @@ class TestSFRedmineMembershipManager(BaseSFRedmineService):
             membership_update.assert_called_with('membership',
                                                  ['generic_role_id', ] * 6)
 
-    def test_get(self):
-        patches = [patch.object(self.redmine.membership,
-                                '_get_uid'),
-                   patch.object(RedmineUtils,
-                                'get_project_membership_for_user'), ]
-        with nested(*patches) as (a, b):
-            a.return_value = 'aaaa'
-            self.redmine.membership.get('user', 'project')
-            b.assert_called_with('project', 'aaaa')
-
-    def test_update(self):
-        patches = [patch.object(self.redmine.membership,
-                                '_get_uid'),
-                   patch.object(RedmineUtils,
-                                'get_project_membership_for_user'),
-                   patch.object(self.redmine.membership,
-                                'update_membership'), ]
-        with nested(*patches) as (a, b, c):
-            a.return_value = 'aaaa'
-            b.return_value = 'bbbb'
-            self.redmine.membership.update('user', 'project', ['roles', ])
-            c.assert_called_with('bbbb', ['roles', ])
-
     def test_delete_failure(self):
         patches = [patch.object(self.redmine.membership,
                                 '_get_uid'),
                    patch.object(self.redmine.membership,
                                 'get'),
                    patch.object(self.redmine.role,
-                                'get'), ]
-        with nested(*patches) as (a, b, c):
+                                'get'),
+                   patch.object(RedmineUtils,
+                                'get_project_membership_for_user'), ]
+        with nested(*patches) as (a, b, c, d):
             a.return_value = 'testuser'
             b.return_value = 'membership'
             c.return_value = ['Developer', ]
+            d.return_value = [1, 2]
             self.assertRaises(exc.Unauthorized,
                               self.redmine.membership.delete,
                               'requestor', 'u', 'proj', None)

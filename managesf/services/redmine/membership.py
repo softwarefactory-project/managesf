@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2015 Red Hat <licensing@enovance.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -75,45 +73,44 @@ class SFRedmineMembershipManager(RedmineMembershipManager):
             dev_role_id = rm.get_role_id('Developer')
             role_id.append(dev_role_id)
         uid = self._get_uid(username)
+        if not uid:
+            uid = rm.get_group_id(username)
+            if not uid:
+                # Corner case we won't fail here.
+                # We used to manage uncorrectly project' groups
+                # inside redmine where users supposed to be in
+                # project group were just assigned a role instead
+                # of putting them in a group with an attached role.
+                # Here it is pretty sure a group like p1-ptl needs
+                # to be added but does not exist on Redmine.
+                return
         m = rm.get_project_membership_for_user(project, uid)
         if m:
             roles = rm.get_project_roles_for_user(project, uid)
             role_ids = [rm.get_role_id(u) for u in roles]
             role_ids.extend(role_id)
-            self.update_membership(m, role_ids)
+            rm.update_membership(m, role_ids)
         else:
             memberships = {'user_id': uid, 'role_ids': role_id}
-            self.update_project_membership(project, [memberships])
-
-    def get(self, username, project_name):
-        """get a user's membership for project_name"""
-        rm = self.plugin.get_client()
-        project_name = self._clean_name(project_name)
-        uid = self._get_uid(username=username)
-        return rm.get_project_membership_for_user(project_name, uid)
-
-    def update(self, username, project_name, role_ids):
-        rm = self.plugin.get_client()
-        project_name = self._clean_name(project_name)
-        uid = self._get_uid(username=username)
-        membership_id = rm.get_project_membership_for_user(project_name, uid)
-        return self.update_membership(membership_id, role_ids)
-
-    def update_membership(self, membership_id, role_ids):
-        rm = self.plugin.get_client()
-        return rm.update_membership(membership_id, role_ids)
-
-    def update_project_membership(self, project_name, memberships):
-        rm = self.plugin.get_client()
-        project_name = self._clean_name(project_name)
-        return rm.update_project_membership(project_name, memberships)
+            rm.update_project_membership(project, [memberships])
 
     def delete(self, requestor, username, project_name, group=None):
         """remove username's membership to group from project_name"""
         rm = self.plugin.get_client()
         project_name = self._clean_name(project_name)
         uid = self._get_uid(username=username)
-        m = self.get(username, project_name)
+        if not uid:
+            uid = rm.get_group_id(username)
+            if not uid:
+                # Corner case we won't fail here.
+                # We used to manage uncorrectly project' groups
+                # inside redmine where users supposed to be in
+                # project group were just assigned a role instead
+                # of putting them in a group with an attached role.
+                # Here it is pretty sure a group like p1-ptl needs
+                # to be added but does not exist on Redmine.
+                return
+        m = rm.get_project_membership_for_user(project_name, uid)
         if not m:
             return None
         user_roles = self.plugin.role.get(requestor, project_name)
