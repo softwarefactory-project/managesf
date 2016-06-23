@@ -44,6 +44,7 @@ from managesf.services.redmine import SoftwareFactoryRedmine
 from managesf.services.redmine.membership import SFRedmineMembershipManager
 from managesf.services.redmine.project import SFRedmineProjectManager
 from managesf.services.redmine.user import SFRedmineUserManager
+from managesf.services.storyboard.user import StoryboardUserManager
 
 
 FIND_PROJECT_PATH = 'managesf.controllers.root.ProjectController._find_project'
@@ -67,6 +68,7 @@ class FunctionalTest(TestCase):
                        'sshconfig': c.sshconfig,
                        'managesf': c.managesf,
                        'jenkins': c.jenkins,
+                       'storyboard': c.storyboard,
                        'mysql': c.mysql,
                        'nodepool': c.nodepool,
                        'etherpad': c.etherpad,
@@ -535,15 +537,20 @@ class TestManageSFAppMembershipController(FunctionalTest):
                   'full_name': 'User %i' % x,
                   'username': 'user%i' % x} for x in range(10)]
         ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(StoryboardUserManager, 'create'),
                patch.object(g_user.SFGerritUserManager, 'create'),
                patch.object(SFRedmineUserManager, 'get'),
+               patch.object(StoryboardUserManager, 'get'),
                patch.object(g_user.SFGerritUserManager, 'get'), ]
-        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
+                              r_get, s_get, g_get, ):
             r_get.return_value = None
+            s_get.return_value = None
             g_get.return_value = None
             for x in range(10):
                 redmine_create.return_value = x
                 gerrit_create.return_value = x
+                sb_create.return_value = x
                 response = self.app.post_json('/services_users/', users[x],
                                               extra_environ=environ,
                                               status="*")
@@ -813,21 +820,29 @@ class TestManageSFServicesUserController(FunctionalTest):
     def test_add_user_in_backends(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
         ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(StoryboardUserManager, 'create'),
                patch.object(g_user.SFGerritUserManager, 'create'),
                patch.object(SFRedmineUserManager, 'get'),
+               patch.object(StoryboardUserManager, 'get'),
                patch.object(g_user.SFGerritUserManager, 'get'), ]
         create_ctx = [patch('managesf.services.gerrit.get_cookie'),
                       patch.object(RedmineUtils, 'create_user'),
+                      patch.object(StoryboardUserManager, 'create'),
                       patch.object(g_user.SFGerritUserManager, '_add_sshkeys'),
                       patch.object(g_user.SFGerritUserManager,
                                    '_add_account_as_external'),
                       patch('pysflib.sfgerrit.GerritUtils.create_account'),
                       patch.object(SFRedmineUserManager, 'get'),
+                      patch.object(StoryboardUserManager, 'get'),
                       patch.object(g_user.SFGerritUserManager, 'get'),
                       patch('pysflib.sfgerrit.GerritUtils.update_account'),
-                      patch.object(SFRedmineUserManager, 'update'), ]
+                      patch.object(SFRedmineUserManager, 'update'),
+                      patch.object(StoryboardUserManager, 'update'),
+                      ]
         rm_user = MagicMock()
         rm_user.id = 9
+        sb_user = MagicMock()
+        sb_user.id = 10
         gerrit_created = {"_account_id": 5,
                           "name": "Jotaro Kujoh",
                           "email": "jojo@starplatinum.dom",
@@ -839,6 +854,8 @@ class TestManageSFServicesUserController(FunctionalTest):
                  'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
         rm_user2 = MagicMock()
         rm_user2.id = 12
+        sb_user2 = MagicMock()
+        sb_user2.id = 13
         gerrit2_created = {"_account_id": 8,
                            "name": "Dio Brando",
                            "email": "dio@wryyyyy.dom",
@@ -851,32 +868,42 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos3 = {'email': 'john@joestar.dom',
                   'ssh_keys': ['ora', 'oraora'],
                   'full_name': 'Jonathan Joestar', 'username': 'Jon'}
-        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
+                              r_get, s_get, g_get, ):
             r_get.return_value = None
+            s_get.return_value = None
             g_get.return_value = None
             redmine_create.return_value = rm_user.id
+            sb_create.return_value = sb_user.id
             gerrit_create.return_value = gerrit_created["_account_id"]
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-            redmine_create.assert_called_with(username=infos.get('username'),
-                                              email=infos.get('email'),
-                                              full_name=infos.get('full_name'),
-                                              ssh_keys=infos['ssh_keys'])
-            gerrit_create.assert_called_with(username=infos.get('username'),
-                                             email=infos.get('email'),
-                                             full_name=infos.get('full_name'),
-                                             ssh_keys=infos['ssh_keys'])
+            _, redmine_args = redmine_create.call_args
+            _, gerrit_args = gerrit_create.call_args
+            for k, v in (
+                ("username", infos.get('username')),
+                ("email", infos.get('email')),
+                ("full_name", infos.get('full_name')),
+                ("ssh_keys", infos['ssh_keys'])
+            ):
+                self.assertEqual(redmine_args[k], v)
+                self.assertEqual(gerrit_args[k], v)
+            self.assertTrue("cauth_id" in redmine_args)
+            self.assertTrue("cauth_id" in gerrit_args)
             # TODO(mhu) test if mapping is set correctly
         # mock at a lower level
-        with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
+        with nested(*create_ctx) as (get_cookie, rm_create_user, s_create, ssh,
                                      external, create_account,
-                                     r_get, g_get, g_update, r_update):
+                                     r_get, s_get, g_get,
+                                     g_update, s_update, r_update):
             get_cookie.return_value = 'admin_cookie'
 
             rm_create_user.return_value = rm_user2
+            s_create.return_value = sb_user2.id
             create_account.return_value = gerrit2_created
             r_get.return_value = None
+            s_get.return_value = None
             g_get.return_value = None
             response = self.app.post_json('/services_users/', infos2,
                                           extra_environ=environ, status="*")
@@ -885,38 +912,44 @@ class TestManageSFServicesUserController(FunctionalTest):
                                               infos2['email'],
                                               infos2['full_name'])
 
-        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+        with nested(*ctx) as (redmine_create, storyboard_create, gerrit_create,
+                              r_get, s_get, g_get, ):
             # assert that raising UnavailableActionError won't fail
             def unavailable(*args, **kwargs):
                 raise exc.UnavailableActionError
             redmine_create.side_effect = unavailable
             r_get.side_effect = unavailable
+            s_get.side_effect = unavailable
             g_get.return_value = 14
             gerrit_create.return_value = 14
             response = self.app.post_json('/services_users/', infos3,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-        with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
+        with nested(*create_ctx) as (get_cookie, rm_create_user, s_create, ssh,
                                      external, create_account,
-                                     r_get, g_get, g_update, r_update):
+                                     r_get, s_get, g_get,
+                                     g_update, s_update, r_update):
             get_cookie.return_value = 'admin_cookie'
             # assert that user already existing in backend won't fail
 
             def already(*args, **kwargs):
                 raise ValidationError('Resource already exists')
             r_get.return_value = rm_user.id
+            s_get.return_value = sb_user.id
             g_get.return_value = gerrit_created["_account_id"]
             create_account.return_value = gerrit_created
             rm_create_user.side_effect = already
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-        with nested(*create_ctx) as (get_cookie, rm_create_user, ssh,
+        with nested(*create_ctx) as (get_cookie, rm_create_user, s_create, ssh,
                                      external, create_account,
-                                     r_get, g_get, g_update, r_update):
+                                     r_get, s_get, g_get,
+                                     g_update, s_update, r_update):
             get_cookie.return_value = 'admin_cookie'
             # assert that user found in backend will skip gracefully
             r_get.return_value = rm_user.id
+            s_get.return_value = sb_user.id
             g_get.return_value = gerrit_created["_account_id"]
             create_account.return_value = gerrit_created
             response = self.app.post_json('/services_users/', infos,
@@ -959,22 +992,27 @@ class TestManageSFServicesUserController(FunctionalTest):
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'iggy the fool', 'username': 'iggy'}
         ctx = [patch.object(SFRedmineUserManager, 'delete'),
+               patch.object(StoryboardUserManager, 'delete'),
                patch.object(g_user.SFGerritUserManager, 'delete'),
                patch.object(SFRedmineUserManager, 'create'),
+               patch.object(StoryboardUserManager, 'create'),
                patch.object(g_user.SFGerritUserManager, 'create'),
                patch.object(SFRedmineUserManager, 'get'),
+               patch.object(StoryboardUserManager, 'get'),
                patch.object(g_user.SFGerritUserManager, 'get'), ]
-        with nested(*ctx) as (redmine_delete, gerrit_delete,
-                              redmine_create, gerrit_create,
-                              redmine_get, gerrit_get):
+        with nested(*ctx) as (redmine_delete, sb_delete, gerrit_delete,
+                              redmine_create, sb_create, gerrit_create,
+                              redmine_get, sb_get, gerrit_get):
             # Test deletion of non existing user
             response = self.app.delete('/services_users/?username=iggy',
                                        extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 404)
             # test deletion of existing user
             redmine_create.return_value = 99
+            sb_create.return_value = 99
             gerrit_create.return_value = 99
             redmine_get.return_value = None
+            sb_get.return_value = None
             gerrit_get.return_value = None
             self.app.post_json('/services_users/', infos,
                                extra_environ=environ, status="*")
@@ -982,13 +1020,16 @@ class TestManageSFServicesUserController(FunctionalTest):
                                        extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 204)
             redmine_delete.assert_called_with(username='iggy', email=None)
+            sb_delete.assert_called_with(username='iggy', email=None)
             gerrit_delete.assert_called_with(username='iggy', email=None)
-        with nested(*ctx) as (redmine_delete, gerrit_delete,
-                              redmine_create, gerrit_create,
-                              redmine_get, gerrit_get):
+        with nested(*ctx) as (redmine_delete, sb_delete, gerrit_delete,
+                              redmine_create, sb_create, gerrit_create,
+                              redmine_get, sb_get, gerrit_get):
             redmine_create.return_value = 100
+            sb_create.return_value = 100
             gerrit_create.return_value = 100
             redmine_get.return_value = None
+            sb_get.return_value = None
             gerrit_get.return_value = None
             self.app.post_json('/services_users/', infos,
                                extra_environ=environ, status="*")
@@ -998,6 +1039,8 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertEqual(response.status_int, 204)
             redmine_delete.assert_called_with(username=None,
                                               email='iggy@stooges.dom')
+            sb_delete.assert_called_with(username=None,
+                                         email='iggy@stooges.dom')
             gerrit_delete.assert_called_with(username=None,
                                              email='iggy@stooges.dom')
             # deleted from SF backend too
@@ -1011,13 +1054,18 @@ class TestManageSFServicesUserController(FunctionalTest):
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'yoshikage kira', 'username': 'kira'}
         ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(StoryboardUserManager, 'create'),
                patch.object(g_user.SFGerritUserManager, 'create'),
                patch.object(SFRedmineUserManager, 'get'),
+               patch.object(StoryboardUserManager, 'get'),
                patch.object(g_user.SFGerritUserManager, 'get'), ]
-        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
+                              r_get, s_get, g_get, ):
             r_get.return_value = None
+            s_get.return_value = None
             g_get.return_value = None
             redmine_create.return_value = 12
+            sb_create.return_value = 12
             gerrit_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_kira,
                                           extra_environ=environ, status="*")
@@ -1038,13 +1086,18 @@ class TestManageSFServicesUserController(FunctionalTest):
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Polnareff', 'username': 'chariot'}
         ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(StoryboardUserManager, 'create'),
                patch.object(g_user.SFGerritUserManager, 'create'),
                patch.object(SFRedmineUserManager, 'get'),
+               patch.object(StoryboardUserManager, 'get'),
                patch.object(g_user.SFGerritUserManager, 'get'), ]
-        with nested(*ctx) as (redmine_create, gerrit_create, r_get, g_get, ):
+        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
+                              r_get, s_get, g_get, ):
             r_get.return_value = None
+            s_get.return_value = None
             g_get.return_value = None
             redmine_create.return_value = 12
+            sb_create.return_value = 12
             gerrit_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_jojo,
                                           extra_environ=environ, status="*")
@@ -1096,17 +1149,22 @@ class TestManageSFServicesUserController(FunctionalTest):
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
         ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(StoryboardUserManager, 'create'),
                patch.object(g_user.SFGerritUserManager, 'create'),
                patch.object(SFRedmineUserManager, 'update'),
+               patch.object(StoryboardUserManager, 'update'),
                patch.object(g_user.SFGerritUserManager, 'update'),
                patch.object(SFRedmineUserManager, 'get'),
+               patch.object(StoryboardUserManager, 'get'),
                patch.object(g_user.SFGerritUserManager, 'get'), ]
-        with nested(*ctx) as (redmine_create, gerrit_create,
-                              redmine_update, gerrit_update,
-                              r_get, g_get, ):
+        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
+                              redmine_update, sb_update, gerrit_update,
+                              r_get, s_get, g_get, ):
             r_get.return_value = None
+            s_get.return_value = None
             g_get.return_value = None
             redmine_create.return_value = 12
+            sb_create.return_value = 12
             gerrit_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_jojo,
                                           extra_environ=environ, status="*")

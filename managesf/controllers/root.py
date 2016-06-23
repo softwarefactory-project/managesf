@@ -44,7 +44,7 @@ CLIENTERRORMSG = "Unable to process your request, failed with "\
 
 # instanciate service plugins
 SF_SERVICES = []
-DEFAULT_SERVICES = ['SFGerrit', 'SFRedmine', 'jenkins']
+DEFAULT_SERVICES = ['SFGerrit', 'SFRedmine', 'SFStoryboard', 'jenkins']
 
 
 def load_services():
@@ -561,7 +561,8 @@ class ServicesUsersController(RestController):
                     s_id = service.user.create(username=username,
                                                email=email,
                                                full_name=full_name,
-                                               ssh_keys=ssh_keys)
+                                               ssh_keys=ssh_keys,
+                                               cauth_id=user_id)
                     sfmanager.user.mapping.set(user_id,
                                                service.service_name,
                                                s_id)
@@ -681,7 +682,8 @@ class ServicesUsersController(RestController):
                     s_id = service.user.create(username=username,
                                                email=email,
                                                full_name=full_name,
-                                               ssh_keys=ssh_keys)
+                                               ssh_keys=ssh_keys,
+                                               cauth_id=user_id)
                     # we might have a mapping, but to a wrong user id in the
                     # service (because the user existed before but was removed
                     # directly from the service, for example)

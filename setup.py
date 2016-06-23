@@ -45,6 +45,7 @@ setup(
         'managesf.service': [
             ('SFGerrit = managesf.services.gerrit:SoftwareFactoryGerrit'),
             ('SFRedmine = managesf.services.redmine:SoftwareFactoryRedmine'),
+            ('SFStoryboard = managesf.services.storyboard:SoftwareFactoryStoryboard'),
             ('jenkins = managesf.services.jenkins:Jenkins'),
             ('nodepool = managesf.services.nodepool:Nodepool'),
             ('etherpad = managesf.services.etherpad:Etherpad'),

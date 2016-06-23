@@ -1,4 +1,5 @@
 -e git+https://github.com/redhat-cip/pysflib.git#egg=pysflib
+-e git+https://github.com/openstack-infra/python-storyboardclient.git#egg=storyboardclient
 pecan==1.0.3
 WebOb==1.5.0a1
 gerritlib==0.4.0

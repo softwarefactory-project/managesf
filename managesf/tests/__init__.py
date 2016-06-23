@@ -22,6 +22,7 @@ class dummy_conf():
     }
     services = ['SFGerrit',
                 'SFRedmine',
+                'SFStoryboard',
                 'jenkins',
                 'etherpad',
                 'nodepool',
@@ -34,6 +35,15 @@ class dummy_conf():
         'ssh_port': 2929,
         'sshkey_priv_path': tempfile.mkstemp()[1],
         'replication_config_path': tempfile.mkstemp()[1],
+        'db_host': 'db.tests.dom',
+        'db_name': 'gerrit_db',
+        'db_user': 'gerrit_db_user',
+        'db_password': 'gerrit_db_password',
+    }
+    storyboard = {
+        'host': 'storyboard',
+        'url': 'http://storyboard:20000/v1/',
+        'service_token': 'SECRET',
         'db_host': 'db.tests.dom',
         'db_name': 'gerrit_db',
         'db_user': 'gerrit_db_user',
