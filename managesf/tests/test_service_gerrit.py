@@ -106,6 +106,11 @@ class TestSFGerritUserManager(BaseSFGerritService):
                                     ssh_keys=[{'key': 'bop'}])
             add_sshkeys.assert_called_with('jojo',
                                            [{'key': 'bop'}])
+        # Test fringe case where we try to create the admin user
+        self.assertEqual(1,
+                         self.gerrit.user.create(None, 'dio@wryyyyy.org',
+                                                 'Dio Brando',
+                                                 cauth_id=1))
 
     def test_get(self):
         self.assertRaises(TypeError,

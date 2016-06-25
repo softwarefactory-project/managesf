@@ -72,6 +72,17 @@ class SFGerritUserManager(base.UserManager):
     def create(self, username, email, full_name, ssh_keys=None, **kwargs):
         _user = {"name": unicode(full_name), "email": str(email)}
         g_client = self.plugin.get_client()
+        if username is None:
+            if "cauth_id" in kwargs and int(kwargs["cauth_id"]) == 1:
+                # Special case for admin user already created
+                msg = u"[%s] requested creation of admin, skipping"
+                logger.debug(msg % self.plugin.service_name)
+                return 1
+            msg = u"[%s] can't create user %s without username (%s)"
+            logger.error(msg % (self.plugin.service_name, email,
+                                str(kwargs)))
+            raise Exception(msg % (self.plugin.service_name, email,
+                                   str(kwargs)))
         user = g_client.create_account(username, _user)
         try:
             account_id = user.get('_account_id')
