@@ -74,7 +74,7 @@ class SFGerritGroupManager(base.GroupManager):
         except Exception, e:
             logger.info(msg % e)
             raise exc.CreateGroupException(msg % e)
-        if not st:
+        if st is False:
             logger.info("[%s] " % self.plugin.service_name +
                         msg % " a conflict")
             raise exc.CreateGroupException(msg % " a conflict")
