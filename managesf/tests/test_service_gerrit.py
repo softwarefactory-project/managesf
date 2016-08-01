@@ -123,8 +123,8 @@ class TestSFGerritUserManager(BaseSFGerritService):
             get.return_value = self.user_data
             u = self.gerrit.user.get(email='jojo@starplatinum.dom')
             get.assert_called_with('jojo@starplatinum.dom')
-            self.assertEqual('jojo',
-                             u['username'])
+            self.assertEqual(5,
+                             u)
 
     def test_delete(self):
         self.assertRaises(TypeError,
@@ -136,7 +136,7 @@ class TestSFGerritUserManager(BaseSFGerritService):
                    patch.object(self.gerrit.user, 'session'),
                    patch('managesf.services.gerrit.user.G.Gerrit._ssh'), ]
         with nested(*patches) as (get, session, ssh):
-            get.return_value = self.user_data
+            get.return_value = self.user_data['_account_id']
             sql = """DELETE FROM account_group_members WHERE account_id=5;
 DELETE FROM accounts WHERE account_id=5;
 DELETE FROM account_external_ids WHERE account_id=5;"""

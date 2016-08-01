@@ -113,7 +113,11 @@ class SFGerritUserManager(base.UserManager):
             query = email
         g_client = self.plugin.get_client()
         try:
-            return g_client.get_account(query)
+            account = g_client.get_account(query)
+            if isinstance(account, dict):
+                return account.get('_account_id')
+            else:
+                return account
         except:
             return None
         return None
@@ -131,8 +135,7 @@ class SFGerritUserManager(base.UserManager):
     def delete(self, email=None, username=None):
         if not (bool(email) != bool(username)):
             raise TypeError('mail OR username needed')
-        user_info = self.get(email, username) or {}
-        account_id = user_info.get('_account_id')
+        account_id = self.get(email, username)
         if not account_id:
             msg = u'[%s] %s not found, skip deletion'
             logger.debug(msg % (self.plugin.service_name,
