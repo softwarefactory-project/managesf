@@ -119,3 +119,4 @@ class dummy_conf():
     pages = {
         'maps': tempfile.mkstemp()[1]
     }
+    policy = {}

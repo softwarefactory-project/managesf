@@ -51,6 +51,9 @@ setup(
             ('etherpad = managesf.services.etherpad:Etherpad'),
             ('lodgeit = managesf.services.lodgeit:Lodgeit'),
         ],
+        'oslo.policy.policies': [
+            ('managesf = managesf.policies:list_rules'),
+        ]
     },
     url=('http://softwarefactory-project.io/'
          'r/gitweb?p=managesf.git;a=summary'),

@@ -1,3 +1,4 @@
 include requirements.txt
 recursive-include public *
 recursive-include managesf/templates *
+recursive-include etc *

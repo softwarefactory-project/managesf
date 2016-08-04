@@ -78,7 +78,8 @@ class FunctionalTest(TestCase):
                        'nodepool': c.nodepool,
                        'etherpad': c.etherpad,
                        'lodgeit': c.lodgeit,
-                       'pages': c.pages, }
+                       'pages': c.pages,
+                       'policy': c.policy, }
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}
@@ -291,7 +292,8 @@ class TestManageSFAppProjectController(FunctionalTest):
                           get_groups_details, goi):
                 _mock.reset_mock()
             response = self.app.get('/project/')
-            for _mock in (p_get, r_get, get_user_groups,
+            # get_user_groups is called by the policy engine
+            for _mock in (p_get, r_get,
                           get_projects_groups_id,
                           get_groups_details, goi):
                 self.assertFalse(_mock.called)
@@ -330,38 +332,42 @@ class TestManageSFAppProjectController(FunctionalTest):
 
     def test_project_put(self):
         # Create a project with no name
-        with patch('managesf.controllers.root.is_admin') as gia:
+        with patch('managesf.controllers.root.authorize') as authorize:
             response = self.app.put('/project/', status="*")
             self.assertEqual(response.status_int, 500)
         # Create a project with name, but without administrator status
-        with patch('managesf.controllers.root.is_admin') as gia:
-            gia.return_value = False
+        with patch('managesf.controllers.root.authorize') as authorize:
+            authorize.return_value = False
             response = self.app.put('/project/p1', status="*")
             self.assertEqual(response.status_int, 401)
         # Create a project with name
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch('managesf.controllers.root.is_admin'),
+               patch.object(project.SFGerritProjectManager,
+                            'get_user_groups'),
                patch.object(SFRedmineProjectManager, 'create'),
                patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, gia, rip, pfn):
+        with nested(*ctx) as (gip, gug, rip, pfn):
+            gug.return_value = []
             pfn.return_value = {}
             response = self.app.put('/project/p1', status="*",
-                                    extra_environ={'REMOTE_USER': 'bob'})
-            self.assertTupleEqual(('p1', 'bob', {}), gip.mock_calls[0][1])
-            self.assertTupleEqual(('p1', 'bob', {}), rip.mock_calls[0][1])
+                                    extra_environ={'REMOTE_USER': 'admin'})
+            self.assertTupleEqual(('p1', 'admin', {}), gip.mock_calls[0][1])
+            self.assertTupleEqual(('p1', 'admin', {}), rip.mock_calls[0][1])
             self.assertEqual(response.status_int, 201)
             self.assertEqual(json.loads(response.body),
                              'Project p1 has been created.')
         # Create a project with name - an error occurs
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch('managesf.controllers.root.is_admin'),
+               patch.object(project.SFGerritProjectManager,
+                            'get_user_groups'),
                patch.object(SFRedmineProjectManager, 'create',
                             side_effect=raiseexc),
                patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, gia, rip, fpn):
+        with nested(*ctx) as (gip, gug, rip, fpn):
+            gug.return_value = []
             fpn.return_value = {}
             response = self.app.put('/project/p1', status="*",
-                                    extra_environ={'REMOTE_USER': 'bob'})
+                                    extra_environ={'REMOTE_USER': 'admin'})
             self.assertEqual(response.status_int, 500)
             self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
@@ -370,18 +376,20 @@ class TestManageSFAppProjectController(FunctionalTest):
         # Create a project based on an upstream and test early fail
         # if upstream is not reachable
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch('managesf.controllers.root.is_admin'),
+               patch.object(project.SFGerritProjectManager,
+                            'get_user_groups'),
                patch.object(SFRedmineProjectManager, 'create'),
                patch.object(utils.GerritRepo, 'check_upstream'),
                patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, gia, rip, cu, pfn):
+        with nested(*ctx) as (gip, gug, rip, cu, pfn):
             pfn.return_value = {}
+            gug.return_value = []
             cu.return_value = [False, "fatal: unable to access remote"]
             response = self.app.put_json(
                 '/project/p1',
                 {'upstream': 'git@github.com/account/repo.git'},
                 status="*",
-                extra_environ={'REMOTE_USER': 'bob'})
+                extra_environ={'REMOTE_USER': 'admin'})
             self.assertEqual(response.status_int, 400)
             self.assertEqual(json.loads(response.body),
                              "fatal: unable to access remote")
@@ -390,44 +398,75 @@ class TestManageSFAppProjectController(FunctionalTest):
                 '/project/p1',
                 {'upstream': 'git@github.com/account/repo.git'},
                 status="*",
-                extra_environ={'REMOTE_USER': 'bob'})
+                extra_environ={'REMOTE_USER': 'admin'})
             self.assertEqual(response.status_int, 201)
 
         # Create a project with upstream and include all branches
         ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch('managesf.controllers.root.is_admin'),
+               patch.object(project.SFGerritProjectManager,
+                            'get_user_groups'),
                patch.object(SFRedmineProjectManager, 'create'),
                patch.object(utils.GerritRepo, 'check_upstream'),
                patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, gia, rip, cu, pfn):
+        with nested(*ctx) as (gip, gug, rip, cu, pfn):
             pfn.return_value = {}
             cu.return_value = [True, None]
             data = {'upstream': 'git@github.com/account/repo.git',
                     'add-branches': True}
+            env = {'REMOTE_USER': 'admin'}
             response = self.app.put_json('/project/prj2',
                                          data,
                                          status='*',
-                                         extra_environ={'REMOTE_USER': 'BOB'})
+                                         extra_environ=env)
             self.assertEqual(response.status_code, 201)
 
     def test_project_delete(self):
+        # Need to be admin or ptl with default rules
+        with patch.object(project.SFGerritProjectManager,
+                          'get_user_groups') as gug:
+            gug.return_value = []
+            response = self.app.delete('/project/whatevs/', status="*",
+                                       extra_environ={'REMOTE_USER': 'testy'})
+            self.assertEqual(401, response.status_int)
         # Delete a project with no name
-        response = self.app.delete('/project/', status="*")
+        response = self.app.delete('/project/', status="*",
+                                   extra_environ={'REMOTE_USER': 'admin'})
         self.assertEqual(response.status_int, 500)
         # Deletion of config project is not possible
-        response = self.app.delete('/project/config', status="*")
+        response = self.app.delete('/project/config', status="*",
+                                   extra_environ={'REMOTE_USER': 'admin'})
         self.assertEqual(response.status_int, 500)
         # Delete a project with name
         ctx = [patch.object(SFGerritProjectManager, 'delete'),
                patch.object(SFRedmineProjectManager, 'delete'),
-               patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gdp, rdp, pfn):
+               patch(FIND_PROJECT_PATH),
+               patch.object(project.SFGerritProjectManager,
+                            'get_user_groups'), ]
+        with nested(*ctx) as (gdp, rdp, pfn, gug):
+            gug.return_value = []
             pfn.return_value = {'name': 'p1'}
             name = '===' + base64.urlsafe_b64encode('p1')
             response = self.app.delete('/project/%s/' % name, status="*",
-                                       extra_environ={'REMOTE_USER': 'testy'})
-            self.assertTupleEqual(('p1', 'testy'), gdp.mock_calls[0][1])
-            self.assertTupleEqual(('p1', 'testy'), rdp.mock_calls[0][1])
+                                       extra_environ={'REMOTE_USER': 'admin'})
+            self.assertTupleEqual(('p1', 'admin'), gdp.mock_calls[0][1])
+            self.assertTupleEqual(('p1', 'admin'), rdp.mock_calls[0][1])
+            self.assertEqual(response.status_int, 200)
+            self.assertEqual(json.loads(response.body),
+                             'Project p1 has been deleted.')
+        # Delete a project as PTL (default rule)
+        ctx = [patch.object(SFGerritProjectManager, 'delete'),
+               patch.object(SFRedmineProjectManager, 'delete'),
+               patch(FIND_PROJECT_PATH),
+               patch.object(project.SFGerritProjectManager,
+                            'get_user_groups'), ]
+        with nested(*ctx) as (gdp, rdp, pfn, gug):
+            gug.return_value = [{'name': 'p1-ptl'}, ]
+            pfn.return_value = {'name': 'p1'}
+            name = '===' + base64.urlsafe_b64encode('p1')
+            response = self.app.delete('/project/%s/' % name, status="*",
+                                       extra_environ={'REMOTE_USER': 'bob'})
+            self.assertTupleEqual(('p1', 'bob'), gdp.mock_calls[0][1])
+            self.assertTupleEqual(('p1', 'bob'), rdp.mock_calls[0][1])
             self.assertEqual(response.status_int, 200)
             self.assertEqual(json.loads(response.body),
                              'Project p1 has been deleted.')
@@ -435,10 +474,13 @@ class TestManageSFAppProjectController(FunctionalTest):
         ctx = [patch.object(SFGerritProjectManager, 'delete'),
                patch.object(SFRedmineProjectManager, 'delete',
                             side_effect=raiseexc),
-               patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, rip, pfn):
+               patch(FIND_PROJECT_PATH),
+               patch.object(project.SFGerritProjectManager,
+                            'get_user_groups'), ]
+        with nested(*ctx) as (gip, rip, pfn, gug):
             pfn.return_value = ('p1', None)
-            response = self.app.delete('/project/p1', status="*")
+            response = self.app.delete('/project/p1', status="*",
+                                       extra_environ={'REMOTE_USER': 'admin'})
             self.assertEqual(response.status_int, 500)
             self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '

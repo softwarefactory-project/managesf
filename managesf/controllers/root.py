@@ -31,6 +31,7 @@ from managesf.controllers import backup, localuser, introspection, htp, pages
 from managesf.controllers import SFuser
 from managesf.services import base, gerrit
 from managesf.services import exceptions
+from managesf import policy
 
 
 logger = logging.getLogger(__name__)
@@ -98,6 +99,17 @@ def report_unhandled_error(exp):
     logger.exception(LOGERRORMSG % str(exp))
     response.status = 500
     return CLIENTERRORMSG % str(exp)
+
+
+def authorize(rule_name, target):
+    credentials = {'username': request.remote_user,
+                   'groups': []}
+    # TODO(mhu) this must be independent from gerrit
+    code_review = [s for s in SF_SERVICES
+                   if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
+    user_groups = code_review.project.get_user_groups(request.remote_user)
+    credentials['groups'] = [grp['name'] for grp in user_groups]
+    return policy.authorize(rule_name, target, credentials)
 
 
 class BackupController(RestController):
@@ -332,6 +344,11 @@ class ProjectController(RestController):
 
     @expose('json')
     def get_all(self):
+        _policy = 'managesf.project:get_all'
+        if not authorize(_policy,
+                         target={}):
+            return abort(401,
+                         detail='Failure to comply with policy %s' % _policy)
         projects = self.get_cache()
         if projects:
             return projects
@@ -349,6 +366,11 @@ class ProjectController(RestController):
 
     @expose('json')
     def get_one(self, project_id):
+        _policy = 'managesf.project:get_one'
+        if not authorize(_policy,
+                         target={}):
+            return abort(401,
+                         detail='Failure to comply with policy %s' % _policy)
         name = _decode_project_name(project_id)
         project = self._find_project(name)
         if not project:
@@ -358,15 +380,17 @@ class ProjectController(RestController):
 
     @expose('json')
     def put(self, name):
-        if getattr(conf, "project_create_administrator_only", True):
-            if not is_admin(request.remote_user):
-                abort(401)
+        _policy = 'managesf.project:create'
 
         if not name:
             logger.exception("Project name required")
             abort(400)
 
         name = _decode_project_name(name)
+        if not authorize(_policy,
+                         target={'project': name}):
+            return abort(401,
+                         detail='Failure to comply with policy %s' % _policy)
         project = self._find_project(name)
         if project:
             logger.exception("Project %s already exists" % name)
@@ -402,6 +426,11 @@ class ProjectController(RestController):
     @expose('json')
     def delete(self, name):
         name = _decode_project_name(name)
+        _policy = 'managesf.project:delete'
+        if not authorize(_policy,
+                         target={'project': name}):
+            return abort(401,
+                         detail='Failure to comply with policy %s' % _policy)
         project = self._find_project(name)
         if name == 'config':
             response.status = 400
