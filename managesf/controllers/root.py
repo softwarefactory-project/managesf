@@ -728,12 +728,13 @@ class ServicesUsersController(RestController):
                 username = infos.get('username')
                 ssh_keys = infos.get('ssh_keys', [])
                 email = infos.get('email')
+                cauth_id = infos.get('external_id')
                 try:
                     s_id = service.user.create(username=username,
                                                email=email,
                                                full_name=full_name,
                                                ssh_keys=ssh_keys,
-                                               cauth_id=user_id)
+                                               cauth_id=cauth_id)
                     sfmanager.user.mapping.set(user_id,
                                                service.service_name,
                                                s_id)
@@ -850,11 +851,12 @@ class ServicesUsersController(RestController):
                     username = infos.get('username')
                     ssh_keys = infos.get('ssh_keys', [])
                     email = infos.get('email')
+                    cauth_id = infos.get('external_id')
                     s_id = service.user.create(username=username,
                                                email=email,
                                                full_name=full_name,
                                                ssh_keys=ssh_keys,
-                                               cauth_id=user_id)
+                                               cauth_id=cauth_id)
                     # we might have a mapping, but to a wrong user id in the
                     # service (because the user existed before but was removed
                     # directly from the service, for example)
