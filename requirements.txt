@@ -9,7 +9,7 @@ passlib==1.6.5
 basicauth==0.3
 sqlalchemy==1.0.8
 urllib3==1.11
-paramiko
+paramiko<2
 pycrypto==2.6.1
 htpasswd==2.3
 pygerrit # see dependency in pysflib
