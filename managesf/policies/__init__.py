@@ -32,6 +32,7 @@ from managesf.policies import project
 from managesf.policies import restore
 from managesf.policies import services_users
 from managesf.policies import tests
+from managesf.policies import resources
 
 
 def list_rules():
@@ -48,5 +49,6 @@ def list_rules():
         htpasswd.list_rules(),
         hooks.list_rules(),
         tests.list_rules(),
-        config.list_rules(), )
+        config.list_rules(),
+        resources.list_rules(), )
 # introspection.list_rules(),

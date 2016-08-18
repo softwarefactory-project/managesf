@@ -153,13 +153,14 @@ class GerritRepo(object):
         self._exec(cmd)
         for path, content in paths.items():
             self.add_file(path, content)
-        cmd = "git commit -a --author '%s' -m'Provides ACL and Groups'" % \
-              self.email
-        self._exec(cmd)
-        cmd = "git push origin meta/config:meta/config"
-        self._exec(cmd)
-        logger.info("[gerrit] Push on config for repository %s" %
-                    self.prj_name)
+        if self._exec('git status -s'):
+            cmd = "git commit -a --author '%s' -m'Provides ACL and Groups'" % (
+                self.email)
+            self._exec(cmd)
+            cmd = "git push origin meta/config:meta/config"
+            self._exec(cmd)
+            logger.info("[gerrit] Push on config for "
+                        "repository %s" % self.prj_name)
 
     def push_master(self, paths):
         logger.info("[gerrit] Prepare push on master for repository %s" %

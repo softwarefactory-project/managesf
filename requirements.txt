@@ -20,3 +20,5 @@ stevedore==1.7.0
 MySQL-python==1.2.5
 six==1.9.0
 oslo.policy==1.13.0
+deepdiff==2.1.2
+GitPython==2.0.8

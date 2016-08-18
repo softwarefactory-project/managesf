@@ -59,3 +59,7 @@
 'managesf.tests:add': 'rule:admin_api or rule:ptl_api'
 
 'managesf.config:get': 'rule:authenticated_api'
+
+'managesf.resources:get': 'rule:any'
+'managesf.resources:validate': 'rule:admin_or_service'
+'managesf.resources:apply': 'rule:admin_or_service'

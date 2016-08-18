@@ -30,6 +30,7 @@ from managesf.controllers import SFuser
 from managesf.services import base, gerrit
 from managesf.services import exceptions
 from managesf import policy
+from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
 
 logger = logging.getLogger(__name__)
@@ -1162,6 +1163,59 @@ class ConfigController(RestController):
                                                    target={})
         return permissions
 
+
+class ResourcesController(RestController):
+    def check_policy(self, _policy):
+        if not authorize(_policy,
+                         target={}):
+            return abort(401,
+                         detail='Failure to comply with policy %s' % _policy)
+
+    @expose('json')
+    def get(self):
+        self.check_policy('managesf.resources:get')
+        eng = SFResourceBackendEngine(
+            os.path.join(conf.resources['workdir'], 'read'),
+            conf.resources['subdir'])
+        return eng.get(conf.resources['master_repo'],
+                       'master')
+
+    @expose('json')
+    def post(self):
+        self.check_policy('managesf.resources:validate')
+        infos = request.json if request.content_length else {}
+        zuul_url = infos.get('zuul_url', None)
+        zuul_ref = infos.get('zuul_ref', None)
+        if not all([zuul_url, zuul_ref]):
+            abort(400, detail="Request content invalid")
+        eng = SFResourceBackendEngine(
+            os.path.join(conf.resources['workdir'], 'validate'),
+            conf.resources['subdir'])
+        status, logs = eng.validate(conf.resources['master_repo'],
+                                    'master', zuul_url, zuul_ref)
+        if not status:
+            response.status = 409
+        else:
+            response.status = 200
+        return logs
+
+    @expose('json')
+    def put(self):
+        self.check_policy('managesf.resources:apply')
+        eng = SFResourceBackendEngine(
+            os.path.join(conf.resources['workdir'], 'apply'),
+            conf.resources['subdir'])
+        status, logs = eng.apply(conf.resources['master_repo'],
+                                 'master^1',
+                                 conf.resources['master_repo'],
+                                 'master')
+        if not status:
+            response.status = 409
+        else:
+            response.status = 201
+        return logs
+
+
 load_services()
 
 
@@ -1179,3 +1233,4 @@ class RootController(object):
     hooks = HooksController()
     config = ConfigController()
     pages = PagesController()
+    resources = ResourcesController()

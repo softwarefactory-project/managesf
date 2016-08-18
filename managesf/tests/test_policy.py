@@ -392,6 +392,37 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.group:update',
                                          target, credentials))
 
+    def test_resources_policies(self):
+        """Test the default resources endpoint policies"""
+        credentials = {}
+        self.assertTrue(policy.authorize('managesf.resources:get',
+                                         {}, credentials))
+        self.assertFalse(policy.authorize('managesf.resources:validate',
+                                          {}, credentials))
+        self.assertFalse(policy.authorize('managesf.resources:apply',
+                                          {}, credentials))
+        credentials = {'username': 'shimajiro'}
+        self.assertTrue(policy.authorize('managesf.resources:get',
+                                         {}, credentials))
+        self.assertFalse(policy.authorize('managesf.resources:validate',
+                                          {}, credentials))
+        self.assertFalse(policy.authorize('managesf.resources:apply',
+                                          {}, credentials))
+        credentials = {'username': 'admin'}
+        self.assertTrue(policy.authorize('managesf.resources:get',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.resources:validate',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.resources:apply',
+                                         {}, credentials))
+        credentials = {'username': '_SF_SERVICE_USER_'}
+        self.assertTrue(policy.authorize('managesf.resources:get',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.resources:validate',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.resources:apply',
+                                         {}, credentials))
+
     def test_default_policies(self):
         """Test the default policies that come with a default deployment"""
         credentials = {}

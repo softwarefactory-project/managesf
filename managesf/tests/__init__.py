@@ -59,6 +59,11 @@ class dummy_conf():
         'sshkey_priv_path': '/tmp/id_rsa',
         'backup_dir': '/tmp',
     }
+    resources = {
+        'workdir': '/tmp/workspace',
+        'subdir': 'resources',
+        'master_repo': 'http://sftests.com/r/config',
+    }
     jenkins = {
         'host': 'jenkins.test.dom',
     }

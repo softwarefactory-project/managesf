@@ -63,7 +63,7 @@ class TestGerritRepo(TestCase):
             with patch.object(gr, 'add_file') as af:
                 gr.push_config({'f1': 'contentf1', 'f2': 'contentf2'})
                 self.assertEqual(2, len(af.mock_calls))
-                self.assertEqual(4, len(ex.mock_calls))
+                self.assertEqual(6, len(ex.mock_calls))
 
     def test_push_master(self):
         gr = utils.GerritRepo('p1', self.conf)

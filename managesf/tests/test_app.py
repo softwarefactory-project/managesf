@@ -12,9 +12,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import base64
-import json
 import os
+import json
+import shutil
+import base64
+import tempfile
 
 from unittest import TestCase
 from webtest import TestApp
@@ -51,6 +53,9 @@ from managesf.services.redmine.user import SFRedmineUserManager
 from managesf.services.storyboard.user import StoryboardUserManager
 from managesf.services.redmine.group import RedmineGroupManager
 
+from managesf.tests import resources_test_utils as rtu
+from managesf.model.yamlbkd.resources.dummy import Dummy
+
 
 FIND_PROJECT_PATH = 'managesf.controllers.root.ProjectController._find_project'
 
@@ -61,6 +66,7 @@ def raiseexc(*args, **kwargs):
 
 class FunctionalTest(TestCase):
     def setUp(self):
+        self.to_delete = []
         c = dummy_conf()
         self.config = {'services': c.services,
                        'gerrit': c.gerrit,
@@ -79,7 +85,8 @@ class FunctionalTest(TestCase):
                        'etherpad': c.etherpad,
                        'lodgeit': c.lodgeit,
                        'pages': c.pages,
-                       'policy': c.policy, }
+                       'policy': c.policy,
+                       'resources': c.resources, }
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}
@@ -88,6 +95,11 @@ class FunctionalTest(TestCase):
     def tearDown(self):
         # Remove the sqlite db
         os.unlink(self.config['sqlalchemy']['url'][len('sqlite:///'):])
+        for path in self.to_delete:
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
 
 
 class TestManageSFIntrospectionController(FunctionalTest):
@@ -1756,3 +1768,115 @@ gitweb: http://redmine.tests.dom/r/gitweb?p=testytest.git;a=commit;h=456
                                  j['hook_name'])
                 self.assertEqual("Could not change status of issue #789",
                                  j['redmine'])
+
+
+class TestResourcesController(FunctionalTest):
+
+    def prepare_repo(self, data):
+        repo_path = rtu.prepare_git_repo(self.to_delete)
+        rtu.add_yaml_data(repo_path, data)
+        return repo_path
+
+    def test_get(self):
+        workdir = tempfile.mkdtemp()
+        self.to_delete.append(workdir)
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine.get') as get:
+            get.return_value = {}
+            resp = self.app.get('/resources/')
+
+        data = {'resources': {'dummies': {
+                'id1': {'name': 'resource_a'}
+                }}}
+        repo_path = self.prepare_repo(data)
+        with patch('managesf.controllers.root.conf') as conf:
+            conf.resources = {'workdir': workdir,
+                              'subdir': 'resources',
+                              'master_repo': repo_path}
+            resp = self.app.get('/resources/')
+            self.assertIn("resources", resp.json)
+
+    def test_post(self):
+        workdir = tempfile.mkdtemp()
+        self.to_delete.append(workdir)
+
+        environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+
+        data = {'resources': {'dummies': {}}}
+        repo_path = self.prepare_repo(data)
+        proposed_data = {'resources': {'dummies': {
+                         'id1': {'namespace': 'awesome',
+                                 'name': 'p1'}}}}
+        repo_path_zuul = self.prepare_repo(proposed_data)
+        # This patch.object for the policy engine
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            with patch('managesf.controllers.root.conf') as conf:
+                conf.resources = {'workdir': workdir,
+                                  'subdir': 'resources',
+                                  'master_repo': repo_path}
+                kwargs = {'zuul_url': repo_path_zuul,
+                          'zuul_ref': 'master'}
+                with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                                {'dummies': Dummy}):
+                    resp = self.app.post_json('/resources/',
+                                              kwargs,
+                                              extra_environ=environ,
+                                              status="*")
+                self.assertIn(
+                    'Resource [type: dummies, ID: id1] is going '
+                    'to be created.',
+                    resp.json)
+                self.assertEqual(resp.status_code, 200)
+
+                proposed_data = {'resources': {'dummies': {
+                                 'idbogus': {'namespace': 'awesome',
+                                             'n4me': 'p3'},
+                                 'id2': {'namespace': 'awesome',
+                                         'name': 'p2'}
+                                 }}}
+                repo_path_zuul = self.prepare_repo(proposed_data)
+                kwargs = {'zuul_url': repo_path_zuul,
+                          'zuul_ref': 'master'}
+                with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                                {'dummies': Dummy}):
+                    resp = self.app.post_json('/resources/',
+                                              kwargs,
+                                              extra_environ=environ,
+                                              status="*")
+                self.assertIn(
+                    "Resource [type: dummy, ID: idbogus] contains extra keys. "
+                    "Please check the model.",
+                    resp.json)
+                self.assertEqual(resp.status_code, 409)
+
+    def test_put(self):
+        workdir = tempfile.mkdtemp()
+        self.to_delete.append(workdir)
+
+        environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+
+        data = {'resources': {'dummies': {}}}
+        repo_path = self.prepare_repo(data)
+        new_data = {'resources': {'dummies': {
+                    'id1': {'namespace': 'awesome',
+                            'name': 'p1'}}}}
+        rtu.add_yaml_data(repo_path, new_data)
+        # This patch.object for the policy engine
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            with patch('managesf.controllers.root.conf') as conf:
+                conf.resources = {'workdir': workdir,
+                                  'subdir': 'resources',
+                                  'master_repo': repo_path}
+                with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                                {'dummies': Dummy}):
+                    resp = self.app.put('/resources/',
+                                        extra_environ=environ,
+                                        status="*")
+                self.assertIn("Resource [type: dummies, ID: id1] will be "
+                              "created.",
+                              resp.json)
+                self.assertIn("Resource [type: dummies, ID: id1] has been "
+                              "created.",
+                              resp.json)
+                self.assertEqual(len(resp.json), 2)
