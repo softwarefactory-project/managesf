@@ -20,7 +20,7 @@ in the configuration file, in the "services" section, like so:
     'jenkins',
     'etherpad',
     'nodepool',
-]
+  ]
 
 Each service has a dedicated configuration section. See below for more details,
 but keep in mind that for services shipped with Software Factory, the configuration
