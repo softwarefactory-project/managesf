@@ -66,6 +66,22 @@ class GroupCheck(policy.Check):
         return False
 
 
+@policy.register('target.group')
+class TargetGroupCheck(policy.Check):
+    """Check the target group for membership related calls"""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'group' in target:
+            return match.lower() == target['group'].lower()
+        return False
+
+
 rules = [
     policy.RuleDefault('is_admin', 'username:%s' % admin_account),
     policy.RuleDefault('is_service', 'username:%s' % SERVICE_USER),

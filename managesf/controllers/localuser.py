@@ -15,31 +15,12 @@
 
 import logging
 
-from pecan import conf
-from pecan import request
-
 from managesf import model
 from basicauth import decode, DecodeError
 from passlib.hash import pbkdf2_sha256
 
 
 logger = logging.getLogger(__name__)
-
-
-class AddUserForbidden(Exception):
-    pass
-
-
-class DeleteUserForbidden(Exception):
-    pass
-
-
-class UpdateUserForbidden(Exception):
-    pass
-
-
-class GetUserForbidden(Exception):
-    pass
 
 
 class UserNotFound(Exception):
@@ -85,11 +66,6 @@ def hash_password(infos):
 def update_user(username, infos):
     reason = ''
     if not model.get_user(username):
-        if request.remote_user != conf.admin['name']:
-            raise AddUserForbidden('Only %s can create a new user' %
-                                   conf.admin['name'])
-        if username == conf.admin['name']:
-            raise AddUserForbidden('This user is reserved')
         infos['username'] = username
         verify_input(infos)
         hash_password(infos)
@@ -98,11 +74,6 @@ def update_user(username, infos):
             del infos['hashed_password']
             ret = infos
     else:
-        if request.remote_user != conf.admin['name'] and \
-                request.remote_user != username:
-            raise UpdateUserForbidden(
-                '%s is trying to update %s. This is forbidden' %
-                (request.remote_user, username))
         verify_input(infos)
         hash_password(infos)
         ret = model.update_user(username, infos)
@@ -114,9 +85,6 @@ def update_user(username, infos):
 
 
 def delete_user(username):
-    if request.remote_user != conf.admin['name']:
-        raise DeleteUserForbidden("Only %s can delete an user" %
-                                  conf.admin['name'])
     ret = model.delete_user(username)
     if not ret:
         raise UserNotFound("%s not found" % username)
@@ -124,10 +92,6 @@ def delete_user(username):
 
 
 def get_user(username):
-    if request.remote_user != conf.admin['name'] and \
-            request.remote_user != username:
-        raise GetUserForbidden("%s not allowed to fetch %s" %
-                               (request.remote_user, username))
     infos = model.get_user(username)
     if not infos:
         raise UserNotFound("%s not found" % username)
