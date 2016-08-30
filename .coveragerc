@@ -1,8 +1,0 @@
-[run]
-branch = True
-omit = .tox
-     tests
-source = managesf
-
-[report]
-show_missing = 1

@@ -23,7 +23,6 @@ import os.path
 
 from pecan import conf
 from oslo_policy import policy
-from oslo_config import cfg
 
 from managesf import policies
 
@@ -33,8 +32,23 @@ logger = logging.getLogger(__name__)
 
 _ENFORCER = None
 
-C = cfg.CONF
-C()
+
+class FakeOsloPolicy:
+    def __init__(self, policy_file):
+        self.policy_dirs = []
+        self.policy_default_rule = None
+        self.policy_file = policy_file
+
+
+class FakeOslo:
+    def __init__(self, policy_file):
+        self.oslo_policy = FakeOsloPolicy(policy_file)
+
+    def register_opts(self, *arg, **kwarg):
+        return
+
+    def find_file(self, *arg, **kwarg):
+        return self.oslo_policy.policy_file
 
 
 def reset():
@@ -54,7 +68,7 @@ def init(policy_file=None, rules=None):
 
     global _ENFORCER
     if not _ENFORCER:
-        _ENFORCER = policy.Enforcer(C,
+        _ENFORCER = policy.Enforcer(FakeOslo(policy_file),
                                     policy_file=policy_file,
                                     rules=rules,
                                     use_conf=False)
