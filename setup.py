@@ -14,45 +14,8 @@
 # under the License.
 # -*- coding: utf-8 -*-
 
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages
+import setuptools
 
-try:
-    import multiprocessing  # noqa
-except:
-    pass
-
-
-VERSION = '0.10.0'
-
-
-setup(
-    name='managesf',
-    version=VERSION,
-    description=('A python client/server used to centralize management '
-                 'of services deployed under Software Factory'),
-    author='Software Factory',
-    author_email='softwarefactory@redhat.com',
-    test_suite='nose.collector',
-    zip_safe=False,
-    include_package_data=True,
-    packages=find_packages(exclude=['ez_setup']),
-    entry_points={
-        'managesf.service': [
-            ('SFGerrit = managesf.services.gerrit:SoftwareFactoryGerrit'),
-            ('SFRedmine = managesf.services.redmine:SoftwareFactoryRedmine'),
-            ('SFStoryboard = managesf.services.storyboard:SoftwareFactoryStoryboard'),
-        ],
-        'oslo.policy.policies': [
-            ('managesf = managesf.policies:list_rules'),
-        ]
-    },
-    url=('http://softwarefactory-project.io/'
-         'r/gitweb?p=managesf.git;a=summary'),
-    download_url='https://github.com/redhat-cip/managesf/tarball/%s' % VERSION,
-    keywords=['software factory', 'CI', 'continuous integration'],
-)
+setuptools.setup(
+    setup_requires=['pbr'],
+    pbr=True)
