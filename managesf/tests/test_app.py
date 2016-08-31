@@ -1311,6 +1311,54 @@ class TestManageSFServicesUserController(FunctionalTest):
                                 extra_environ=environ, status="*")
             self.assertEqual('99', jojo.json.get('cauth_id'))
 
+    def test_idp_sync(self):
+        environ = {'REMOTE_USER': self.config['admin']['name']}
+        infos_jojo = {'email': 'jojo@starplatinum.dom',
+                      'ssh_keys': ['ora', 'oraora'],
+                      'full_name': 'Jotaro Kujoh', 'username': 'jojo',
+                      'external_id': 42}
+        ctx = [patch.object(SFRedmineUserManager, 'create'),
+               patch.object(StoryboardUserManager, 'create'),
+               patch.object(g_user.SFGerritUserManager, 'create'),
+               patch.object(SFRedmineUserManager, 'update'),
+               patch.object(StoryboardUserManager, 'update'),
+               patch.object(g_user.SFGerritUserManager, 'update'),
+               patch.object(SFRedmineUserManager, 'get'),
+               patch.object(StoryboardUserManager, 'get'),
+               patch.object(g_user.SFGerritUserManager, 'get')]
+        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
+                              r_up, s_up, g_up,
+                              r_get, s_get, g_get):
+            for mock in (r_up, s_up, g_up, r_get, s_get, g_get):
+                mock.return_value = None
+            redmine_create.return_value = 12
+            sb_create.return_value = 12
+            gerrit_create.return_value = 13
+
+            # User logs in
+            response = self.app.post_json('/services_users/', infos_jojo,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+
+            # User disable idp_sync
+            disable_idp = {'idp_sync': False}
+            user_cred = {'REMOTE_USER': 'jojo'}
+            response = self.app.put_json('/services_users/?username=jojo',
+                                         disable_idp, extra_environ=user_cred,
+                                         status="*")
+            self.assertEqual(response.status_int, 200)
+
+            # User change its mail on idp and logs in again
+            infos_jojo['email'] = 'jojo@galactica.com'
+            response = self.app.post_json('/services_users/', infos_jojo,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201)
+
+            # Check user mail didn't change because idp_sync is False
+            response = self.app.get('/services_users/?username=jojo',
+                                    extra_environ=environ, status="*")
+            self.assertNotEqual(response.json['email'], infos_jojo['email'])
+
     def test_update_user(self):
         environ = {'REMOTE_USER': self.config['admin']['name']}
         infos_jojo = {'email': 'jojo@starplatinum.dom',

@@ -726,13 +726,14 @@ class ServicesUsersController(RestController):
         msg = 'The following fields cannot be updated: %s, discarding them'
         logger.debug(msg % str(forbidden))
         return dict((u, infos[u]) for u in infos.keys()
-                    if u not in forbidden and infos[u])
+                    if u not in forbidden and infos[u] is not None)
 
     def _update(self, user_id, infos):
         sfmanager.user.update(user_id,
                               username=infos.get('username'),
                               email=infos.get('email'),
-                              fullname=infos.get('full_name'))
+                              fullname=infos.get('full_name'),
+                              idp_sync=infos.get('idp_sync'))
         for service in SF_SERVICES:
             s_id = sfmanager.user.mapping.get_service_mapping(
                 service.service_name,
@@ -805,25 +806,8 @@ class ServicesUsersController(RestController):
         if not infos or not infos.get('username'):
             abort(400, detail=u'Incomplete user information: %r' % infos)
         try:
-            # In this version we cannot lookup just with cauth_id
-            known_user = sfmanager.user.get(username=infos['username'],
-                                            email=infos['email'],
-                                            fullname=infos['full_name'])
-            # if we have this user and a bogus cauth_id, update it
-            if known_user:
-                msg = u'found user #%(id)s %(username)s (%(email)s)'
-                logger.debug(msg % known_user)
-                e_id = infos.get('external_id')
-                if e_id and int(e_id) != int(known_user['cauth_id']):
-                    logger.debug('Update cauth ID - This is normal if'
-                                 'cauth was reinitialized')
-                    sfmanager.user.reset_cauth_id(known_user['id'],
-                                                  e_id)
-                u = known_user['id']
-                clean_infos = self._remove_non_updatable_fields(infos)
-                self._update(u, clean_infos)
-            # maybe we know this user by cauth_id but her details changed
-            elif not known_user and infos.get('external_id', -1) != -1:
+            known_user = None
+            if infos.get('external_id', -1) != -1:
                 known_user = sfmanager.user.get(cauth_id=infos['external_id'])
                 if known_user:
                     msg = (u'found user #%(id)s %(username)s (%(email)s) '
@@ -831,7 +815,11 @@ class ServicesUsersController(RestController):
                     logger.debug(msg % known_user)
                     u = known_user['id']
                     clean_infos = self._remove_non_updatable_fields(infos)
-                    self._update(u, clean_infos)
+                    if known_user.get('idp_sync'):
+                        self._update(u, clean_infos)
+                    else:
+                        logger.info("Skipping user information update because"
+                                    "idp_sync is disabled")
             # if we still cannot find it, let's create it
             if not known_user:
                 u = sfmanager.user.create(username=infos['username'],

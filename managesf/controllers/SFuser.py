@@ -83,7 +83,8 @@ class SFUserManager:
             return user['id']
         return crud.create(username, email, fullname, cauth_id)
 
-    def update(self, id, username=None, email=None, fullname=None):
+    def update(self, id, username=None, email=None, fullname=None,
+               idp_sync=None):
         msg = u'Updating user info (id %s):' % id
         if username:
             msg += u' username=%s,' % username
@@ -91,9 +92,11 @@ class SFUserManager:
             msg += u' email=%s,' % email
         if fullname:
             msg += u' full name=%s' % fullname
+        if idp_sync is not None:
+            msg += u' idp_sync=%s' % idp_sync
         logger.info(msg)
         return crud.update(id, username=username,
-                           email=email, fullname=fullname)
+                           email=email, fullname=fullname, idp_sync=idp_sync)
 
     def reset_cauth_id(self, id, cauth_id):
         msg = u'Updating user info (id %s): cauth_id=%s'
