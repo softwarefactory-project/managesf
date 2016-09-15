@@ -369,14 +369,16 @@ class ProjectController(RestController):
                             group_type = group_name.split('-')[-1]
                             projects[p]['groups'][group_type] = details
 
-        # This is okay here :)
+        # Skip this if there is no issue tracker
         tracker = [s for s in SF_SERVICES
-                   if isinstance(s, base.BaseIssueTrackerServicePlugin)][0]
-        # 1 or more requests (depends on the amount of issue and pagination
-        for issue in tracker.get_open_issues().get('issues'):
-            prj = issue.get('project').get('name')
-            if prj in projects:
-                projects[prj]['open_issues'] += 1
+                   if isinstance(s, base.BaseIssueTrackerServicePlugin)]
+        if tracker:
+            tracker = tracker[0]
+            # 1 or more requests (depends on issues and pagination)
+            for issue in tracker.get_open_issues().get('issues'):
+                prj = issue.get('project').get('name')
+                if prj in projects:
+                    projects[prj]['open_issues'] += 1
 
         # Done in 1 requests
         for review in code_review.review.get():
