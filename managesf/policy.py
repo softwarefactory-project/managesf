@@ -72,13 +72,13 @@ def init(policy_file=None, rules=None):
                                     policy_file=policy_file,
                                     rules=rules,
                                     use_conf=False)
+        _ENFORCER.register_defaults(policies.list_rules())
     if policy_file:
         _ENFORCER.load_rules(force_reload=True)
     register_rules(_ENFORCER)
 
 
 def register_rules(enforcer):
-    enforcer.register_defaults(policies.list_rules())
     if not enforcer.rules:
         # Override defaults with the file rules
         for override in enforcer.file_rules.values():
