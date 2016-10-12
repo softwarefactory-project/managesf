@@ -131,7 +131,7 @@ class TestPolicyEngine(TestCase):
         credentials = {'username': 'admin'}
         self.assertTrue(policy.authorize('managesf.hooks:trigger',
                                          target, credentials))
-        credentials = {'username': '_SF_SERVICE_USER_'}
+        credentials = {'username': 'SF_SERVICE_USER'}
         self.assertTrue(policy.authorize('managesf.hooks:trigger',
                                          target, credentials))
 

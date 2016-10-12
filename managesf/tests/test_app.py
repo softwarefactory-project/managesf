@@ -1606,7 +1606,7 @@ class TestManageSFServicesUserController(FunctionalTest):
 class TestHooksController(FunctionalTest):
     def test_non_existing_hook(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
             resp = self.app.post_json('/hooks/toto', {'arg1': 1, 'arg2': 2},
                                       extra_environ=environ, status="*")
             self.assertEqual(404, resp.status_int)
@@ -1616,7 +1616,7 @@ class TestHooksController(FunctionalTest):
 
     def test_non_existing_service(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
             resp = self.app.post_json('/hooks/toto/blagh',
                                       {'arg1': 1, 'arg2': 2},
                                       extra_environ=environ, status="*")
@@ -1627,7 +1627,7 @@ class TestHooksController(FunctionalTest):
 
     def test_patchset_created(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
             hooks_kwargs = {'change': 123,
                             'is_draft': False,
                             'change_url': 'blop',
@@ -1676,7 +1676,7 @@ Review: blop
 
     def test_patchset_created_one_service(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
             with patch.object(BaseHooksManager,
                               'patchset_created') as patchset_created:
                 patchset_created.return_value = "mocked"
@@ -1705,7 +1705,7 @@ Review: blop
 
     def test_change_merged(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
             hooks_kwargs = {'change': 123,
                             'change_url': 'blop',
                             'project': 'testytest',
