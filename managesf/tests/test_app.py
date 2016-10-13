@@ -1801,7 +1801,7 @@ class TestResourcesController(FunctionalTest):
         workdir = tempfile.mkdtemp()
         self.to_delete.append(workdir)
 
-        environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+        environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
 
         data = {'resources': {'dummies': {}}}
         repo_path = self.prepare_repo(data)
@@ -1854,7 +1854,7 @@ class TestResourcesController(FunctionalTest):
         workdir = tempfile.mkdtemp()
         self.to_delete.append(workdir)
 
-        environ = {'REMOTE_USER': '_SF_SERVICE_USER_'}
+        environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
 
         data = {'resources': {'dummies': {}}}
         repo_path = self.prepare_repo(data)

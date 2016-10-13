@@ -33,7 +33,6 @@ RULE_AUTHENTICATED_API = 'rule:authenticated_api'
 
 # TODO this value should be in the conf
 SERVICE_USER = 'SF_SERVICE_USER'
-OLD_SERVICE_USER = '_SF_SERVICE_USER_'
 
 try:
     admin_account = conf.admin['name']
@@ -86,8 +85,7 @@ class TargetGroupCheck(policy.Check):
 rules = [
     policy.RuleDefault('is_admin', 'username:%s' % admin_account),
     policy.RuleDefault('is_service',
-                       'username:%s or username:%s' % (SERVICE_USER,
-                                                       OLD_SERVICE_USER)),
+                       'username:%s' % SERVICE_USER),
     policy.RuleDefault('admin_or_service',
                        'rule:is_admin or rule:is_service'),
     policy.RuleDefault('admin_api', 'rule:is_admin'),

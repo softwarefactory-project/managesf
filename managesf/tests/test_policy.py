@@ -415,7 +415,7 @@ class TestPolicyEngine(TestCase):
                                          {}, credentials))
         self.assertTrue(policy.authorize('managesf.resources:apply',
                                          {}, credentials))
-        credentials = {'username': '_SF_SERVICE_USER_'}
+        credentials = {'username': 'SF_SERVICE_USER'}
         self.assertTrue(policy.authorize('managesf.resources:get',
                                          {}, credentials))
         self.assertTrue(policy.authorize('managesf.resources:validate',
