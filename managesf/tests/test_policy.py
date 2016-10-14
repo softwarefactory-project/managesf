@@ -43,12 +43,8 @@ class TestPolicyEngine(TestCase):
                        'htpasswd': c.htpasswd,
                        'sshconfig': c.sshconfig,
                        'managesf': c.managesf,
-                       'jenkins': c.jenkins,
                        'storyboard': c.storyboard,
                        'mysql': c.mysql,
-                       'nodepool': c.nodepool,
-                       'etherpad': c.etherpad,
-                       'lodgeit': c.lodgeit,
                        'pages': c.pages,
                        'policy': c.policy, }
         self.app = TestApp(load_app(self.config))
@@ -251,19 +247,6 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.backup:get',
                                          target, credentials))
         self.assertTrue(policy.authorize('managesf.backup:create',
-                                         target, credentials))
-
-    def test_restore_policies(self):
-        """Test the default restore endpoint policies"""
-        credentials = {}
-        target = {}
-        self.assertFalse(policy.authorize('managesf.restore:restore',
-                                          target, credentials))
-        credentials = {'username': 'RickSanchez'}
-        self.assertFalse(policy.authorize('managesf.restore:restore',
-                                          target, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.restore:restore',
                                          target, credentials))
 
     def test_membership_policies(self):
@@ -545,12 +528,7 @@ class TestPolicyEngineFromFile(TestCase):
                        'htpasswd': c.htpasswd,
                        'sshconfig': c.sshconfig,
                        'managesf': c.managesf,
-                       'jenkins': c.jenkins,
                        'storyboard': c.storyboard,
-                       'mysql': c.mysql,
-                       'nodepool': c.nodepool,
-                       'etherpad': c.etherpad,
-                       'lodgeit': c.lodgeit,
                        'pages': c.pages,
                        'policy': c.policy, }
         pol_file = tempfile.mkstemp()[1] + '.yaml'

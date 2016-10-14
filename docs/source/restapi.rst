@@ -163,22 +163,9 @@ the body contains a gzip tar archive.
 Restore a backup
 ----------------
 
-.. code-block:: none
+To restore a backup, it needs to be copied to /var/www/managesf/sf_backup.tar.gz
+and this command needs to be run:
 
- *POST /restore*
+.. code-block:: bash
 
-The backup archive must be sent in the request body as multipart form data.
-
-Request
-
-.. code-block:: guess
-
- POST /backup
- Content-Type: Content-Type: multipart/form-data; boundary=...
- Content-Length: ...
- Cookie: auth_pubtkt=..
-
-Response
-
-If successfully restored, HTTP status code 200 is returned. It may
-take sometime for SF REST API to return an HTTP response.
+  ansible-playbook /etc/ansible/sf_restore.yml

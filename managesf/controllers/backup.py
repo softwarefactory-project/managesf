@@ -16,71 +16,20 @@
 from pecan import conf
 import logging
 from utils import RemoteUser
-import time
-import os.path
 
 logger = logging.getLogger(__name__)
 
 
 class Backup(object):
     def __init__(self):
-        path = conf.managesf['sshkey_priv_path']
-        self.jru = RemoteUser('root', conf.jenkins['host'], path)
-        self.msqlru = RemoteUser('root', conf.mysql['host'], path)
-        self.mru = RemoteUser('root', conf.managesf['host'], path)
-
-    def check_for_service(self, ru, service):
-        attempt = 0
-        # Wait up to 10 minutes for gerrit to restart
-        while attempt <= 300:
-            p = ru._ssh(service)
-            logger.debug(" Return status is %s" % p.returncode)
-            if p.returncode != 0:
-                time.sleep(2)
-                attempt += 1
-            else:
-                break
+        c = conf.managesf
+        self.client = RemoteUser('root', c['host'], c['sshkey_update_path'])
 
     def start(self):
-        logger.debug("start backup of mysql")
-        p = self.msqlru._ssh('/root/backup_mysql.sh')
-        logger.info("-> Mysql backup ended with code: %d" % p.returncode)
-
-        logger.debug("start backup of SF hiera files")
-        p = self.mru._ssh('/root/backup_backup.sh')
-        logger.info("-> SF hiera backup ended with code: %d" % p.returncode)
-
-        bkp_dir = conf.managesf.get('backup_dir', '/var/www/managesf/')
-        logger.debug("generate backup in %s" % bkp_dir)
-        bkp = os.path.join(bkp_dir, 'sf_backup.tar.gz')
-        self.mru._ssh(
-            'tar --absolute-names -czPf ' +
-            '%s /root/.bup /root/*db.sql.gz' % bkp)
-        self.mru._ssh('chmod 0600 %s' % bkp)
-        self.mru._ssh('chown apache:apache %s' % bkp)
-
-    def unpack(self):
-        bkp_dir = conf.managesf.get('backup_dir', '/var/www/managesf/')
-        bkp = os.path.join(bkp_dir, 'sf_backup.tar.gz')
-        self.mru._ssh('tar -xzPf %s' % bkp)
-
-    def restore(self):
-        p = self.msqlru._ssh('/root/restore_mysql.sh')
-        logger.info("Mysql restoration ended with code: %d" % p.returncode)
-        p = self.mru._ssh('/root/restore_backup.sh')
-        logger.info("SF hiera restoration ended with code: %d" % p.returncode)
+        logger.debug("start backup")
+        self.client._ssh('sf_backup')
 
 
 def backup_start():
     bkp = Backup()
     bkp.start()
-
-
-def backup_unpack():
-    bkp = Backup()
-    bkp.unpack()
-
-
-def backup_restore():
-    bkp = Backup()
-    bkp.restore()

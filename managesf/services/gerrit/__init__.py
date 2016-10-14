@@ -46,7 +46,6 @@ class Gerrit(base.BaseCodeReviewServicePlugin):
         self.user = None
         self.membership = None
         self.role = None
-        self.backup = None
         self.repository = None
         self.review = None
         self.group = None
@@ -69,8 +68,6 @@ class SoftwareFactoryGerrit(Gerrit):
         self.user = user.SFGerritUserManager(self)
         self.membership = membership.SFGerritMembershipManager(self)
         self.role = role.SFGerritRoleManager(self)
-        self.backup = base.BackupManager(self)
-        self.backup.heartbeat_cmd = 'wget --spider http://localhost:8000/r/'
         self.repository = repository.SFGerritRepositoryManager(self)
         self.review = review.SFGerritReviewManager(self)
         self.group = group.SFGerritGroupManager(self)

@@ -45,7 +45,7 @@ CLIENTERRORMSG = "Unable to process your request, failed with "\
 
 # instanciate service plugins
 SF_SERVICES = []
-DEFAULT_SERVICES = ['SFGerrit', 'SFRedmine', 'SFStoryboard', 'jenkins']
+DEFAULT_SERVICES = ['SFGerrit', 'SFRedmine', 'SFStoryboard']
 
 
 def load_services():
@@ -136,38 +136,7 @@ class BackupController(RestController):
             return abort(401,
                          detail='Failure to comply with policy %s' % _policy)
         try:
-            for service in SF_SERVICES:
-                try:
-                    service.backup.backup()
-                except exceptions.UnavailableActionError:
-                    pass
             backup.backup_start()
-            response.status = 204
-        except Exception as e:
-            return report_unhandled_error(e)
-
-
-class RestoreController(RestController):
-    @expose('json')
-    def post(self):
-        _policy = 'managesf.restore:restore'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        filepath = os.path.join(conf.managesf.get('backup_dir',
-                                                  '/var/www/managesf/'),
-                                'sf_backup.tar.gz')
-        with open(filepath, 'wb+') as f:
-            f.write(request.POST['file'].file.read())
-        try:
-            backup.backup_unpack()
-            backup.backup_restore()
-            for service in SF_SERVICES:
-                try:
-                    service.backup.restore()
-                except exceptions.UnavailableActionError:
-                    pass
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
@@ -1241,7 +1210,6 @@ load_services()
 class RootController(object):
     project = ProjectController()
     backup = BackupController()
-    restore = RestoreController()
     user = LocalUserController()
     bind = LocalUserBindController()
     group = GroupController()

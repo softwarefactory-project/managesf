@@ -17,9 +17,6 @@ in the configuration file, in the "services" section, like so:
   services = [
     'SFRedmine',
     'SFGerrit',
-    'jenkins',
-    'etherpad',
-    'nodepool',
   ]
 
 Each service has a dedicated configuration section. See below for more details,
@@ -64,59 +61,6 @@ is managed by cauth.
   ssh_port                        the ssh port Gerrit listens on
   sshkey_priv_path                the path to Gerrit's private ssh key
   replication_config_path         the path to the replication configuration
-=============================  =================================================
-
-jenkins
-.......
-
-Jenkins jobs manager packaged within Software Factory by default.
-
-*configuration section:* jenkins
-
-=============================  =================================================
-  Option                          Description
-=============================  =================================================
-  host                            the jenkins host
-=============================  =================================================
-
-etherpad
-........
-
-etherpad collaborative text editing tool packaged within Software Factory by default.
-
-*configuration section:* etherpad
-
-=============================  =================================================
-  Option                          Description
-=============================  =================================================
-  host                            the etherpad host
-=============================  =================================================
-
-
-lodgeit
-.......
-
-Lodgeit pastebin-like service packaged within Software Factory by default.
-
-*configuration section:* lodgeit
-
-=============================  =================================================
-  Option                          Description
-=============================  =================================================
-  host                            the lodgeit host
-=============================  =================================================
-
-nodepool
-........
-
-nodepool slave VMs manager packaged within Software Factory by default.
-
-*configuration section:* nodepool
-
-=============================  =================================================
-  Option                          Description
-=============================  =================================================
-  host                            the nodepool host
 =============================  =================================================
 
 

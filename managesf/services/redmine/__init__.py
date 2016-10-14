@@ -20,7 +20,6 @@ from pysflib.sfredmine import RedmineUtils
 from redmine import Redmine as RM
 
 from managesf.services import base
-from managesf.services.redmine import backup
 from managesf.services.redmine import hooks
 from managesf.services.redmine import membership
 from managesf.services.redmine import project
@@ -41,7 +40,6 @@ class Redmine(base.BaseIssueTrackerServicePlugin):
         self.user = user.UserManager(self)
         self.membership = membership.MembershipManager(self)
         self.role = role.RoleManager(self)
-        self.backup = backup.RedmineBackupManager(self)
         self.hooks = hooks.RedmineHooksManager(self)
         self.group = group.RedmineGroupManager(self)
 
@@ -70,8 +68,6 @@ class SoftwareFactoryRedmine(Redmine):
         self.user = user.SFRedmineUserManager(self)
         self.membership = membership.SFRedmineMembershipManager(self)
         self.role = role.SFRedmineRoleManager(self)
-        self.backup = base.BackupManager(self)
-        self.backup.heartbeat_cmd = None
         self.hooks = hooks.RedmineHooksManager(self)
         self.group = group.RedmineGroupManager(self)
 

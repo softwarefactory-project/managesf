@@ -46,10 +46,6 @@ setup(
             ('SFGerrit = managesf.services.gerrit:SoftwareFactoryGerrit'),
             ('SFRedmine = managesf.services.redmine:SoftwareFactoryRedmine'),
             ('SFStoryboard = managesf.services.storyboard:SoftwareFactoryStoryboard'),
-            ('jenkins = managesf.services.jenkins:Jenkins'),
-            ('nodepool = managesf.services.nodepool:Nodepool'),
-            ('etherpad = managesf.services.etherpad:Etherpad'),
-            ('lodgeit = managesf.services.lodgeit:Lodgeit'),
         ],
         'oslo.policy.policies': [
             ('managesf = managesf.policies:list_rules'),

@@ -29,7 +29,6 @@ from managesf.policies import localuser
 from managesf.policies import membership
 from managesf.policies import pages
 from managesf.policies import project
-from managesf.policies import restore
 from managesf.policies import services_users
 from managesf.policies import tests
 from managesf.policies import resources
@@ -40,7 +39,6 @@ def list_rules():
         base.list_rules(),
         backup.list_rules(),
         project.list_rules(),
-        restore.list_rules(),
         membership.list_rules(),
         group.list_rules(),
         pages.list_rules(),
