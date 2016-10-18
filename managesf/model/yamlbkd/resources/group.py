@@ -75,6 +75,19 @@ class GroupOps(object):
         except Exception, e:
             logs.append("Group create: err API returned %s" % e)
 
+        # Remove auto added admin
+        try:
+            ret = self.client.delete_group_member(
+                name, self.conf.admin['email'])
+            if ret is False:
+                logs.append("Group create [del member: %s]: "
+                            "err API returned HTTP 404/409" % (
+                                self.conf.admin['email']))
+        except Exception, e:
+            logs.append("Group create [del member: admin]: "
+                        "err API returned %s" % (
+                            self.conf.admin['email'], e))
+
         if members:
             for member in members:
                 try:
@@ -85,16 +98,6 @@ class GroupOps(object):
                 except Exception, e:
                     logs.append("Group create [add member: %s]: "
                                 "err API returned %s" % (member, e))
-
-        # Remove auto added admin
-        try:
-            ret = self.client.delete_group_member(name, "admin")
-            if ret is False:
-                logs.append("Group create [del member: admin]: "
-                            "err API returned HTTP 404/409")
-        except Exception, e:
-            logs.append("Group create [del member: admin]: "
-                        "err API returned %s" % e)
 
         return logs
 
@@ -121,11 +124,6 @@ class GroupOps(object):
         current_members = [u['email'] for u in
                            self.client.get_group_members(gid)]
         for member in current_members:
-            # Workaround SF is initialized with two users
-            # with the same email admin@domain
-            # http://softwarefactory-project.io/r/#/c/5052
-            if member == self.conf.admin['email']:
-                member = 'admin'
             try:
                 ret = self.client.delete_group_member(name, member)
                 if ret is False:
@@ -175,8 +173,6 @@ class GroupOps(object):
         to_del = set(current_members) - set(members)
 
         for mb in to_add:
-            if mb == self.conf.admin['email']:
-                mb = 'admin'
             try:
                 ret = self.client.add_group_member(mb, name)
                 if ret is False:
@@ -187,8 +183,6 @@ class GroupOps(object):
                             "err API returned %s" % (mb, e))
 
         for mb in to_del:
-            if mb == self.conf.admin['email']:
-                mb = 'admin'
             try:
                 ret = self.client.delete_group_member(name, mb)
                 if ret is False:

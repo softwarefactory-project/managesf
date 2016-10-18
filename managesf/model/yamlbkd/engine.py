@@ -15,9 +15,11 @@
 
 import os
 import re
+import yaml
 import deepdiff
 import logging
 
+from StringIO import StringIO
 from pecan import conf
 
 from managesf.model.yamlbkd.yamlbackend import YAMLBackend
@@ -416,3 +418,50 @@ class SFResourceBackendEngine(object):
                               self.subdir, self.workdir,
                               "%s_cache" % self.workdir.rstrip('/'))
         return current.get_data()
+
+    def direct_apply(self, prev, new):
+        """ Top level direct_apply function. This function should be
+        called only under specific conditions.
+
+        The yamls will be checked for consistencies then resources
+        deduced from the diff of both will be applied. It is needed to
+        understand that using this will de-synchronize the config
+        respository from the reality.
+        """
+        logger.info("Resources engine: direct apply resources requested")
+        direct_apply_logs = []
+        try:
+            try:
+                prev = yaml.safe_load(StringIO(prev))
+            except Exception:
+                raise YAMLDBException("YAML format corrupted for prev")
+            try:
+                new = yaml.safe_load(StringIO(new))
+            except Exception:
+                raise YAMLDBException("YAML format corrupted for new")
+            YAMLBackend._validate_base_struct(prev)
+            YAMLBackend._validate_base_struct(new)
+            for rtype in MAPPING:
+                prev['resources'].setdefault(rtype, {})
+                new['resources'].setdefault(rtype, {})
+            self._check_deps_constraints(new)
+            self._check_unicity_constraints(new)
+            changes = self._get_data_diff(prev, new)
+            self._validate_changes(changes, direct_apply_logs, new)
+            direct_apply_logs.extend(
+                self._resolv_resources_need_refresh(changes, new))
+            partial = self._apply_changes(changes, direct_apply_logs, new)
+        except (YAMLDBException,
+                ModelInvalidException,
+                ResourceInvalidException,
+                ResourceUnicityException,
+                ResourceDepsException), e:
+            direct_apply_logs.append(e.msg)
+            for l in direct_apply_logs:
+                logger.info(l)
+            return False, direct_apply_logs
+        for l in direct_apply_logs:
+            logger.info(l)
+        if partial:
+            return False, direct_apply_logs
+        return True, direct_apply_logs

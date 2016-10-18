@@ -18,6 +18,7 @@ import re
 from managesf.services.gerrit import SoftwareFactoryGerrit
 from managesf.model.yamlbkd.resource import BaseResource
 from managesf.services.gerrit import utils
+from managesf.controllers.utils import template
 
 # ## DEBUG statements to ease run that standalone ###
 # import logging
@@ -30,7 +31,7 @@ from managesf.services.gerrit import utils
 # from pecan import configuration
 # from managesf.model.yamlbkd.resources.gitrepository import GitRepositoryOps
 # conf = configuration.conf_from_file('/var/www/managesf/config.py')
-# g = GitRepositoryOps(conf)
+# g = GitRepositoryOps(conf, {})
 # g._set_client()
 # ###
 
@@ -64,8 +65,8 @@ class GitRepositoryOps(object):
         except Exception, e:
             logs.append("Repo create: err API returned %s" % e)
 
-        install_acl_logs = self.install_acl(**kwargs)
-        logs.extend(install_acl_logs)
+        logs.extend(self.install_acl(**kwargs))
+        logs.extend(self.install_git_review_file(**kwargs))
 
         return logs
 
@@ -87,8 +88,30 @@ class GitRepositoryOps(object):
     def update(self, **kwargs):
         logs = []
 
-        install_acl_logs = self.install_acl(**kwargs)
-        logs.extend(install_acl_logs)
+        logs.extend(self.install_acl(**kwargs))
+        logs.extend(self.install_git_review_file(**kwargs))
+
+        return logs
+
+    def install_git_review_file(self, **kwargs):
+        logs = []
+
+        name = kwargs['name']
+
+        paths = {}
+        content = file(template('gitreview')).read() % (
+            {'gerrit-host': self.conf.gerrit['top_domain'],
+             'gerrit-host-port': self.conf.gerrit['ssh_port'],
+             'name': name})
+        paths['.gitreview'] = content
+
+        # Clone the master branch and push the .gitreview file
+        try:
+            r = utils.GerritRepo(name, self.conf)
+            r.clone()
+            r.push_master(paths)
+        except Exception, e:
+            logs.append(str(e))
 
         return logs
 

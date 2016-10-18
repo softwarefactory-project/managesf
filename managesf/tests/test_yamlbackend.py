@@ -100,6 +100,7 @@ class YAMLBackendTest(TestCase):
                                      clone_path,
                                      cache_path)
         # Try to validate a bunch a invalid data
+        rids = {}
         for data in [
             42,
             [],
@@ -111,7 +112,7 @@ class YAMLBackendTest(TestCase):
             {'resources': {'projects': {'id': []}, 'groups': {'id': []}}},
         ]:
             self.assertRaises(yamlbackend.YAMLDBException,
-                              db.validate, data)
+                              db.validate, data, rids)
 
     def test_db_data_struct_extra(self):
         # Init the DB with valid data

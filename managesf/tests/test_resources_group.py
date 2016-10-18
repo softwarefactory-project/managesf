@@ -60,7 +60,7 @@ class GroupOpsTest(TestCase):
                              call('body2@sftests.com', 'space/g1'))
             self.assertEqual(len(dgm.call_args_list), 1)
             self.assertEqual(dgm.call_args_list[0],
-                             call('space/g1', 'admin'))
+                             call('space/g1', self.conf.admin['email']))
             self.assertEqual(len(logs), 0)
         with nested(*patches) as (cg, agm, dgm):
             cg.side_effect = Exception('Random error')
@@ -73,8 +73,9 @@ class GroupOpsTest(TestCase):
                           'err API returned HTTP 404/409', logs)
             self.assertIn('Group create [add member: body2@sftests.com]: '
                           'err API returned HTTP 404/409', logs)
-            self.assertIn('Group create [del member: admin]: '
-                          'err API returned HTTP 404/409', logs)
+            self.assertIn('Group create [del member: %s]: '
+                          'err API returned HTTP 404/409' % (
+                              self.conf.admin['email']), logs)
             self.assertEqual(len(logs), 4)
 
     def test_delete(self):
@@ -103,7 +104,7 @@ class GroupOpsTest(TestCase):
             self.assertEqual(len(dgm.call_args_list), 3)
             self.assertListEqual([call('space/g1', 'body@sftests.com'),
                                   call('space/g1', 'body2@sftests.com'),
-                                  call('space/g1', 'admin')],
+                                  call('space/g1', self.conf.admin['email'])],
                                  dgm.call_args_list)
             self.assertEqual(call("DELETE FROM account_groups WHERE "
                                   "name='space/g1';DELETE FROM "
@@ -142,8 +143,9 @@ class GroupOpsTest(TestCase):
                           'err API returned Random Error', logs)
             self.assertIn('Group delete [del member: body2@sftests.com]: '
                           'err API returned Random Error', logs)
-            self.assertIn('Group delete [del member: admin]: '
-                          'err API returned Random Error', logs)
+            self.assertIn('Group delete [del member: %s]: '
+                          'err API returned Random Error' % (
+                              self.conf.admin['email']), logs)
             self.assertEqual(len(logs), 3)
 
     def test_update(self):

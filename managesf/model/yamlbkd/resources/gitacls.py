@@ -29,6 +29,10 @@ class ACLOps(object):
         self.new = new
 
     def extra_validations(self, **kwargs):
+        default_groups = ('Non-Interactive Users',
+                          'Administrators',
+                          'Registered Users',
+                          'Anonymous Users')
         logs = []
         acls = kwargs['file']
         groups = kwargs['groups']
@@ -56,7 +60,8 @@ class ACLOps(object):
                 m = re.search('.*group (.*)$', v)
                 if m:
                     group_name = m.groups()[0]
-                    if group_name not in group_names:
+                    if (group_name not in group_names and
+                            group_name not in default_groups):
                         logs.append(
                             "ACLs file section (%s), key (%s) relies on an "
                             "unknown group name: %s" % (
@@ -78,7 +83,7 @@ class ACL(BaseResource):
         ),
         'groups': (
             list,
-            '^([a-zA-Z0-9])+$',
+            '.+',
             False,
             [],
             True,

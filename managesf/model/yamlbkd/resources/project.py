@@ -79,7 +79,7 @@ class Project(BaseResource):
         ),
         'source-repositories': (
             list,
-            '.*',
+            '.+',
             True,
             None,
             True,

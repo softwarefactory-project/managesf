@@ -1880,3 +1880,31 @@ class TestResourcesController(FunctionalTest):
                               "created.",
                               resp.json)
                 self.assertEqual(len(resp.json), 2)
+                with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                                {'dummies': Dummy}, clear=True):
+                    prev = "resources: {}"
+                    new = """resources:
+  dummies:
+    id1:
+      name: dum
+      namespace: a
+"""
+                    kwargs = {'prev': prev, 'new': new}
+                    resp = self.app.put_json('/resources/',
+                                             kwargs,
+                                             extra_environ=environ,
+                                             status="*")
+                    self.assertListEqual(
+                        resp.json,
+                        ["Resource [type: dummies, ID: id1] is "
+                         "going to be created.",
+                         "Resource [type: dummies, ID: id1] will "
+                         "be created.",
+                         "Resource [type: dummies, ID: id1] has "
+                         "been created."])
+                    kwargs = {'wrong': None}
+                    resp = self.app.put_json('/resources/',
+                                             kwargs,
+                                             extra_environ=environ,
+                                             status="*")
+                    self.assertEqual(resp.status_code, 400)

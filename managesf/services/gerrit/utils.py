@@ -169,12 +169,14 @@ class GerritRepo(object):
         self._exec(cmd)
         for path, content in paths.items():
             self.add_file(path, content)
-        cmd = "git commit -a --author '%s' -m'ManageSF commit'" % self.email
-        self._exec(cmd)
-        cmd = "git push origin master"
-        self._exec(cmd)
-        logger.info("[gerrit] Push on master for repository %s" %
-                    self.prj_name)
+        if self._exec('git status -s'):
+            cmd = "git commit -a --author '%s' -m'ManageSF commit'" % (
+                self.email)
+            self._exec(cmd)
+            cmd = "git push origin master"
+            self._exec(cmd)
+            logger.info("[gerrit] Push on master for repository %s" %
+                        self.prj_name)
 
     def _fetch_upstream_repo(self, remote, ssh_key=None):
         msg = "Add and fetch upstream repo %s to project's repo %s"

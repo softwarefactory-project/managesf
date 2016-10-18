@@ -1202,13 +1202,26 @@ class ResourcesController(RestController):
     @expose('json')
     def put(self):
         self.check_policy('managesf.resources:apply')
+        infos = request.json if request.content_length else {}
         eng = SFResourceBackendEngine(
             os.path.join(conf.resources['workdir'], 'apply'),
             conf.resources['subdir'])
-        status, logs = eng.apply(conf.resources['master_repo'],
-                                 'master^1',
-                                 conf.resources['master_repo'],
-                                 'master')
+        if not infos:
+            status, logs = eng.apply(conf.resources['master_repo'],
+                                     'master^1',
+                                     conf.resources['master_repo'],
+                                     'master')
+        else:
+            try:
+                prev = infos.get('prev', None)
+                new = infos.get('new', None)
+                if not prev or not new:
+                    raise Exception
+            except Exception:
+                response.status = 400
+                return ['Unable to find the "new" and/or "prev" '
+                        'keys in the json payload']
+            status, logs = eng.direct_apply(prev, new)
         if not status:
             response.status = 409
         else:

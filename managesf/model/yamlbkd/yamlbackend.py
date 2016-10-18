@@ -126,15 +126,16 @@ class YAMLBackend(object):
                     "YAML format corrupted in file %s" % (
                         os.path.join(self.db_path, f)))
             if not self.data:
-                self.data = self.validate(yaml_data)
+                self.data = self.validate(yaml_data, self.rids)
             else:
-                data_to_append = self.validate(yaml_data)
+                data_to_append = self.validate(yaml_data, self.rids)
                 for rtype, resources in data_to_append['resources'].items():
                     if rtype not in self.data['resources']:
                         self.data['resources'][rtype] = {}
                     self.data['resources'][rtype].update(resources)
 
-    def _validate_base_struct(self, data):
+    @staticmethod
+    def _validate_base_struct(data):
         try:
             assert isinstance(data, type(RESOURCES_STRUCT))
             assert isinstance(data['resources'],
@@ -162,7 +163,8 @@ class YAMLBackend(object):
             raise YAMLDBException(
                 "Resource %s of type %s is invalid" % (resource, rtype))
 
-    def _validate_rid_unicity(self, data):
+    @staticmethod
+    def _validate_rid_unicity(data, rids):
         # Verify at YAML load time that duplicated resources key
         # are not present. To avoid overlapping of resources.
         # https://gist.github.com/pypt/94d747fe5180851196eb implements a
@@ -177,9 +179,9 @@ class YAMLBackend(object):
         # implemented.
         for rtype, resources in data['resources'].items():
             for rid, resource in resources.items():
-                self.rids.setdefault(rtype, {})
-                if rid not in self.rids[rtype]:
-                    self.rids[rtype][rid] = None
+                rids.setdefault(rtype, {})
+                if rid not in rids[rtype]:
+                    rids[rtype][rid] = None
                 else:
                     raise YAMLDBException(
                         "Duplicated resource ID detected for "
@@ -196,11 +198,12 @@ class YAMLBackend(object):
             self._load_db()
             self._update_cache()
 
-    def validate(self, data):
+    @staticmethod
+    def validate(data, rids):
         """ Validate the resource data structure.
         """
-        self._validate_base_struct(data)
-        self._validate_rid_unicity(data)
+        YAMLBackend._validate_base_struct(data)
+        YAMLBackend._validate_rid_unicity(data, rids)
         return data
 
     def get_data(self):
