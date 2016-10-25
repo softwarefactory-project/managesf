@@ -39,8 +39,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -53,8 +53,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a cool group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -84,8 +84,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a cool group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -115,16 +115,16 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a cool group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     'g2': {
                         'name': 'sf/g1',
                         'description': 'This is a another cool group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -149,8 +149,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -163,7 +163,7 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user2@sftests.com'
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -187,8 +187,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -201,7 +201,7 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g2',
                         'description': 'This is a group',
                         'members': [
-                            'user4@sftests.com'
+                            'user4@sftests.com',
                             ]
                         }
                     }
@@ -228,8 +228,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -242,8 +242,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g2',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -298,6 +298,49 @@ class EngineRealResourcesTest(TestCase):
                 logs)
             self.assertEqual(len(logs), 2)
 
+        patches = [
+            patch('managesf.model.yamlbkd.engine.'
+                  'SFResourceBackendEngine._load_resources_data'),
+            patch('os.path.isdir'),
+            patch('os.mkdir'),
+            patch('managesf.model.yamlbkd.resources.group.GroupOps.'
+                  'check_account_members'),
+        ]
+
+        master = {
+            'resources': {
+                'groups': {}
+                }
+            }
+        new = {
+            'resources': {
+                'groups': {
+                    'g1': {
+                        'name': 'Administrators',
+                        'description': 'This is the Admin group',
+                        'members': [
+                            'user1@sftests.com',
+                            'user2@sftests.com',
+                            ]
+                        }
+                    }
+                }
+            }
+
+        with nested(*patches) as (l, i, m, cam):
+            l.return_value = (master, new)
+            cam.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertFalse(valid)
+            self.assertIn(
+                'Check group name [Administrators in not managed by this API]',
+                logs)
+            self.assertIn(
+                'Resource [type: groups, ID: g1] extra validations failed',
+                logs)
+            self.assertEqual(len(logs), 2)
+
     def test_acls_validation(self):
         patches = [
             patch('managesf.model.yamlbkd.engine.'
@@ -344,8 +387,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -364,8 +407,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -395,8 +438,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -410,8 +453,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -441,8 +484,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         }
                     }
@@ -492,8 +535,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     }
@@ -523,8 +566,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     }
@@ -550,8 +593,8 @@ class EngineRealResourcesTest(TestCase):
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     }
@@ -572,8 +615,8 @@ wrong ! This string won't be accepted by Gerrit !
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     }
@@ -602,8 +645,8 @@ wrong ! This string won't be accepted by Gerrit !
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     }
@@ -633,8 +676,8 @@ wrong ! This string won't be accepted by Gerrit !
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     }
@@ -679,16 +722,16 @@ wrong ! This string won't be accepted by Gerrit !
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     'g2': {
                         'name': 'others/g2',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     }
@@ -731,16 +774,16 @@ wrong ! This string won't be accepted by Gerrit !
                         'name': 'sf/g1',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     'g2': {
                         'name': 'g2',
                         'description': 'This is a group',
                         'members': [
-                            'user1@sftests.com'
-                            'user2@sftests.com'
+                            'user1@sftests.com',
+                            'user2@sftests.com',
                             ]
                         },
                     }
@@ -1084,3 +1127,115 @@ wrong ! This string won't be accepted by Gerrit !
                           'refresh as at least one of its dependencies '
                           'has been updated', logs)
             self.assertEqual(len(logs), 4)
+
+    def test_get_missing_resources(self):
+        patches = [
+            patch('managesf.model.yamlbkd.engine.'
+                  'SFResourceBackendEngine.get'),
+            patch('managesf.model.yamlbkd.resources.gitrepository.'
+                  'GitRepositoryOps.get_all'),
+            patch('managesf.model.yamlbkd.resources.group.'
+                  'GroupOps.get_all'),
+        ]
+        eng = engine.SFResourceBackendEngine(None, None)
+        current_resources = {
+            'resources': {
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'source-repositories': ['r1'],
+                    },
+                },
+                'groups': {
+                    'g1': {
+                        'name': 'g1',
+                        'members': ['user2@sftests.com'],
+                    },
+                    'g2': {
+                        'name': 'g2',
+                        'members': ['user3@sftests.com'],
+                    },
+                },
+                'repos': {
+                    'r1': {
+                        'name': 'sf/r1',
+                        'acl': 'a1',
+                    },
+                    'r2': {
+                        'name': 'sf/r2',
+                        'acl': 'a1',
+                    },
+                },
+                'acls': {
+                    'a1': {
+                        'file': 'fake',
+                        'groups': [],
+                    }
+                }
+            }
+        }
+        gr_reality = {
+            'repos': {
+                'sf/r1': {
+                    'name': 'sf/r1',
+                    'acl': 'hash77',
+                },
+                'sf/r2': {
+                    'name': 'sf/r2',
+                    'acl': 'hash77',
+                },
+                'sf/r3': {
+                    'name': 'sf/r3',
+                    'acl': 'hash77',
+                },
+            },
+            'acls': {
+                'hash77': {
+                    'file': 'fake',
+                    'groups': [],
+                },
+                'hash78': {
+                    'file': 'fake2',
+                    'groups': [],
+                },
+            },
+        }
+        g_reality = {
+            'groups': {
+                'g3': {
+                    'name': 'g3',
+                    'members': ['user3@sftests.com'],
+                },
+            },
+        }
+        expected = {
+            'resources': {
+                'groups': {
+                    'g3': {
+                        'name': 'g3',
+                        'members': ['user3@sftests.com']
+                    },
+                },
+                'repos': {
+                    'sf/r3': {
+                        'name': 'sf/r3',
+                        'acl': 'a1',
+                    }
+                },
+                'acls': {
+                    'hash78': {
+                        'groups': [],
+                        'file': 'fake2',
+                    }
+                },
+            }
+        }
+
+        with nested(*patches) as (g, gar, gag):
+            gar.return_value = ([], gr_reality)
+            gag.return_value = ([], g_reality)
+            g.return_value = current_resources
+            logs, tree = eng.get_missing_resources(None, None)
+            self.assertListEqual(logs, [])
+            self.assertDictEqual(tree, expected)

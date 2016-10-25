@@ -111,6 +111,7 @@ class ResourcesTest(TestCase):
                 'create': lambda: None,
                 'delete': lambda: None,
                 'extra_validations': NotImplementedError,
+                'get_all': NotImplementedError,
             }
         R1('id', {})
 
@@ -133,6 +134,7 @@ class ResourcesTest(TestCase):
                 'create': None,
                 'delete': lambda: None,
                 'extra_validations': NotImplementedError,
+                'get_all': NotImplementedError,
             }
         self.assertRaises(ModelInvalidException,
                           R1, 'id', {})
@@ -150,6 +152,7 @@ class ResourcesTest(TestCase):
                 'create': lambda kwargs: Ops().create(**kwargs),
                 'delete': lambda: None,
                 'extra_validations': NotImplementedError,
+                'get_all': NotImplementedError,
             }
         res = R1('id', {})
         self.assertDictEqual({'arg': 'value'},

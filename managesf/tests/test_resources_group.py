@@ -206,3 +206,65 @@ class GroupOpsTest(TestCase):
             self.assertIn('Check group members [body2@sftests.com '
                           'does not exists]: err API unable to '
                           'find the member', logs)
+
+    def test_get_all(self):
+        patches = [
+            patch('pysflib.sfgerrit.GerritUtils.get_groups'),
+            patch('pysflib.sfgerrit.GerritUtils.get_group_members'),
+        ]
+        o = GroupOps(self.conf, None)
+
+        def fake_get_groups():
+            return {
+                'g1': {
+                    'description': 'd1',
+                    'group_id': 1,
+                    },
+                'g2': {
+                    'description': 'd2',
+                    'group_id': 2,
+                    },
+                'Administrators': {
+                    'description': 'Gerrit Admin groups',
+                    'group_id': 3,
+                    },
+                'Non-Interactive Users': {
+                    'description': 'Gerrit Non-Interactive Users groups',
+                    'group_id': 4,
+                    },
+            }
+
+        def fake_get_group_members(group_id):
+            groups = {
+                '1': [
+                    {'email': 'user1@sftests.com'},
+                    {'email': 'user3@sftests.com'}
+                ],
+                '2': [
+                    {'email': 'user2@sftests.com'}
+                ],
+                '3': [
+                    {'email': 'user2@sftests.com'}
+                ],
+                '4': [
+                    {'email': 'user2@sftests.com'}
+                ],
+            }
+            return groups[group_id]
+
+        with nested(*patches) as (gg, ggm):
+            gg.side_effect = fake_get_groups
+            ggm.side_effect = fake_get_group_members
+            logs, g_tree = o.get_all()
+            self.assertListEqual(logs, [])
+            self.assertIn('g1', g_tree['groups'].keys())
+            self.assertIn('g2', g_tree['groups'].keys())
+            self.assertEqual(len(g_tree['groups'].keys()), 2)
+            self.assertIn('user1@sftests.com',
+                          g_tree['groups']['g1']['members'])
+            self.assertIn('user3@sftests.com',
+                          g_tree['groups']['g1']['members'])
+            self.assertEqual(len(g_tree['groups']['g1']['members']), 2)
+            self.assertIn('user2@sftests.com',
+                          g_tree['groups']['g2']['members'])
+            self.assertEqual(len(g_tree['groups']['g2']['members']), 1)

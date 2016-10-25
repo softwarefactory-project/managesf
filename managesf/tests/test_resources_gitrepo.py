@@ -14,6 +14,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
+import hashlib
+import tempfile
+
 from unittest import TestCase
 
 from mock import patch, call
@@ -190,3 +194,110 @@ class GitRepositoryOpsTest(TestCase):
             self.assertEqual(dp.call_args_list[0],
                              call('space/g1', True,))
             self.assertEqual(len(logs), 0)
+
+    def test_get_all(self):
+        patches = [
+            patch('pysflib.sfgerrit.GerritUtils.get_projects'),
+            patch('managesf.services.gerrit.utils.GerritRepo'),
+        ]
+
+        a1 = """[project]
+    description = This is the project p1
+[access "refs/*"]
+  read = group Anonymous Users
+    read = group p1-core
+  owner = group p1-ptl
+[access "refs/heads/*"]
+    label-Code-Review = -2..+2 group p1-core
+    label-Verified = -2..+2 group p1-ptl
+    label-Workflow = -1..+1 group p1-core
+    submit = group p1-ptl
+    read = group Anonymous Users
+    read = group p1-core
+[access "refs/meta/config"]
+    read = group p1-core
+[receive]
+    requireChangeId = true
+[submit]
+    mergeContent = false
+    action = fast forward only
+"""
+
+        a2 = """[submit]
+    mergeContent = false
+    action = fast forward only
+"""
+
+        clean_a1 = """[access "refs/*"]
+  read = group Anonymous Users
+    read = group p1-core
+  owner = group p1-ptl
+[access "refs/heads/*"]
+    label-Code-Review = -2..+2 group p1-core
+    label-Verified = -2..+2 group p1-ptl
+    label-Workflow = -1..+1 group p1-core
+    submit = group p1-ptl
+    read = group Anonymous Users
+    read = group p1-core
+[access "refs/meta/config"]
+    read = group p1-core
+[receive]
+    requireChangeId = true
+[submit]
+    mergeContent = false
+    action = fast forward only
+"""
+
+        m = hashlib.md5()
+        m.update(clean_a1)
+        a1_id = m.hexdigest()
+        m = hashlib.md5()
+        m.update(a2)
+        a2_id = m.hexdigest()
+
+        def fake_get_projects():
+            return ['p1', 'p2']
+
+        def fake_repo_utils(name, conf):
+            class FakeGerritRepo():
+                def __init__(self, name, conf):
+                    self.name = name
+                    self.conf = conf
+
+                def get_raw_acls(self):
+                    data = {
+                        'p1': a1,
+                        'p2': a2,
+                    }
+                    f, p = tempfile.mkstemp()
+                    os.close(f)
+                    file(p, 'w').write(data[self.name])
+                    return p
+            return FakeGerritRepo(name, conf)
+
+        o = GitRepositoryOps(self.conf, None)
+        with nested(*patches) as (gps, gr):
+            gps.side_effect = fake_get_projects
+            gr.side_effect = fake_repo_utils
+            logs, tree = o.get_all()
+            self.assertIn('repos', tree.keys())
+            self.assertIn('acls', tree.keys())
+            self.assertIn(a1_id, tree['acls'].keys())
+            self.assertIn(a2_id, tree['acls'].keys())
+            self.assertEqual(len(tree['acls'].keys()), 2)
+            self.assertIn('p1', tree['repos'].keys())
+            self.assertIn('p2', tree['repos'].keys())
+            self.assertEqual(len(tree['repos'].keys()), 2)
+            self.assertDictEqual(tree['repos']['p1'],
+                                 {'name': 'p1',
+                                  'description': 'This is the project p1',
+                                  'acl': a1_id})
+            self.assertDictEqual(tree['repos']['p2'],
+                                 {'name': 'p2',
+                                  'acl': a2_id})
+            self.assertEqual(tree['acls'][a1_id]['file'], clean_a1)
+            self.assertIn('p1-ptl', tree['acls'][a1_id]['groups'])
+            self.assertIn('p1-core', tree['acls'][a1_id]['groups'])
+            self.assertEqual(len(tree['acls'][a1_id]['groups']), 2)
+            self.assertEqual(tree['acls'][a2_id]['file'], a2)
+            self.assertEqual(len(tree['acls'][a2_id]['groups']), 0)

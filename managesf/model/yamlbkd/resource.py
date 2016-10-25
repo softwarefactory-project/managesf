@@ -28,7 +28,7 @@ class ResourceInvalidException(Exception):
 
 
 AUTHORIZED_CALLBACKS = ('update', 'create', 'delete',
-                        'extra_validations')
+                        'extra_validations', 'get_all')
 
 KEY_RE_CONSTRAINT = "[a-zA-Z0-9-_]+"
 
@@ -65,6 +65,7 @@ class BaseResource(object):
         'create': lambda conf, new, kwargs: NotImplementedError,
         'delete': lambda conf, new, kwargs: NotImplementedError,
         'extra_validations': lambda conf, new, kwargs: NotImplementedError,
+        'get_all': lambda conf, new: NotImplementedError,
     }
 
     def __init__(self, id, resource):
@@ -209,13 +210,18 @@ class BaseResource(object):
     def is_mutable(self, key):
         return self.__class__.MODEL[key][4]
 
-    def get_deps(self):
+    def get_deps(self, keyname=False):
         """ Return a dictionnary of {rtype: set([ids, ])} that list
         resource instance dependencies. eg. a given
         resource field requires another resource to be validated, or
         applied. Note that dependencies between resources of the
         same type cannot exists.
+
+        If keyname is set to True then this method should return
+        the key name of the resource that contains dependency ids.
         """
+        if keyname:
+            return ''
         return {}
 
     def set_defaults(self):

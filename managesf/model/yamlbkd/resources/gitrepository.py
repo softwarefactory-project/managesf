@@ -14,6 +14,9 @@
 # under the License.
 
 import re
+import hashlib
+
+from git.config import GitConfigParser
 
 from managesf.services.gerrit import SoftwareFactoryGerrit
 from managesf.model.yamlbkd.resource import BaseResource
@@ -35,6 +38,10 @@ from managesf.controllers.utils import template
 # g._set_client()
 # ###
 
+DEFAULT_GROUPS = ('Non-Interactive Users',
+                  'Administrators',
+                  'Anonymous Users')
+
 
 class GitRepositoryOps(object):
 
@@ -47,6 +54,66 @@ class GitRepositoryOps(object):
         if not self.client:
             gerrit = SoftwareFactoryGerrit(self.conf)
             self.client = gerrit.get_client()
+
+    def get_all(self):
+        logs = []
+        gitrepos = {}
+        acls = {}
+
+        self._set_client()
+
+        try:
+            repos = self.client.get_projects()
+            if repos is False:
+                logs.append("Repo list: err API returned HTTP 404/409")
+        except Exception, e:
+            logs.append("Repo list: err API returned %s" % e)
+
+        for name in repos:
+            gitrepos[name] = {}
+            r = utils.GerritRepo(name, self.conf)
+            # Remove the project section when it only contains description
+            remove_project_section = False
+            acl_path = r.get_raw_acls()
+            acl_groups = set()
+            c = GitConfigParser(acl_path)
+            c.read()
+            for section_name in c.sections():
+                for k, v in c.items(section_name):
+                    if section_name == 'project':
+                        if k == 'description':
+                            if len(c.items(section_name)) == 1:
+                                remove_project_section = True
+                            gitrepos[name]['description'] = v
+                        continue
+                    r = re.search('group (.*)', v)
+                    if r:
+                        acl_groups.add(r.groups()[0].strip())
+
+            _acl = file(acl_path).read()
+            acl = ""
+            # Clean the ACL file to avoid issue at YAML multiline
+            # serialization. Remove the description and as a good
+            # practice description should never appears in a ACL rtype
+            # TODO(fbo): extra_validation of acl must deny the description
+            for l in _acl.splitlines():
+                if remove_project_section and l.find('[project]') != -1:
+                    continue
+                if l.find('description') != -1:
+                    continue
+                acl += l.replace('\t', '    ').rstrip() + '\n'
+            m = hashlib.md5()
+            m.update(acl)
+            acl_id = m.hexdigest()
+            gitrepos[name]['name'] = name
+            gitrepos[name]['acl'] = acl_id
+            acls[acl_id] = {}
+            acls[acl_id]['file'] = acl
+            acls[acl_id]['groups'] = acl_groups
+            acls[acl_id]['groups'] -= set(DEFAULT_GROUPS)
+            acls[acl_id]['groups'] -= set(('Registered Users',))
+            acls[acl_id]['groups'] = list(acls[acl_id]['groups'])
+        return logs, {'repos': gitrepos, 'acls': acls}
 
     def create(self, **kwargs):
         logs = []
@@ -127,9 +194,7 @@ class GitRepositoryOps(object):
         acl_data = ""
 
         # Add default groups implicitly
-        for default_group in ('Non-Interactive Users',
-                              'Administrators',
-                              'Anonymous Users'):
+        for default_group in DEFAULT_GROUPS:
             group_names.add(default_group)
 
         # If the string is not empty (default empty)
@@ -219,9 +284,13 @@ class GitRepository(BaseResource):
         'delete': lambda conf, new, kwargs:
             GitRepositoryOps(conf, new).delete(**kwargs),
         'extra_validations': lambda conf, new, kwargs: [],
+        'get_all': lambda conf, new:
+            GitRepositoryOps(conf, new).get_all(),
     }
 
-    def get_deps(self):
+    def get_deps(self, keyname=False):
+        if keyname:
+            return 'acl'
         if self.resource.get('acl'):
             return {'acls': set([self.resource['acl']])}
         else:

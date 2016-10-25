@@ -351,6 +351,79 @@ class SFResourceBackendEngine(object):
             repo_new_uri, new_ref, 'new')
         return prev_data, new_data
 
+    def _get_missing_resources_diff(self, current, reality, ret_tree):
+        """ This method compute the resources read from the
+        reality that miss the current (suppose to be the
+        config/resources/ tree master) tree. The computing
+        is based on the resources PRIMARY_KEY.
+
+        Resources read from the reality will be attached
+        to an auto computed rid. These rid will surely differ
+        from what users will use when declaring a resource.
+
+        Looking at each resources PRIMARY_KEY value let us
+        detect of resource that exist in the current tree
+        under a different rid.
+
+        Furthermore dependency ids of resources from reality
+        will be updated in the proposed tree (ret_tree) to
+        match the current ones.
+
+        Finally the method fill ret_tree with only missing
+        resources.
+        """
+        current_cache_ids = {}
+        already_exist_ids = {}
+        # Create a cache by resource type with dict
+        # {'PRIMARY_KEY_VALUE': rid} - This to speedup lookup.
+        for rtype, resources in current['resources'].items():
+            current_cache_ids.setdefault(rtype, {})
+            for rid, data in resources.items():
+                pk = MAPPING[rtype].PRIMARY_KEY
+                current_cache_ids[rtype][data[pk]] = rid
+
+        # Fill the ret_tree with non existing resources
+        # compared to current and keep track of already
+        # existing one ids.
+        for rtype, resources in reality['resources'].items():
+            for rid, data in resources.items():
+                pk = MAPPING[rtype].PRIMARY_KEY
+                m_rid = current_cache_ids[rtype].get(data[pk], None)
+                if not m_rid:
+                    # The resource does not exists in the
+                    # current tree - so keep it
+                    ret_tree['resources'].setdefault(rtype, {})
+                    ret_tree['resources'][rtype][rid] = data
+                else:
+                    # The resource already exists in the
+                    # current tree - mark it as existing
+                    already_exist_ids.setdefault(rtype, {})
+                    already_exist_ids[rtype][rid] = m_rid
+
+        # Finally update depencies ids if needed
+        for rtype, resources in ret_tree['resources'].items():
+            for rid, data in resources.items():
+                r = MAPPING[rtype](rid, data)
+                dkey = r.get_deps(keyname=True)
+                if not dkey:
+                    continue
+                rdeps = r.get_deps()
+                resolved_rdeps = []
+                drtype = rdeps.keys()[0]
+                dids = rdeps[drtype]
+                if dids:
+                    for did in dids:
+                        if (drtype in already_exist_ids and
+                           did in already_exist_ids[drtype]):
+                            resolved_rdeps.append(
+                                already_exist_ids[drtype][did])
+                        else:
+                            resolved_rdeps.append(did)
+                    if r.MODEL[dkey][0] is list:
+                        r.resource[dkey] = resolved_rdeps
+                    elif r.MODEL[dkey][0] is str:
+                        r.resource[dkey] = resolved_rdeps[0]
+
     def validate(self, repo_prev_uri, prev_ref,
                  repo_new_uri, new_ref):
         """ Top level validate function
@@ -465,3 +538,28 @@ class SFResourceBackendEngine(object):
         if partial:
             return False, direct_apply_logs
         return True, direct_apply_logs
+
+    def get_missing_resources(self, cur_uri, cur_ref):
+        """ Top level get_missing_resources. This method read
+        the real resources from services and return resources
+        struct containing only missing resources (not found
+        in the YAML backend (config repo master HEAD) but on
+        services)
+        """
+        logger.info("Resources engine: get missing resources diff requested")
+        current = self.get(cur_uri, cur_ref)
+        reality = {'resources': {}}
+        for rtype in MAPPING:
+            current['resources'].setdefault(rtype, {})
+            reality['resources'].setdefault(rtype, {})
+        ret_tree = {'resources': {}}
+        logs = []
+        for rtype in MAPPING:
+            ret = MAPPING[rtype].CALLBACKS['get_all'](conf, {})
+            logs.extend(ret[0])
+            reality['resources'].update(ret[1])
+        # Get diff between reality and config
+        self._get_missing_resources_diff(current, reality, ret_tree)
+        for l in logs:
+            logger.info(l)
+        return logs, ret_tree

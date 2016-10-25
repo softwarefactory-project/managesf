@@ -33,9 +33,13 @@ from managesf.model.yamlbkd.resource import BaseResource
 # from pecan import configuration
 # from managesf.model.yamlbkd.resources.group import GroupOps
 # conf = configuration.conf_from_file('/var/www/managesf/config.py')
-# g = GroupOps(conf)
+# g = GroupOps(conf, {})
 # g._set_client()
 # ###
+
+
+UNMANAGED_GERRIT_GROUPS = ('Administrators',
+                           'Non-Interactive Users')
 
 
 class GroupOps(object):
@@ -58,6 +62,42 @@ class GroupOps(object):
                               data=data)
         except HTTPError as e:
             return self.client._manage_errors(e)
+
+    def get_all(self):
+        logs = []
+        groups = {}
+
+        self._set_client()
+
+        try:
+            all_groups = self.client.get_groups()
+            if all_groups is False:
+                logs.append("Group list: err API returned HTTP 404/409")
+                return logs, groups
+        except Exception, e:
+            logs.append("Group list: err API returned %s" % e)
+            return logs, groups
+        groups = {}
+        for gname, data in all_groups.items():
+            if gname in UNMANAGED_GERRIT_GROUPS:
+                continue
+            groups[gname] = {}
+            groups[gname]['name'] = gname
+            groups[gname]['description'] = data['description']
+            groups[gname]['members'] = []
+            try:
+                members = self.client.get_group_members(str(data['group_id']))
+                if members is False:
+                    logs.append(
+                        "Group list members [%s]: err API returned "
+                        "HTTP 404/409" % (gname))
+                else:
+                    groups[gname]['members'] = [m['email'] for m in members]
+            except Exception, e:
+                logs.append(
+                    "Group list members [%s]: err API "
+                    "returned %s" % (gname, e))
+        return logs, {'groups': groups}
 
     def create(self, **kwargs):
         logs = []
@@ -216,12 +256,8 @@ class GroupOps(object):
 
         return logs
 
-    def extra_validations(self, **kwargs):
-        """ This checks that requested members exists
-        inside the backend.
-        """
+    def check_account_members(self, members):
         logs = []
-        members = kwargs['members']
 
         self._set_client()
 
@@ -230,6 +266,23 @@ class GroupOps(object):
             if not isinstance(ret, dict):
                 logs.append("Check group members [%s does not exists]: "
                             "err API unable to find the member" % member)
+        return logs
+
+    def extra_validations(self, **kwargs):
+        """ This checks that requested members exists
+        inside the backend.
+        """
+        logs = []
+        members = kwargs['members']
+        name = kwargs['name']
+
+        # Return log msgs making the validation fail in the engine
+        if name in UNMANAGED_GERRIT_GROUPS:
+            logs.append("Check group name [%s in not managed by this API]" % (
+                        name))
+
+        logs.extend(self.check_account_members(members))
+
         return logs
 
 
@@ -273,4 +326,6 @@ class Group(BaseResource):
             GroupOps(conf, new).delete(**kwargs),
         'extra_validations': lambda conf, new, kwargs:
             GroupOps(conf, new).extra_validations(**kwargs),
+        'get_all': lambda conf, new:
+            GroupOps(conf, new).get_all(),
     }

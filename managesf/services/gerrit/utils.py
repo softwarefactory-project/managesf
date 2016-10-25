@@ -162,6 +162,25 @@ class GerritRepo(object):
             logger.info("[gerrit] Push on config for "
                         "repository %s" % self.prj_name)
 
+    def get_raw_acls(self):
+        remote = "ssh://%(u)s@%(h)s:%(p)s/%(name)s" % {
+            'u': self.conf.admin['name'],
+            'h': self.conf.gerrit['host'],
+            'p': self.conf.gerrit['ssh_port'],
+            'name': self.prj_name,
+        }
+        if not os.path.isdir(
+                os.path.join(self.infos['localcopy_path'], '.git')):
+            self._exec('git init .')
+        self._exec('git remote add origin %s' % remote)
+        cmd = "git fetch origin " + \
+              "refs/meta/config:refs/remotes/origin/meta/config"
+        self._exec(cmd)
+        cmd = "git checkout meta/config"
+        self._exec(cmd)
+        return os.path.join(self.infos['localcopy_path'],
+                            'project.config')
+
     def push_master(self, paths):
         logger.info("[gerrit] Prepare push on master for repository %s" %
                     self.prj_name)

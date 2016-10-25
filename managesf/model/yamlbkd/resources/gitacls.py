@@ -91,14 +91,17 @@ class ACL(BaseResource):
         ),
     }
     PRIORITY = 30
-    PRIMARY_KEY = None
+    PRIMARY_KEY = 'file'
     CALLBACKS = {
         'update': lambda conf, new, kwargs: [],
         'create': lambda conf, new, kwargs: [],
         'delete': lambda conf, new, kwargs: [],
         'extra_validations': lambda conf, new, kwargs:
             ACLOps(conf, new).extra_validations(**kwargs),
+        'get_all': lambda conf, new: ([], {}),
     }
 
-    def get_deps(self):
+    def get_deps(self, keyname=False):
+        if keyname:
+            return 'groups'
         return {'groups': set(self.resource['groups'])}

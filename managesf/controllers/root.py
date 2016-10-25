@@ -1172,13 +1172,19 @@ class ResourcesController(RestController):
                          detail='Failure to comply with policy %s' % _policy)
 
     @expose('json')
-    def get(self):
+    def get(self, **kwargs):
         self.check_policy('managesf.resources:get')
         eng = SFResourceBackendEngine(
             os.path.join(conf.resources['workdir'], 'read'),
             conf.resources['subdir'])
-        return eng.get(conf.resources['master_repo'],
-                       'master')
+        if kwargs.get('get_missing_resources', None) == 'true':
+            return eng.get_missing_resources(
+                conf.resources['master_repo'],
+                'master')
+        else:
+            return eng.get(
+                conf.resources['master_repo'],
+                'master')
 
     @expose('json')
     def post(self):

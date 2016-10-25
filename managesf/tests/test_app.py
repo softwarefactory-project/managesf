@@ -1908,3 +1908,10 @@ class TestResourcesController(FunctionalTest):
                                              extra_environ=environ,
                                              status="*")
                     self.assertEqual(resp.status_code, 400)
+
+    def test_get_missing_resources(self):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine.get_missing_resources') as gmr:
+            gmr.return_value = ([], {})
+            self.app.get('/resources/?get_missing_resources=true')
+            self.assertTrue(gmr.called)

@@ -37,6 +37,9 @@ class DummyOps(object):
     def extra_validations(self, **kwargs):
         return []
 
+    def get_all(self):
+        return [], {}
+
 
 class Dummy(BaseResource):
     MODEL_TYPE = 'dummy'
@@ -66,7 +69,7 @@ class Dummy(BaseResource):
             "",
         ),
     }
-    PRIMARY_KEY = None
+    PRIMARY_KEY = 'name'
     PRIORITY = 50
     CALLBACKS = {
         'update': lambda conf, new, kwargs:
@@ -77,4 +80,6 @@ class Dummy(BaseResource):
             DummyOps(conf, new).delete(**kwargs),
         'extra_validations': lambda conf, new, kwargs:
             DummyOps(conf, new).extra_validations(**kwargs),
+        'get_all': lambda conf, new:
+            DummyOps(conf, new).get_all(),
     }

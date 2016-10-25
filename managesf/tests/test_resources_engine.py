@@ -249,8 +249,6 @@ class EngineTest(TestCase):
 """
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.direct_apply(prev, new)
-            print status
-            print logs
             self.assertIn(
                 'id1', a.call_args[0][0]['dummies']['create'])
             self.assertEqual(
@@ -697,3 +695,149 @@ class EngineTest(TestCase):
                 self.assertIn('Resource [type: dummies, ID: myprojectid2] '
                               'has been updated.',
                               apply_logs)
+
+    def test_get_missing_resources(self):
+        class Dummy2(Dummy):
+            MODEL_TYPE = 'dummy2'
+            MODEL = {
+                'name': (
+                    str,
+                    '.*',
+                    True,
+                    None,
+                    False,
+                    "Resource name",
+                ),
+                'deps': (
+                    list,
+                    '.*',
+                    False,
+                    [],
+                    True,
+                    "Resource dependencies",
+                ),
+            }
+            PRIMARY_KEY = 'name'
+
+            def get_deps(self, keyname=False):
+                if keyname:
+                    return 'deps'
+                else:
+                    return {'dummies': set(self.resource['deps'])}
+
+        patches = [
+            patch('managesf.model.yamlbkd.yamlbackend.'
+                  'YAMLBackend.__init__'),
+            patch.object(SFResourceBackendEngine, 'get'),
+            patch.dict(engine.MAPPING,
+                       {'dummies': Dummy, 'dummies2': Dummy2}, clear=True),
+            patch('managesf.model.yamlbkd.resources.'
+                  'dummy.DummyOps.get_all'),
+        ]
+        with nested(*patches) as (i, g, m, ga):
+            eng = SFResourceBackendEngine(None, None)
+            # PRIMARY_KEY of Dummy is 'name'
+            # PRIMARY_KEY of Dummy2 is 'name'
+
+            # Check basic scenario. dummies:d2 is really new
+            current_resources = {
+                'dummies': {
+                    'd1': {
+                        'namespace': 'sf',
+                        'name': 'd1',
+                    },
+                }
+            }
+            real_resources = {
+                'dummies': {
+                    'd2': {
+                        'namespace': 'sf',
+                        'name': 'd2',
+                    },
+                }
+            }
+            g.return_value = {'resources': current_resources}
+            ga.return_value = ([], real_resources)
+            logs, ret = eng.get_missing_resources(None, None)
+            expected = {
+                'resources': {
+                    'dummies': {
+                        'd2': {
+                            'namespace': 'sf',
+                            'name': 'd2',
+                        },
+                    }
+                }
+            }
+            self.assertDictEqual(ret, expected)
+            self.assertListEqual(logs, [])
+
+            # Check both resources are detected similar.
+            # dummies:d1 is dummies:dummy-d1-id
+            current_resources = {
+                'dummies': {
+                    'dummy-d1-id': {
+                        'namespace': 'sf',
+                        'name': 'd1',
+                    },
+                }
+            }
+            real_resources = {
+                'dummies': {
+                    'd1': {
+                        'namespace': 'sf',
+                        'name': 'd1',
+                    },
+                }
+            }
+            g.return_value = {'resources': current_resources}
+            ga.return_value = ([], real_resources)
+            logs, ret = eng.get_missing_resources(None, None)
+            expected = {
+                'resources': {}
+            }
+            self.assertDictEqual(ret, expected)
+            self.assertListEqual(logs, [])
+
+            # Check both resources are detected similar.
+            # dummies:d1 is dummies:dummy-d1-id
+            # dummies2:d2_1 depends on dummies:d1 but
+            # dummies:d1 is know under dummies:dummy-d1-id
+            # This check make sure the deps if is updated.
+            current_resources = {
+                'dummies': {
+                    'dummy-d1-id': {
+                        'namespace': 'sf',
+                        'name': 'd1',
+                    },
+                }
+            }
+            real_resources = {
+                'dummies': {
+                    'd1': {
+                        'namespace': 'sf',
+                        'name': 'd1',
+                    },
+                },
+                'dummies2': {
+                    'd2_1': {
+                        'name': 'd2_1',
+                        'deps': ['d1'],
+                    },
+                },
+            }
+            g.return_value = {'resources': current_resources}
+            ga.return_value = ([], real_resources)
+            logs, ret = eng.get_missing_resources(None, None)
+            expected = {
+                'resources': {
+                    'dummies2': {
+                        'd2_1': {
+                            'deps': ['dummy-d1-id'],
+                            'name': 'd2_1',
+                        }
+                    }
+                }
+            }
+            self.assertDictEqual(ret, expected)
+            self.assertListEqual(logs, [])
