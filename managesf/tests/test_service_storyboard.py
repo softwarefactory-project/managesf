@@ -20,6 +20,7 @@ from contextlib import nested
 
 from managesf.services import storyboard
 from managesf.tests import dummy_conf
+from managesf.controllers.SFuser import SFUserManager
 
 
 class BaseSFStoryboardService(TestCase):
@@ -54,12 +55,23 @@ class TestSFStoryboardUserManager(BaseSFStoryboardService):
             patch.object(self.storyboard.user.users, 'insert'),
             patch.object(self.storyboard.user.users, 'update'),
             patch.object(self.storyboard.user, 'create_update_user_token'),
+            patch.object(SFUserManager, 'get'),
         ]
-        with nested(*patches) as (sql_exec, get_user, insert, update, token):
+        with nested(*patches) as (sql_exec, get_user, insert,
+                                  update, token, get):
+
             get_user.return_value = 42
+            get.return_value = {'username': "jdoe"}
+
             self.storyboard.user.update(42, username="jdoe")
             self.assertEquals(True, update.called)
             self.assertEquals(False, insert.called)
+            token.assert_called_with(42, 'jdoe')
+
+            self.storyboard.user.update(42, email='something')
+            self.assertEquals(True, update.called)
+            self.assertEquals(False, insert.called)
+            token.assert_called_with(42, 'jdoe')
 
     def test_get(self):
         patches = [patch.object(self.storyboard.user, 'get_user')]
