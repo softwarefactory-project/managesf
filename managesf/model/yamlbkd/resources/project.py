@@ -19,6 +19,12 @@ from managesf.model.yamlbkd.resource import BaseResource
 
 class Project(BaseResource):
 
+    DESCRIPTION = ("The project resource can be is used to describe a "
+                   "project. It can be seen as the top level resource type in "
+                   "in this model. You can use it reference multiple Git "
+                   "repositories and multiple link to external resources like "
+                   "a project website and the issues tracker website.")
+
     MODEL_TYPE = 'project'
     MODEL = {
         'name': (

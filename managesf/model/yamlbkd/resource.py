@@ -55,6 +55,7 @@ class BaseResource(object):
     """
 
     MODEL_TYPE = 'default'
+    DESCRIPTION = 'No description available'
     MODEL = {}
     PRIORITY = None
     # The primary key tells if a field should be unique

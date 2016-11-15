@@ -289,6 +289,10 @@ class GroupOps(object):
 class Group(BaseResource):
 
     MODEL_TYPE = 'group'
+    DESCRIPTION = ("The group resource is used to define a group of "
+                   "known user on the platform. Users must be referenced "
+                   "by their email address. A group can be share between "
+                   "multiple acls.")
     MODEL = {
         'name': (
             str,
@@ -312,7 +316,7 @@ class Group(BaseResource):
             False,
             [],
             True,
-            "The group member list",
+            "The group members list",
         ),
     }
     PRIORITY = 40

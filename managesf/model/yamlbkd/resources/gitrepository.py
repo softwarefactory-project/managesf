@@ -248,6 +248,9 @@ global:Registered-Users\tRegistered Users"""
 class GitRepository(BaseResource):
 
     MODEL_TYPE = 'git'
+    DESCRIPTION = ("The git resource is used to describe a git repository "
+                   "hosted on Gerrit. An acl ID can be provided via the acl "
+                   "key.")
     MODEL = {
         'name': (
             str,
