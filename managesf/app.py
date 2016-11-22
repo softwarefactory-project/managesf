@@ -14,6 +14,8 @@
 # under the License.
 
 from pecan import make_app
+from pecan.deploy import deploy
+from wsgiref import simple_server
 from managesf import model
 
 
@@ -27,3 +29,11 @@ def setup_app(config):
         logging=getattr(config, 'logging', {}),
         **app_conf
     )
+
+
+def main():
+    app = deploy("/etc/managesf/config.py")
+    host = app.config['server']['host']
+    port = app.config['server']['port']
+    srv = simple_server.make_server(host, port, app)
+    srv.serve_forever()

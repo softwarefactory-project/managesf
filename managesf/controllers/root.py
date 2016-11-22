@@ -101,8 +101,9 @@ def report_unhandled_error(exp):
 
 
 def authorize(rule_name, target):
-    credentials = {'username': request.remote_user,
-                   'groups': []}
+    if not request.remote_user:
+        request.remote_user = request.headers.get('X-Remote-User')
+    credentials = {'username': request.remote_user, 'groups': []}
     # TODO(mhu) this must be independent from gerrit
     if request.remote_user:
         code_review = [s for s in SF_SERVICES
