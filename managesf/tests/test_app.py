@@ -76,7 +76,6 @@ class FunctionalTest(TestCase):
                        'sqlalchemy': c.sqlalchemy,
                        'auth': c.auth,
                        'htpasswd': c.htpasswd,
-                       'sshconfig': c.sshconfig,
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'mysql': c.mysql,
