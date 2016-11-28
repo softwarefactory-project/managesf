@@ -63,3 +63,7 @@
 'managesf.resources:get': 'rule:any'
 'managesf.resources:validate': 'rule:admin_or_service'
 'managesf.resources:apply': 'rule:admin_or_service'
+
+'managesf.job:get': 'rule:any'
+'managesf.job.stop: 'rule:admin_or_service'
+'managesf.job.run': 'rule:admin_or_service'

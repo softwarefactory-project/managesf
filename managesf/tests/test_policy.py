@@ -405,6 +405,37 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.resources:apply',
                                          {}, credentials))
 
+    def test_jobs_policies(self):
+        """Test the default jobs endpoint policies"""
+        credentials = {}
+        self.assertTrue(policy.authorize('managesf.job:get',
+                                         {}, credentials))
+        self.assertFalse(policy.authorize('managesf.job:run',
+                                          {}, credentials))
+        self.assertFalse(policy.authorize('managesf.job:stop',
+                                          {}, credentials))
+        credentials = {'username': 'shimajiro'}
+        self.assertTrue(policy.authorize('managesf.job:get',
+                                         {}, credentials))
+        self.assertFalse(policy.authorize('managesf.job:run',
+                                          {}, credentials))
+        self.assertFalse(policy.authorize('managesf.job:stop',
+                                          {}, credentials))
+        credentials = {'username': 'admin'}
+        self.assertTrue(policy.authorize('managesf.job:get',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.job:run',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.job:stop',
+                                         {}, credentials))
+        credentials = {'username': 'SF_SERVICE_USER'}
+        self.assertTrue(policy.authorize('managesf.job:get',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.job:run',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.job:stop',
+                                         {}, credentials))
+
     def test_default_policies(self):
         """Test the default policies that come with a default deployment"""
         credentials = {}
@@ -528,7 +559,8 @@ class TestPolicyEngineFromFile(TestCase):
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'pages': c.pages,
-                       'policy': c.policy, }
+                       'policy': c.policy,
+                       'jenkins': c.jenkins, }
         pol_file = tempfile.mkstemp()[1] + '.yaml'
         with open(pol_file, 'w') as p:
             yaml.dump(

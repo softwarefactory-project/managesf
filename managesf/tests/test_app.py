@@ -52,6 +52,7 @@ from managesf.services.redmine.project import SFRedmineProjectManager
 from managesf.services.redmine.user import SFRedmineUserManager
 from managesf.services.storyboard.user import StoryboardUserManager
 from managesf.services.redmine.group import RedmineGroupManager
+from managesf.services.jenkins.job import SFJenkinsJobManager
 
 from managesf.tests import resources_test_utils as rtu
 from managesf.model.yamlbkd.resources.dummy import Dummy
@@ -81,7 +82,8 @@ class FunctionalTest(TestCase):
                        'mysql': c.mysql,
                        'pages': c.pages,
                        'policy': c.policy,
-                       'resources': c.resources, }
+                       'resources': c.resources,
+                       'jenkins': c.jenkins, }
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}
@@ -1708,6 +1710,146 @@ gitweb: http://redmine.tests.dom/r/gitweb?p=testytest.git;a=commit;h=456
                                  j['hook_name'])
                 self.assertEqual("Could not change status of issue #789",
                                  j['redmine'])
+
+
+class TestJobsController(FunctionalTest):
+    def test_get(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFJenkinsJobManager, 'get_job') as get:
+                get.return_value = [{'status': 'SUCCESS',
+                                     'job_name': 'mockjob',
+                                     'job_id': '9999'}, ]
+                # no filtering arg
+                resp = self.app.get('/jobs/mockjob/',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                get.assert_called_with('mockjob')
+                j = json.loads(resp.body)
+                self.assertTrue('jenkins' in j.keys())
+                j = j['jenkins']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(1,
+                                 len(j))
+                self.assertTrue(all(get.return_value[0][u] == j[0][u]
+                                    for u in get.return_value[0]),
+                                j)
+                # wrong filtering arg
+                resp = self.app.get('/jobs/mockjob/?wrong=superwrong',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(403, resp.status_int)
+                # add filtering arg
+                resp = self.app.get('/jobs/mockjob/?change=3&patchset=5',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                get.assert_called_with('mockjob', change='3', patchset='5')
+                j = json.loads(resp.body)
+                self.assertTrue('jenkins' in j.keys())
+                j = j['jenkins']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(1,
+                                 len(j))
+                self.assertTrue(all(get.return_value[0][u] == j[0][u]
+                                    for u in get.return_value[0]),
+                                j)
+
+    def test_get_by_id(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFJenkinsJobManager, 'get_job_status') as get:
+                get.return_value = {'status': 'SUCCESS',
+                                    'job_name': 'mockjob',
+                                    'job_id': '9999'}
+                resp = self.app.get('/jobs/mockjob/id/9999/',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                get.assert_called_with('mockjob', 9999)
+                j = json.loads(resp.body)
+                self.assertTrue('jenkins' in j.keys())
+                j = j['jenkins']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(1,
+                                 len(j))
+                self.assertTrue(all(get.return_value[u] == j[0][u]
+                                    for u in get.return_value),
+                                j)
+
+    def test_get_parameters(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFJenkinsJobManager, 'get_job_parameters') as g:
+                g.return_value = {'parameters': [{'name': 'a',
+                                                  'value': 'b'},
+                                                 {'name': 'c',
+                                                  'value': 'd'}, ],
+                                  'job_name': 'mockjob',
+                                  'job_id': '9999'}
+                resp = self.app.get('/jobs/mockjob/id/9999/parameters',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                g.assert_called_with('mockjob', '9999')
+                j = json.loads(resp.body)
+                self.assertTrue('jenkins' in j.keys())
+                j = j['jenkins']
+                self.assertTrue(all(g.return_value[u] == j[u]
+                                    for u in g.return_value),
+                                j)
+
+    def test_get_logs_url(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFJenkinsJobManager, 'get_job_logs') as g:
+                g.return_value = {'logs_url': 'http://mockurl',
+                                  'job_name': 'mockjob',
+                                  'job_id': '9999'}
+                resp = self.app.get('/jobs/mockjob/id/9999/logs',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                g.assert_called_with('mockjob', '9999')
+                j = json.loads(resp.body)
+                self.assertTrue('jenkins' in j.keys())
+                j = j['jenkins']
+                self.assertTrue(all(g.return_value[u] == j[u]
+                                    for u in g.return_value),
+                                j)
+
+    def test_run(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFJenkinsJobManager, 'run') as run:
+                run.return_value = {'status': 'pending',
+                                    'job_name': 'mockjob',
+                                    'job_id': '9999'}
+                job_params = {'arg1': 'val1', 'arg2': 'val2'}
+                resp = self.app.post_json('/jobs/mockjob/',
+                                          job_params,
+                                          extra_environ=environ, status="*")
+                self.assertEqual(201, resp.status_int)
+                run.assert_called_with('mockjob', job_params)
+                j = json.loads(resp.body)
+                self.assertTrue('jenkins' in j.keys())
+                j = j['jenkins']
+                self.assertTrue(all(run.return_value[u] == j[u]
+                                    for u in run.return_value),
+                                j)
+
+    def test_stop(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFJenkinsJobManager, 'stop') as stop:
+                stop.return_value = {'status': 'aborted',
+                                     'job_name': 'mockjob',
+                                     'job_id': '9999'}
+                resp = self.app.delete('/jobs/mockjob/id/9999/',
+                                       extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                stop.assert_called_with('mockjob', '9999')
+                j = json.loads(resp.body)
+                self.assertTrue('jenkins' in j.keys())
+                j = j['jenkins']
+                self.assertTrue(all(stop.return_value[u] == j[u]
+                                    for u in stop.return_value),
+                                j)
 
 
 class TestResourcesController(FunctionalTest):

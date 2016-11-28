@@ -175,6 +175,35 @@ class RoleManager(BaseCRUDManager):
 
 
 @six.add_metaclass(abc.ABCMeta)
+class JobManager(BaseCRUDManager):
+    """Abstract class handling jobs for a "job runner"-type service"""
+
+    def get_job(self, job_name, **kwargs):
+        """lists one or several jobs depending on filtering with kwargs"""
+        raise exc.UnavailableActionError()
+
+    def get_job_parameters(self, job_name, job_id):
+        """get parameters used to run a job"""
+        raise exc.UnavailableActionError()
+
+    def get_job_status(self, job_name, job_id):
+        """get parameters used to run a job"""
+        raise exc.UnavailableActionError()
+
+    def get_job_logs(self, job_name, job_id):
+        """get logs of a finished job"""
+        raise exc.UnavailableActionError()
+
+    def run(self, job_name, job_parameters):
+        """run a job"""
+        raise exc.UnavailableActionError()
+
+    def stop(self, job_name, job_id):
+        """stop a running job"""
+        raise exc.UnavailableActionError()
+
+
+@six.add_metaclass(abc.ABCMeta)
 class BaseServicePlugin(object):
     """Base plugin for a service that can be managed by Software Factory.
     """
@@ -218,6 +247,15 @@ class BaseIssueTrackerServicePlugin(BaseServicePlugin):
 
     def get_active_users(self):
         """Return a list of active users"""
+
+
+@six.add_metaclass(abc.ABCMeta)
+class BaseJobRunnerServicePlugin(BaseServicePlugin):
+    """Base plugin for a service used to execute jobs, for example Jenkins."""
+
+    def __init__(self, conf):
+        super(BaseJobRunnerServicePlugin, self).__init__(conf)
+        self.job = JobManager(self)
 
 
 @six.add_metaclass(abc.ABCMeta)
