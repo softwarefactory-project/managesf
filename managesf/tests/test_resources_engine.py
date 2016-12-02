@@ -644,7 +644,7 @@ class EngineTest(TestCase):
                        'dummy.DummyOps.create') as c:
                 c.return_value = []
                 changes = {'dummies': {'create': {'myprojectid': {}}}}
-                eng._apply_changes(changes, apply_logs, {})
+                self.assertFalse(eng._apply_changes(changes, apply_logs, {}))
                 self.assertTrue(c.called)
             self.assertIn(
                 'Resource [type: dummies, ID: myprojectid] '
@@ -695,6 +695,43 @@ class EngineTest(TestCase):
                 self.assertIn('Resource [type: dummies, ID: myprojectid2] '
                               'has been updated.',
                               apply_logs)
+
+            # Verify an unexpected exception is properly catched
+            apply_logs = []
+            with patch('managesf.model.yamlbkd.resources.'
+                       'dummy.DummyOps.create') as c:
+                c.side_effect = Exception('Random Error msg')
+                changes = {'dummies': {'create': {'myprojectid': {}}}}
+                self.assertTrue(eng._apply_changes(changes, apply_logs, {}))
+                self.assertIn('Resource [type: dummies, ID: myprojectid] '
+                              'create op error (Random Error msg).',
+                              apply_logs)
+
+            # Verify an unexpected exception does not exit _apply_changes
+            apply_logs = []
+            with patch('managesf.model.yamlbkd.resources.'
+                       'dummy.DummyOps.create') as c:
+                c.side_effect = Exception('Random Error msg')
+                changes = {
+                    'dummies': {
+                        'create': {
+                            'myprojectid1': {},
+                            'myprojectid2': {},
+                            'myprojectid3': {},
+                        },
+                    }
+                }
+                self.assertTrue(eng._apply_changes(changes, apply_logs, {}))
+                for r in ('myprojectid1', 'myprojectid2', 'myprojectid3'):
+                    self.assertIn(
+                        'Resource [type: dummies, ID: %s] will be created.' % (
+                            r), apply_logs)
+                    self.assertIn(
+                        'Resource [type: dummies, ID: %s] create op error '
+                        '(Random Error msg).' % r, apply_logs)
+                    self.assertIn(
+                        'Resource [type: dummies, ID: %s] create op '
+                        'failed.' % r, apply_logs)
 
     def test_get_missing_resources(self):
         class Dummy2(Dummy):

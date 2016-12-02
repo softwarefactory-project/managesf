@@ -165,7 +165,8 @@ class GroupOpsTest(TestCase):
                   'members': ['body@sftests.com', 'body2@sftests.com']}
 
         with nested(*patches) as (ggi, ggm, agm, dgm, gggm, dggm, gup):
-            ggm.return_value = [{'email': 'body3@sftests.com'}]
+            ggm.return_value = [{'email': 'body3@sftests.com'},
+                                {'id': 'John Doe'}]
             gggm.return_value = [{'name': 'included_group'}]
             logs = o.update(**kwargs)
             self.assertEqual(len(agm.call_args_list), 2)
@@ -238,7 +239,8 @@ class GroupOpsTest(TestCase):
             groups = {
                 '1': [
                     {'email': 'user1@sftests.com'},
-                    {'email': 'user3@sftests.com'}
+                    {'email': 'user3@sftests.com'},
+                    {'id': 'John Doe'}
                 ],
                 '2': [
                     {'email': 'user2@sftests.com'}

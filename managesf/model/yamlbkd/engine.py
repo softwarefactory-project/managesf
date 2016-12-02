@@ -259,17 +259,23 @@ class SFResourceBackendEngine(object):
                         "Resource [type: %s, ID: %s] will be %s." % (
                             rtype, rid, ctype + 'd'))
                     logs = []
-                    if ctype == 'update':
-                        # Resource set_defaults is done in get_update_change
-                        # for resources that need to be updated
-                        logs = MAPPING[rtype].CALLBACKS[ctype](
-                            conf, new, data['data'])
-                    else:
-                        r = MAPPING[rtype](rid, data)
-                        r.set_defaults()
-                        _data = r.get_resource()
-                        logs = MAPPING[rtype].CALLBACKS[ctype](
-                            conf, new, _data)
+                    try:
+                        if ctype == 'update':
+                            # Resource set_defaults is done in
+                            # get_update_change for resources that
+                            # need to be updated
+                            logs = MAPPING[rtype].CALLBACKS[ctype](
+                                conf, new, data['data'])
+                        else:
+                            r = MAPPING[rtype](rid, data)
+                            r.set_defaults()
+                            _data = r.get_resource()
+                            logs = MAPPING[rtype].CALLBACKS[ctype](
+                                conf, new, _data)
+                    except Exception, e:
+                        logs.append(
+                            "Resource [type: %s, ID: %s] %s op error (%s)." % (
+                                rtype, rid, ctype, str(e)))
                     if logs:
                         # We have logs here meaning callback call
                         # has encountered some troubles
