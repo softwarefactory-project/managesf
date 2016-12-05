@@ -22,7 +22,10 @@ from sqlalchemy import Table, Column, Integer, DateTime, Unicode, MetaData
 
 from managesf.services import base
 from managesf.controllers import SFuser
-import storyboardclient.openstack.common.apiclient.exceptions as sbexc
+try:
+    import storyboardclient.openstack.common.apiclient.exceptions as sbexc
+except ImportError:
+    import storyboardclient._apiclient.exceptions as sbexc
 
 
 logger = logging.getLogger(__name__)
