@@ -26,9 +26,7 @@ RESOURCES_STRUCT = {'resources': {'rtype': {'key': {}}}}
 
 
 class YAMLDBException(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-        logger.error(msg)
+    pass
 
 
 class YAMLBackend(object):

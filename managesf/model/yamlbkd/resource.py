@@ -18,13 +18,11 @@ import re
 
 
 class ModelInvalidException(Exception):
-    def __init__(self, msg):
-        self.msg = msg
+    pass
 
 
 class ResourceInvalidException(Exception):
-    def __init__(self, msg):
-        self.msg = msg
+    pass
 
 
 AUTHORIZED_CALLBACKS = ('update', 'create', 'delete',

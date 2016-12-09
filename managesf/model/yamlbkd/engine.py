@@ -42,13 +42,11 @@ MAPPING = {'repos': GitRepository,
 
 
 class ResourceDepsException(Exception):
-    def __init__(self, msg):
-        self.msg = msg
+    pass
 
 
 class ResourceUnicityException(Exception):
-    def __init__(self, msg):
-        self.msg = msg
+    pass
 
 
 class SFResourceBackendEngine(object):
@@ -453,7 +451,7 @@ class SFResourceBackendEngine(object):
                 ResourceInvalidException,
                 ResourceUnicityException,
                 ResourceDepsException), e:
-            validation_logs.append(e.msg)
+            validation_logs.append(e.message)
             for l in validation_logs:
                 logger.info(l)
             return False, validation_logs
@@ -478,7 +476,7 @@ class SFResourceBackendEngine(object):
             apply_logs.extend(logs)
             partial = self._apply_changes(changes, apply_logs, new)
         except YAMLDBException, e:
-            apply_logs.append(e.msg)
+            apply_logs.append(e.message)
             for l in apply_logs:
                 logger.info(l)
             return False, apply_logs
@@ -535,7 +533,7 @@ class SFResourceBackendEngine(object):
                 ResourceInvalidException,
                 ResourceUnicityException,
                 ResourceDepsException), e:
-            direct_apply_logs.append(e.msg)
+            direct_apply_logs.append(e.message)
             for l in direct_apply_logs:
                 logger.info(l)
             return False, direct_apply_logs
