@@ -32,11 +32,39 @@ class ResourcesTest(TestCase):
             PRIMARY_KEY = None
             PRIORITY = 10
 
-        R1('id', {})
+        self.assertRaises(ModelInvalidException,
+                          R1, 'id', {})
 
         class R1(BaseResource):
             MODEL_TYPE = 'test'
             MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
+                'key': (str, ".*", False, "string", True, "desc"),
+            }
+            PRIMARY_KEY = None
+            PRIORITY = 10
+
+        r = R1('id', {})
+        self.assertEqual(r.resource['name'], 'id')
+        r = R1('id', {'name': 'overwritten'})
+        self.assertEqual(r.resource['name'], 'id')
+
+        class R1(BaseResource):
+            MODEL_TYPE = 'test'
+            MODEL = {
+                'name': (str, "[0-9]+", False, "123", True, "Name"),
+            }
+            PRIMARY_KEY = None
+            PRIORITY = 10
+
+        r = R1('id', {})
+        self.assertRaises(ResourceInvalidException,
+                          r.validate)
+
+        class R1(BaseResource):
+            MODEL_TYPE = 'test'
+            MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
                 'key': (int, None, False, "string", True, "desc"),
             }
             PRIMARY_KEY = 'name'
@@ -48,6 +76,7 @@ class ResourcesTest(TestCase):
         class R1(BaseResource):
             MODEL_TYPE = 'test'
             MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
                 'key': (int, None, False, "string", True, "desc"),
             }
             PRIMARY_KEY = None
@@ -70,6 +99,7 @@ class ResourcesTest(TestCase):
         class R1(BaseResource):
             MODEL_TYPE = 'test'
             MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
                 'key': (int, None, True, None, True, "desc"),
                 'key2': (str, ".+", False, "default", True, "desc"),
                 'key3': (list, "[0-9]+", False, [], True, "desc"),
@@ -104,6 +134,9 @@ class ResourcesTest(TestCase):
     def test_resource_model_callbacks(self):
         class R1(BaseResource):
             MODEL_TYPE = 'test'
+            MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
+            }
             PRIORITY = 10
             PRIMARY_KEY = None
             CALLBACKS = {
@@ -117,6 +150,9 @@ class ResourcesTest(TestCase):
 
         class R1(BaseResource):
             MODEL_TYPE = 'test'
+            MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
+            }
             PRIORITY = 10
             PRIMARY_KEY = None
             CALLBACKS = {
@@ -127,6 +163,9 @@ class ResourcesTest(TestCase):
 
         class R1(BaseResource):
             MODEL_TYPE = 'test'
+            MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
+            }
             PRIMARY_KEY = None
             PRIORITY = 10
             CALLBACKS = {
@@ -145,6 +184,9 @@ class ResourcesTest(TestCase):
 
         class R1(BaseResource):
             MODEL_TYPE = 'test'
+            MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
+            }
             PRIMARY_KEY = None
             PRIORITY = 10
             CALLBACKS = {

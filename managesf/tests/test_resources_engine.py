@@ -309,12 +309,10 @@ class EngineTest(TestCase):
             self.assertEqual(len(ret['dummies']['update'].keys()), 0)
             # Test update resource change detected
             prev = {'resources': {'dummies': {'myprojectid': {
-                    'namespace': 'sf',
-                    'name': 'myproject'},
+                    'namespace': 'sf'},
             }}}
             new = {'resources': {'dummies': {'myprojectid': {
-                   'namespace': 'sf',
-                   'name': 'mynewproject'},
+                   'namespace': 'sf2'},
             }}}
             path = tempfile.mkdtemp()
             self.to_delete.append(path)
@@ -322,7 +320,7 @@ class EngineTest(TestCase):
             ret = eng._get_data_diff(prev, new)
             self.assertIn('myprojectid', ret['dummies']['update'])
             self.assertIn(
-                'name',
+                'namespace',
                 ret['dummies']['update']['myprojectid']['changed'])
             self.assertDictEqual(
                 new['resources']['dummies']['myprojectid'],
@@ -336,7 +334,7 @@ class EngineTest(TestCase):
                     'superid': {
                         'namespace': 'super',
                         'name': 'project'}
-                },
+                    },
                 'groups': {}
             }}
             new = {'resources': {
@@ -360,8 +358,6 @@ class EngineTest(TestCase):
             self.assertDictEqual(ret['dummies']['create']['myproject2id'],
                                  new['resources']['dummies']['myproject2id'])
             self.assertIn('namespace',
-                          ret['dummies']['update']['myprojectid']['changed'])
-            self.assertIn('name',
                           ret['dummies']['update']['myprojectid']['changed'])
             self.assertDictEqual(
                 ret['dummies']['update']['myprojectid']['data'],
@@ -468,6 +464,7 @@ class EngineTest(TestCase):
         class Master(BaseResource):
             MODEL_TYPE = 'master'
             MODEL = {
+                'name': (str, "+*", True, None, True, "desc"),
                 'key1': (str, "+*", True, None, True, "desc"),
                 'key2': (list, "+*", True, None, True, "desc"),
             }
@@ -521,6 +518,7 @@ class EngineTest(TestCase):
         class Master(BaseResource):
             MODEL_TYPE = 'master'
             MODEL = {
+                'name': (str, "+*", True, None, True, "desc"),
                 'key': (list, "+*", True, None, True, "desc"),
             }
             PRIORITY = 40
@@ -583,6 +581,7 @@ class EngineTest(TestCase):
         class Master2(BaseResource):
             MODEL_TYPE = 'master2'
             MODEL = {
+                'name': (str, "+*", True, None, True, "desc"),
                 'key': (str, "+*", True, None, True, "desc"),
             }
             PRIORITY = 30
@@ -801,7 +800,6 @@ class EngineTest(TestCase):
                     'dummies': {
                         'd2': {
                             'namespace': 'sf',
-                            'name': 'd2',
                         },
                     }
                 }
@@ -813,9 +811,8 @@ class EngineTest(TestCase):
             # dummies:d1 is dummies:dummy-d1-id
             current_resources = {
                 'dummies': {
-                    'dummy-d1-id': {
+                    'd1': {
                         'namespace': 'sf',
-                        'name': 'd1',
                     },
                 }
             }
@@ -823,7 +820,6 @@ class EngineTest(TestCase):
                 'dummies': {
                     'd1': {
                         'namespace': 'sf',
-                        'name': 'd1',
                     },
                 }
             }
@@ -843,9 +839,8 @@ class EngineTest(TestCase):
             # This check make sure the deps if is updated.
             current_resources = {
                 'dummies': {
-                    'dummy-d1-id': {
+                    'd1': {
                         'namespace': 'sf',
-                        'name': 'd1',
                     },
                 }
             }
@@ -853,12 +848,10 @@ class EngineTest(TestCase):
                 'dummies': {
                     'd1': {
                         'namespace': 'sf',
-                        'name': 'd1',
                     },
                 },
                 'dummies2': {
                     'd2_1': {
-                        'name': 'd2_1',
                         'deps': ['d1'],
                     },
                 },
@@ -870,8 +863,7 @@ class EngineTest(TestCase):
                 'resources': {
                     'dummies2': {
                         'd2_1': {
-                            'deps': ['dummy-d1-id'],
-                            'name': 'd2_1',
+                            'deps': ['d1'],
                         }
                     }
                 }

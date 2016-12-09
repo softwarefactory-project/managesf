@@ -79,6 +79,14 @@ class ACL(BaseResource):
                    "provide the description entry in the acl file to keep "
                    "them shareable between git repositories if needed.")
     MODEL = {
+        'name': (
+            str,
+            '.*',
+            False,
+            '',
+            True,
+            "The ACL name",
+        ),
         'file': (
             str,
             '.*',

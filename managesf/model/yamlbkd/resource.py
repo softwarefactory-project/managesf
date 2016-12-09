@@ -71,6 +71,7 @@ class BaseResource(object):
         self.id = id
         self._model_definition_validate()
         self.resource = resource
+        self.resource['name'] = self.id
         self.mandatory_keys = set(
             [k for k, v in self.__class__.MODEL.items() if v[2]])
         self.keys = set(self.__class__.MODEL)
@@ -88,6 +89,7 @@ class BaseResource(object):
             assert isinstance(self.__class__.PRIORITY, int)
             for key in self.__class__.MODEL:
                 assert re.match("^" + KEY_RE_CONSTRAINT + "$", key)
+            assert 'name' in self.__class__.MODEL
         except:
             raise ModelInvalidException(
                 "Model %s is invalid and not usable" % (

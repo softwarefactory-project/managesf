@@ -384,7 +384,8 @@ class SFResourceBackendEngine(object):
             current_cache_ids.setdefault(rtype, {})
             for rid, data in resources.items():
                 pk = MAPPING[rtype].PRIMARY_KEY
-                current_cache_ids[rtype][data[pk]] = rid
+                r = MAPPING[rtype](rid, data)
+                current_cache_ids[rtype][r.resource[pk]] = rid
 
         # Fill the ret_tree with non existing resources
         # compared to current and keep track of already
@@ -392,7 +393,9 @@ class SFResourceBackendEngine(object):
         for rtype, resources in reality['resources'].items():
             for rid, data in resources.items():
                 pk = MAPPING[rtype].PRIMARY_KEY
-                m_rid = current_cache_ids[rtype].get(data[pk], None)
+                r = MAPPING[rtype](rid, data)
+                m_rid = current_cache_ids[rtype].get(
+                    r.resource[pk], None)
                 if not m_rid:
                     # The resource does not exists in the
                     # current tree - so keep it
@@ -404,7 +407,7 @@ class SFResourceBackendEngine(object):
                     already_exist_ids.setdefault(rtype, {})
                     already_exist_ids[rtype][rid] = m_rid
 
-        # Finally update depencies ids if needed
+        # Finally update dependencies ids if needed
         for rtype, resources in ret_tree['resources'].items():
             for rid, data in resources.items():
                 r = MAPPING[rtype](rid, data)
@@ -427,6 +430,11 @@ class SFResourceBackendEngine(object):
                         r.resource[dkey] = resolved_rdeps
                     elif r.MODEL[dkey][0] is str:
                         r.resource[dkey] = resolved_rdeps[0]
+
+        # Remove the name key as the rid is the name
+        for rtype, resources in ret_tree['resources'].items():
+            for rid, data in resources.items():
+                del ret_tree['resources'][rtype][rid]['name']
 
     def validate(self, repo_prev_uri, prev_ref,
                  repo_new_uri, new_ref):
