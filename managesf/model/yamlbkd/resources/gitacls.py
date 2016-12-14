@@ -84,7 +84,7 @@ class ACL(BaseResource):
             '.*',
             False,
             '',
-            True,
+            False,
             "The ACL name",
         ),
         'file': (

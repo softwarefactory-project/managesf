@@ -71,6 +71,9 @@ class BaseResource(object):
         self.id = id
         self._model_definition_validate()
         self.resource = resource
+        # "name" is a special key that will inherit of the Resource
+        # ID value. The ID value must then match the "name" regex
+        # contraint
         self.resource['name'] = self.id
         self.mandatory_keys = set(
             [k for k, v in self.__class__.MODEL.items() if v[2]])
@@ -95,7 +98,7 @@ class BaseResource(object):
                 "Model %s is invalid and not usable" % (
                     self.__class__.MODEL_TYPE))
 
-        if self.__class__.PRIMARY_KEY:
+        if self.__class__.PRIMARY_KEY and self.__class__.PRIMARY_KEY != 'name':
             if self.__class__.PRIMARY_KEY not in self.__class__.MODEL:
                 raise ModelInvalidException(
                     "Model %s primary key %s does not exists" % (
@@ -118,10 +121,10 @@ class BaseResource(object):
         try:
             # Be sure default values are of the declared type
             # make some others validation on default value
-            for constraints in self.__class__.MODEL.values():
+            for key, constraints in self.__class__.MODEL.items():
                 # Only act on non-mandatory keys as default
-                # is provided
-                if not constraints[2]:
+                # is provided. Skip 'name' checking.
+                if not constraints[2] and key != 'name':
                     # Validate default value type
                     assert isinstance(constraints[3],
                                       constraints[0])

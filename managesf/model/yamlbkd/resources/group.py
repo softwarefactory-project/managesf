@@ -300,8 +300,8 @@ class Group(BaseResource):
         'name': (
             str,
             '^([a-zA-Z0-9\-_\./])+$',
-            True,
-            None,
+            False,
+            "",
             False,
             "The group name",
         ),

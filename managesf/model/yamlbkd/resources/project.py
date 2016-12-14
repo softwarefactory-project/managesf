@@ -30,9 +30,9 @@ class Project(BaseResource):
         'name': (
             str,
             '^([a-zA-Z0-9\-_\./])+$',
-            True,
-            None,
-            True,
+            False,
+            "",
+            False,
             "The project name",
         ),
         'description': (
