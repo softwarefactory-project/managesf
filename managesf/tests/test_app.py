@@ -29,7 +29,6 @@ from redmine.exceptions import ValidationError
 from pysflib.sfredmine import RedmineUtils
 from managesf.tests import dummy_conf
 
-from managesf.services.base import BaseHooksManager
 from managesf.services import exceptions as exc
 
 from managesf.controllers.SFuser import SFUserManager
@@ -1610,24 +1609,13 @@ class TestHooksController(FunctionalTest):
             environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
             resp = self.app.post_json('/hooks/toto', {'arg1': 1, 'arg2': 2},
                                       extra_environ=environ, status="*")
-            self.assertEqual(404, resp.status_int)
-            j = json.loads(resp.body)
-            self.assertEqual(len(self.config['services']) + 1,
-                             len(j))
-
-    def test_non_existing_service(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
-            resp = self.app.post_json('/hooks/toto/blagh',
-                                      {'arg1': 1, 'arg2': 2},
-                                      extra_environ=environ, status="*")
-            self.assertEqual(404, resp.status_int)
-            j = json.loads(resp.body)
-            self.assertEqual('Unknown service',
-                             j['blagh'])
+            self.assertEqual(400, resp.status_int)
 
     def test_patchset_created(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'), \
+                patch('managesf.model.yamlbkd.engine.'
+                      'SFResourceBackendEngine.get') as r:
+            r.return_value = {'resources': {}}
             environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
             hooks_kwargs = {'change': 123,
                             'is_draft': False,
@@ -1653,13 +1641,8 @@ Review: blop
                                                     2,
                                                     message=issue_msg)
                 j = json.loads(resp.body)
-                # +1 from adding the name of the hook
-                self.assertEqual(len(self.config['services']) + 1,
-                                 len(j))
-                self.assertEqual('patchset_created',
-                                 j['hook_name'])
                 self.assertEqual('Success',
-                                 j['redmine'])
+                                 j['msg'])
                 # oh no ! something went wrong with redmine
                 set_issue_status.return_value = False
                 resp = self.app.post_json('/hooks/patchset_created',
@@ -1667,43 +1650,14 @@ Review: blop
                                           extra_environ=environ, status="*")
                 self.assertEqual(400, resp.status_int)
                 j = json.loads(resp.body)
-                # +1 from adding the name of the hook
-                self.assertEqual(len(self.config['services']) + 1,
-                                 len(j))
-                self.assertEqual('patchset_created',
-                                 j['hook_name'])
                 self.assertEqual("Could not change status of issue #789",
-                                 j['redmine'])
-
-    def test_patchset_created_one_service(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
-            with patch.object(BaseHooksManager,
-                              'patchset_created') as patchset_created:
-                patchset_created.return_value = "mocked"
-                resp = self.app.post_json('/hooks/patchset_created/storyboard',
-                                          {'arg1': 1, 'arg2': 2},
-                                          extra_environ=environ, status="*")
-                self.assertEqual(200, resp.status_int)
-                patchset_created.assert_called_with(arg1=1,
-                                                    arg2=2)
-                j = json.loads(resp.body)
-                # only one service called
-                self.assertEqual(2,
-                                 len(j))
-                self.assertEqual('patchset_created',
-                                 j['hook_name'])
-                # call hook for nonexistent service
-                resp = self.app.post_json('/hooks/patchset_created/blagh',
-                                          {'arg1': 1, 'arg2': 2},
-                                          extra_environ=environ, status="*")
-                self.assertEqual(404, resp.status_int)
-                j = json.loads(resp.body)
-                self.assertEqual('Unknown service',
-                                 j['blagh'])
+                                 j['msg'])
 
     def test_change_merged(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'), \
+                patch('managesf.model.yamlbkd.engine.'
+                      'SFResourceBackendEngine.get') as r:
+            r.return_value = {'resources': {}}
             environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
             hooks_kwargs = {'change': 123,
                             'change_url': 'blop',
@@ -1734,13 +1688,8 @@ gitweb: http://redmine.tests.dom/r/gitweb?p=testytest.git;a=commit;h=456
                                                     5,
                                                     message=issue_msg)
                 j = json.loads(resp.body)
-                # +1 from adding the name of the hook
-                self.assertEqual(len(self.config['services']) + 1,
-                                 len(j))
-                self.assertEqual('change_merged',
-                                 j['hook_name'])
                 self.assertEqual('Success',
-                                 j['redmine'])
+                                 j['msg'])
                 # oh no ! something went wrong with redmine
                 set_issue_status.return_value = False
                 resp = self.app.post_json('/hooks/change_merged',
@@ -1748,13 +1697,8 @@ gitweb: http://redmine.tests.dom/r/gitweb?p=testytest.git;a=commit;h=456
                                           extra_environ=environ, status="*")
                 self.assertEqual(400, resp.status_int)
                 j = json.loads(resp.body)
-                # +1 from adding the name of the hook
-                self.assertEqual(len(self.config['services']) + 1,
-                                 len(j))
-                self.assertEqual('change_merged',
-                                 j['hook_name'])
                 self.assertEqual("Could not change status of issue #789",
-                                 j['redmine'])
+                                 j['msg'])
 
 
 class TestJobsController(FunctionalTest):

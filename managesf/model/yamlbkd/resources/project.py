@@ -67,6 +67,14 @@ class Project(BaseResource):
             True,
             "The project issue tracker link",
         ),
+        'commit-hook': (
+            str,
+            '^(SFRedmine|)$',
+            False,
+            "",
+            True,
+            "The engine name to use on commit hook",
+        ),
         'mailing-lists': (
             list,
             '.+@.+',
