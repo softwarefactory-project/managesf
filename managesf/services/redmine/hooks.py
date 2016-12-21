@@ -122,14 +122,14 @@ class RedmineHooksManager(base.BaseHooksManager):
                                        status_related, gitweb_url,
                                        template_message=CREATED,
                                        client=self.plugin.get_client())
-            logger.debug('[%s] %s: %s' % (self.plugin.service_name,
-                                          'patchset_created',
-                                          msg))
+            logger.debug(u'[%s] %s: %s' % (self.plugin.service_name,
+                                           'patchset_created',
+                                           msg))
             return msg
         except Exception as e:
-            logger.error('[%s] %s: %s' % (self.plugin.service_name,
-                                          'patchset_created',
-                                          e.message))
+            logger.error(u'[%s] %s: %s' % (self.plugin.service_name,
+                                           'patchset_created',
+                                           unicode(e)))
             # re-raise
             raise e
 
@@ -150,8 +150,8 @@ class RedmineHooksManager(base.BaseHooksManager):
                                           msg))
             return msg
         except Exception as e:
-            logger.error('[%s] %s: %s' % (self.plugin.service_name,
-                                          'patchset_created',
-                                          e.message))
+            logger.error(u'[%s] %s: %s' % (self.plugin.service_name,
+                                           'patchset_created',
+                                           unicode(e)))
             # re-raise
             raise e

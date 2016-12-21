@@ -507,7 +507,7 @@ class GroupController(RestController):
                 # can't be create in Gerrit
                 if isinstance(service,
                               base.BaseCodeReviewServicePlugin):
-                    abort(409, detail=e.message)
+                    abort(409, detail=unicode(e))
                 else:
                     # For other services just warn via logs
                     logger.info("group %s create on %s was unsuccessful" % (
@@ -541,7 +541,7 @@ class GroupController(RestController):
                 # can't be updated in Gerrit
                 if isinstance(service,
                               base.BaseCodeReviewServicePlugin):
-                    abort(404, detail=e.message)
+                    abort(404, detail=unicode(e))
                 else:
                     # For other services just warn via logs
                     logger.info("group %s post on %s was unsuccessful" % (
@@ -568,7 +568,7 @@ class GroupController(RestController):
             except exceptions.UnavailableActionError:
                 pass
             except exceptions.GroupNotFoundException, e:
-                abort(404, detail=e.message)
+                abort(404, detail=unicode(e))
             except Exception as e:
                 return report_unhandled_error(e)
 
@@ -600,7 +600,7 @@ class GroupController(RestController):
                 if isinstance(service,
                               base.BaseCodeReviewServicePlugin):
                     # Abort if action not possible on Gerrit
-                    abort(404, detail=e.message)
+                    abort(404, detail=unicode(e))
                 else:
                     # For other services just warn via logs
                     logger.info("group %s delete on %s was unsuccessful" % (
@@ -630,9 +630,9 @@ class PagesController(RestController):
         try:
             ret = pages.update_content_url(project, infos)
         except pages.InvalidInfosInput as e:
-            abort(400, detail=e.message)
+            abort(400, detail=unicode(e))
         except pages.PageNotFound as e:
-            abort(404, detail=e.message)
+            abort(404, detail=unicode(e))
         except Exception as e:
             return report_unhandled_error(e)
         if ret:
@@ -661,7 +661,7 @@ class PagesController(RestController):
         try:
             ret = pages.get_content_url(project)
         except pages.PageNotFound as e:
-            abort(404, detail=e.message)
+            abort(404, detail=unicode(e))
         except Exception as e:
             return report_unhandled_error(e)
         return ret
@@ -682,7 +682,7 @@ class PagesController(RestController):
         try:
             pages.delete_content_url(project)
         except pages.PageNotFound as e:
-            abort(404, detail=e.message)
+            abort(404, detail=unicode(e))
         except Exception as e:
             return report_unhandled_error(e)
         logger.info("User %s has deleted the pages target for project %s" % (
@@ -703,7 +703,7 @@ class LocalUserController(RestController):
         try:
             ret = localuser.update_user(username, infos)
         except (localuser.InvalidInfosInput, localuser.BadUserInfos) as e:
-            abort(400, detail=e.message)
+            abort(400, detail=unicode(e))
         except Exception as e:
             return report_unhandled_error(e)
         if isinstance(ret, dict):
@@ -721,7 +721,7 @@ class LocalUserController(RestController):
         try:
             ret = localuser.get_user(username)
         except localuser.UserNotFound as e:
-            abort(404, detail=e.message)
+            abort(404, detail=unicode(e))
         except Exception as e:
             return report_unhandled_error(e)
         return ret
@@ -736,7 +736,7 @@ class LocalUserController(RestController):
         try:
             ret = localuser.delete_user(username)
         except localuser.UserNotFound as e:
-            abort(404, detail=e.message)
+            abort(404, detail=unicode(e))
         except Exception as e:
             return report_unhandled_error(e)
         return ret
@@ -763,7 +763,7 @@ class LocalUserBindController(RestController):
         try:
             ret = localuser.bind_user(authorization)
         except (localuser.BindForbidden, localuser.UserNotFound) as e:
-            abort(401, detail=e.message)
+            abort(401, detail=unicode(e))
         except Exception as e:
             return report_unhandled_error(e)
         if not ret:
@@ -1062,17 +1062,17 @@ class HooksController(RestController):
                 hooks_feedback[s.service_name] = getattr(s.hooks,
                                                          hook_name)(**d)
             except exceptions.UnavailableActionError as e:
-                hooks_feedback[s.service_name] = e.message
+                hooks_feedback[s.service_name] = unicode(e)
                 unavailable_hooks += 1
                 logger.debug('[%s] hook %s is not defined' % (s.service_name,
                                                               hook_name))
             except Exception as e:
-                hooks_feedback[s.service_name] = e.message
+                hooks_feedback[s.service_name] = unicode(e)
                 return_code = 400
-                msg = '[%s] hook %s failed with error: %s'
+                msg = u'[%s] hook %s failed with error: %s'
                 logger.debug(msg % (s.service_name,
                                     hook_name,
-                                    e.message))
+                                    unicode(e)))
         if len(SF_SERVICES) == unavailable_hooks:
             return_code = 404
         response.status = return_code
@@ -1101,7 +1101,7 @@ class TestsController(RestController):
             code_review.review.propose_test_definition(project_name,
                                                        request.remote_user)
         except Exception as e:
-            abort(500, detail=e.message)
+            abort(500, detail=unicode(e))
         if request.json:
             project_scripts = request.json.get('project-scripts', False)
 
@@ -1112,7 +1112,7 @@ class TestsController(RestController):
                 code_review.review.propose_test_scripts(project_name,
                                                         request.remote_user)
             except Exception as e:
-                abort(500, detail=e.message)
+                abort(500, detail=unicode(e))
 
         response.status = 201
         return True

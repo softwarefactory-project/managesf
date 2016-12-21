@@ -278,7 +278,7 @@ def add_user(user):
             session.add(u)
             return True, None
     except exc.IntegrityError as e:
-        return False, e.message
+        return False, unicode(e)
 
 
 def get_user(username):

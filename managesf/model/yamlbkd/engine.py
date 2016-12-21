@@ -459,7 +459,7 @@ class SFResourceBackendEngine(object):
                 ResourceInvalidException,
                 ResourceUnicityException,
                 ResourceDepsException), e:
-            validation_logs.append(e.message)
+            validation_logs.append(unicode(e))
             for l in validation_logs:
                 logger.info(l)
             return False, validation_logs
@@ -484,7 +484,7 @@ class SFResourceBackendEngine(object):
             apply_logs.extend(logs)
             partial = self._apply_changes(changes, apply_logs, new)
         except YAMLDBException, e:
-            apply_logs.append(e.message)
+            apply_logs.append(unicode(e))
             for l in apply_logs:
                 logger.info(l)
             return False, apply_logs
@@ -541,7 +541,7 @@ class SFResourceBackendEngine(object):
                 ResourceInvalidException,
                 ResourceUnicityException,
                 ResourceDepsException), e:
-            direct_apply_logs.append(e.message)
+            direct_apply_logs.append(unicode(e))
             for l in direct_apply_logs:
                 logger.info(l)
             return False, direct_apply_logs

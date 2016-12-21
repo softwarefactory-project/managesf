@@ -35,7 +35,7 @@ class Htpasswd(object):
             with htpasswd.Basic(self.filename) as userdb:
                 return user in userdb.users
         except IOError as e:
-            logger.debug('Could not check htpasswd: %s' % e.message)
+            logger.debug('Could not check htpasswd: %s' % unicode(e))
             raise e
 
     def delete(self, user):
@@ -46,7 +46,7 @@ class Htpasswd(object):
             # we don't care
             pass
         except IOError as e:
-            logger.debug('Could not update htpasswd: %s' % e.message)
+            logger.debug('Could not update htpasswd: %s' % unicode(e))
             raise e
 
     def set_api_password(self, user):
@@ -62,6 +62,6 @@ class Htpasswd(object):
                 userdb.change_password(user, password)
                 logger.debug('Updated htpasswd entry for user %s' % user)
         except IOError as e:
-            logger.debug('Could not update htpasswd: %s' % e.message)
+            logger.debug('Could not update htpasswd: %s' % unicode(e))
             raise e
         return password

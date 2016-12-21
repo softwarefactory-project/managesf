@@ -114,14 +114,14 @@ Review: ccc
                 self.assertFail()
             except Exception as e:
                 self.assertEqual(msg,
-                                 e.message)
+                                 unicode(e))
             kwargs['commit_message'] = 'uuu Related: #789 Fix: #1234'
             try:
                 self.redmine.hooks.patchset_created(**kwargs)
                 self.assertFail()
             except Exception as e:
                 self.assertEqual(msg,
-                                 e.message)
+                                 unicode(e))
 
     def test_change_merged(self):
         args = ('change', 'change_url', 'project',
@@ -169,14 +169,14 @@ Review: ccc
                 self.assertFail()
             except Exception as e:
                 self.assertEqual(msg,
-                                 e.message)
+                                 unicode(e))
             kwargs['commit_message'] = 'uuu Related: #789 Fix: #1234'
             try:
                 self.redmine.hooks.change_merged(**kwargs)
                 self.assertFail()
             except Exception as e:
                 self.assertEqual(msg,
-                                 e.message)
+                                 unicode(e))
 
 
 class TestSFRedmineRoleManager(BaseSFRedmineService):

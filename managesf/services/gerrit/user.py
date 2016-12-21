@@ -68,7 +68,7 @@ class SFGerritUserManager(base.UserManager):
         except Exception as e:
             msg = u"[%s] Could not insert user %s in account_external_ids: %s"
             logger.debug(msg % (self.plugin.service_name,
-                                username, e.message))
+                                username, unicode(e)))
             return False
 
     def create(self, username, email, full_name, ssh_keys=None, **kwargs):
@@ -158,7 +158,7 @@ class SFGerritUserManager(base.UserManager):
         except Exception as e:
             msg = u"[%s] Could not delete user %s in base: %s"
             logger.debug(msg % (self.plugin.service_name,
-                                email or username, e.message))
+                                email or username, unicode(e)))
         # flush gerrit caches
         ge = G.Gerrit(self.plugin.conf['host'],
                       self.plugin._full_conf.admin['name'],

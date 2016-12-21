@@ -51,7 +51,7 @@ class RedmineProjectManager(base.ProjectManager):
             # create the project
             self._create(project_name, description, private)
         except ValidationError as e:
-            if e.message == 'Identifier has already been taken':
+            if unicode(e) == u'Identifier has already been taken':
                 # the project already exists, we assume it is normal
                 msg = '[%s] project %s exists already'
                 logger.debug(msg % (self.plugin.service_name,
@@ -68,7 +68,7 @@ class RedmineProjectManager(base.ProjectManager):
                                           groups=['ptl-group'],
                                           user_is_owner=True)
         except ValidationError as e:
-            if e.message == 'Identifier has already been taken':
+            if unicode(e) == u'Identifier has already been taken':
                 msg = u'[%s] %s is already PTL for %s'
                 logger.debug(msg % (self.plugin.service_name,
                                     username,
@@ -83,7 +83,7 @@ class RedmineProjectManager(base.ProjectManager):
                                           project=project_name,
                                           groups=['dev-group'],)
         except ValidationError as e:
-            if e.message == 'Identifier has already been taken':
+            if unicode(e) == u'Identifier has already been taken':
                 msg = u'[%s] %s is already dev for %s'
                 logger.debug(msg % (self.plugin.service_name,
                                     username,
