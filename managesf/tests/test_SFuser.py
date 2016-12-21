@@ -36,32 +36,32 @@ class SFuserController(TestCase):
 
     def test_create(self):
         u = SFuser.SFUserManager()
-        id = u.create(username='SpongeBob',
+        id = u.create(username=u'SpongeBob',
                       email='SquarePants',
-                      fullname='Sp. Sq.',
+                      fullname=u'Sp. Sq.',
                       cauth_id=17)
         self.assertEqual(str(id),
-                         SFuser.crud.get(username='SpongeBob').get('id'))
+                         SFuser.crud.get(username=u'SpongeBob').get('id'))
         # recreating the same user returns the same id
-        id1 = u.create(username='SpongeBob',
+        id1 = u.create(username=u'SpongeBob',
                        email='SquarePants',
-                       fullname='Sp. Sq.',
+                       fullname=u'Sp. Sq.',
                        cauth_id=17)
         self.assertEqual(str(id1),
                          str(id))
         # if cauth_id is reset, it is updated
-        id2 = u.create(username='SpongeBob',
+        id2 = u.create(username=u'SpongeBob',
                        email='SquarePants',
-                       fullname='Sp. Sq.',
+                       fullname=u'Sp. Sq.',
                        cauth_id=24)
         self.assertEqual(str(id2),
                          str(id))
         self.assertEqual('24',
                          SFuser.crud.get(id2).get('cauth_id'))
         # cauth_id acts as Authoritah
-        id3 = u.create(username='Jake',
+        id3 = u.create(username=u'Jake',
                        email='the Dog',
-                       fullname='J. the Dog',
+                       fullname=u'J. the Dog',
                        cauth_id=24)
         self.assertEqual(str(id3),
                          str(id))
@@ -72,95 +72,95 @@ class SFuserController(TestCase):
         self.assertEqual('J. the Dog',
                          SFuser.crud.get(id3).get('fullname'))
         # create another user, default cauth_id is -1
-        id4 = u.create(username='Finn',
+        id4 = u.create(username=u'Finn',
                        email='the Human',
-                       fullname='F. The Human')
+                       fullname=u'F. The Human')
         self.assertTrue(str(id4) != str(id))
         self.assertEqual('-1',
                          SFuser.crud.get(id4).get('cauth_id'))
         # create another user, make sure it does not update Finn
-        id5 = u.create(username='Bonnibel',
+        id5 = u.create(username=u'Bonnibel',
                        email='Bubblegum',
-                       fullname='Princess Bubblegum')
+                       fullname=u'Princess Bubblegum')
         self.assertTrue(str(id4) != str(id5))
 
     def test_get(self):
         u = SFuser.SFUserManager()
-        u.create(username='Bonnibel',
+        u.create(username=u'Bonnibel',
                  email='Bubblegum',
-                 fullname='Princess Bubblegum')
-        u.create(username='Finn',
+                 fullname=u'Princess Bubblegum')
+        u.create(username=u'Finn',
                  email='the Human',
-                 fullname='F. The Human')
-        id = u.create(username='Jake',
+                 fullname=u'F. The Human')
+        id = u.create(username=u'Jake',
                       email='the Dog',
-                      fullname='J. the Dog',
+                      fullname=u'J. the Dog',
                       cauth_id=24)
         self.assertEqual('Bonnibel',
-                         u.get(username='Bonnibel')['username'])
+                         u.get(username=u'Bonnibel')['username'])
         self.assertEqual('Bubblegum',
-                         u.get(username='Bonnibel',
-                               fullname='Princess Bubblegum')['email'])
+                         u.get(username=u'Bonnibel',
+                               fullname=u'Princess Bubblegum')['email'])
         self.assertEqual('Finn',
                          u.get(email='the Human')['username'])
         self.assertEqual('the Human',
                          u.get(email='the Human')['email'])
         self.assertEqual('Jake',
-                         u.get(fullname='J. the Dog')['username'])
+                         u.get(fullname=u'J. the Dog')['username'])
         self.assertEqual('the Dog',
-                         u.get(fullname='J. the Dog')['email'])
+                         u.get(fullname=u'J. the Dog')['email'])
         self.assertEqual('Jake',
                          u.get(cauth_id=24)['username'])
         self.assertEqual('Jake',
                          u.get(id)['username'])
         self.assertEqual({},
-                         u.get(username='BMO'))
+                         u.get(username=u'BMO'))
         self.assertRaises(KeyError,
                           u.get, cauth_id=-1)
 
     def test_all(self):
         u = SFuser.SFUserManager()
-        u.create(username='Bonnibel',
+        u.create(username=u'Bonnibel',
                  email='Bubblegum',
-                 fullname='Princess Bubblegum')
-        u.create(username='Finn',
+                 fullname=u'Princess Bubblegum')
+        u.create(username=u'Finn',
                  email='the Human',
-                 fullname='F. The Human')
-        u.create(username='Jake',
+                 fullname=u'F. The Human')
+        u.create(username=u'Jake',
                  email='the Dog',
-                 fullname='J. the Dog',
+                 fullname=u'J. the Dog',
                  cauth_id=24)
-        u.create(username='Gunther',
+        u.create(username=u'Gunther',
                  email='the Penguin',
-                 fullname='Orgalorg the Destroyer')
+                 fullname=u'Orgalorg the Destroyer')
         self.assertEqual(4,
                          len(u.all()))
 
     def test_update(self):
         u = SFuser.SFUserManager()
-        pb = u.create(username='Bonnibel',
+        pb = u.create(username=u'Bonnibel',
                       email='Bubblegum',
-                      fullname='Princess Bubblegum')
+                      fullname=u'Princess Bubblegum')
         bonnibel = u.get(pb)
         # updating a non existing user does nothing
         self.assertEqual(None,
                          u.update(pb + 2))
-        u.update(pb, username='Marceline')
+        u.update(pb, username=u'Marceline')
         self.assertEqual('Marceline', u.get(pb)['username'])
         u.update(pb, email='The Vampire')
         self.assertEqual('The Vampire', u.get(pb)['email'])
-        u.update(pb, fullname='M the V')
+        u.update(pb, fullname=u'M the V')
         self.assertEqual('M the V', u.get(pb)['fullname'])
-        u.update(pb, username='Bonnibel',
-                 email='Bubblegum', fullname='Princess Bubblegum')
+        u.update(pb, username=u'Bonnibel',
+                 email='Bubblegum', fullname=u'Princess Bubblegum')
         self.assertEqual(bonnibel,
                          u.get(pb))
 
     def test_reset_cauth_id(self):
         u = SFuser.SFUserManager()
-        pb = u.create(username='Bonnibel',
+        pb = u.create(username=u'Bonnibel',
                       email='Bubblegum',
-                      fullname='Princess Bubblegum',
+                      fullname=u'Princess Bubblegum',
                       cauth_id=23)
         bonnibel = u.get(pb)
         self.assertEqual('23',
@@ -172,49 +172,49 @@ class SFuserController(TestCase):
 
     def test_delete(self):
         u = SFuser.SFUserManager()
-        pb = u.create(username='Bonnibel',
+        pb = u.create(username=u'Bonnibel',
                       email='Bubblegum',
-                      fullname='Princess Bubblegum',
+                      fullname=u'Princess Bubblegum',
                       cauth_id=23)
         u.delete(pb)
         self.assertEqual({},
-                         u.get(username='Bonnibel'))
-        pb = u.create(username='Bonnibel',
+                         u.get(username=u'Bonnibel'))
+        pb = u.create(username=u'Bonnibel',
                       email='Bubblegum',
-                      fullname='Princess Bubblegum',
+                      fullname=u'Princess Bubblegum',
                       cauth_id=23)
-        u.delete(username='Bonnibel')
+        u.delete(username=u'Bonnibel')
         self.assertEqual({},
-                         u.get(username='Bonnibel'))
-        pb = u.create(username='Bonnibel',
+                         u.get(username=u'Bonnibel'))
+        pb = u.create(username=u'Bonnibel',
                       email='Bubblegum',
-                      fullname='Princess Bubblegum',
+                      fullname=u'Princess Bubblegum',
                       cauth_id=23)
         u.delete(email='Bubblegum')
         self.assertEqual({},
-                         u.get(username='Bonnibel'))
-        pb = u.create(username='Bonnibel',
+                         u.get(username=u'Bonnibel'))
+        pb = u.create(username=u'Bonnibel',
                       email='Bubblegum',
-                      fullname='Princess Bubblegum',
+                      fullname=u'Princess Bubblegum',
                       cauth_id=23)
-        u.delete(fullname='Princess Bubblegum')
+        u.delete(fullname=u'Princess Bubblegum')
         self.assertEqual({},
-                         u.get(username='Bonnibel'))
-        pb = u.create(username='Bonnibel',
+                         u.get(username=u'Bonnibel'))
+        pb = u.create(username=u'Bonnibel',
                       email='Bubblegum',
-                      fullname='Princess Bubblegum',
+                      fullname=u'Princess Bubblegum',
                       cauth_id=23)
         u.delete(cauth_id=23)
         self.assertEqual({},
-                         u.get(username='Bonnibel'))
-        pb = u.create(username='Bonnibel',
+                         u.get(username=u'Bonnibel'))
+        pb = u.create(username=u'Bonnibel',
                       email='Bubblegum',
-                      fullname='Princess Bubblegum',
+                      fullname=u'Princess Bubblegum',
                       cauth_id=23)
-        self.assertFalse(u.delete(username='SusanStrong'))
+        self.assertFalse(u.delete(username=u'SusanStrong'))
         u.delete(cauth_id=23, email='Bubblegum')
         self.assertEqual({},
-                         u.get(username='Bonnibel'))
+                         u.get(username=u'Bonnibel'))
 
     def test_unicode(self):
         """create and get a non ascii user"""

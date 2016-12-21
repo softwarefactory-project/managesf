@@ -41,99 +41,99 @@ class TestLocaluserController(TestCase):
     # most of these tests are probably redundant
 
     def test_add_user_as_admin(self):
-        infos = {'fullname': 'John Doe',
+        infos = {'fullname': u'John Doe',
                  'email': 'john@tests.dom',
                  'password': "abc"}
-        localuser.update_user('john', infos)
+        localuser.update_user(u'john', infos)
         expected = {'username': 'john',
-                    'fullname': 'John Doe',
+                    'fullname': u'John Doe',
                     'email': 'john@tests.dom',
                     'sshkey': 'None'}
-        ret = localuser.model.get_user('john')
+        ret = localuser.model.get_user(u'john')
         del ret['hashed_password']
         self.assertDictEqual(ret, expected)
 
     def test_add_update_user_bad_input(self):
-        infos = {'fullname': 'John Doe',
+        infos = {'fullname': u'John Doe',
                  'email': 'john@tests.dom',
                  'hashed_password': "abc"}
         self.assertRaises(localuser.InvalidInfosInput,
-                          lambda: localuser.update_user('john', infos))
+                          lambda: localuser.update_user(u'john', infos))
 
     def test_update_user_as_admin(self):
-        infos = {'fullname': 'John Doe',
+        infos = {'fullname': u'John Doe',
                  'email': 'john@tests.dom',
                  'password': "abc"}
-        localuser.update_user('john', infos)
-        infos = {'fullname': 'Maria Doe',
+        localuser.update_user(u'john', infos)
+        infos = {'fullname': u'Maria Doe',
                  'email': 'maria@tests.dom',
                  'password': "abc"}
-        localuser.update_user('john', infos)
+        localuser.update_user(u'john', infos)
         expected = {'username': 'john',
-                    'fullname': 'Maria Doe',
+                    'fullname': u'Maria Doe',
                     'email': 'maria@tests.dom',
                     'sshkey': 'None'}
-        ret = localuser.model.get_user('john')
+        ret = localuser.model.get_user(u'john')
         del ret['hashed_password']
         self.assertDictEqual(ret, expected)
 
     def test_update_user_as_owner(self):
-        infos = {'fullname': 'John Doe',
+        infos = {'fullname': u'John Doe',
                  'email': 'john@tests.dom',
                  'password': "abc"}
-        localuser.update_user('john', infos)
+        localuser.update_user(u'john', infos)
         # John trying to update its account
 
-        infos = {'fullname': 'Maria Doe',
+        infos = {'fullname': u'Maria Doe',
                  'email': 'maria@tests.dom',
                  'password': "abc"}
-        localuser.update_user('john', infos)
+        localuser.update_user(u'john', infos)
         expected = {'username': 'john',
                     'email': 'maria@tests.dom',
-                    'fullname': 'Maria Doe',
+                    'fullname': u'Maria Doe',
                     'sshkey': 'None'}
-        ret = localuser.model.get_user('john')
+        ret = localuser.model.get_user(u'john')
         del ret['hashed_password']
         self.assertDictEqual(ret, expected)
 
     def test_delete_user_as_admin(self):
-        infos = {'fullname': 'John Doe',
+        infos = {'fullname': u'John Doe',
                  'email': 'john@tests.dom',
                  'password': "abc"}
-        localuser.update_user('john', infos)
-        self.assertIsInstance(localuser.model.get_user('john'), dict)
-        localuser.delete_user('john')
-        self.assertFalse(localuser.model.get_user('john'))
+        localuser.update_user(u'john', infos)
+        self.assertIsInstance(localuser.model.get_user(u'john'), dict)
+        localuser.delete_user(u'john')
+        self.assertFalse(localuser.model.get_user(u'john'))
         # Also test good behavior trying to remove user that not exixt
         self.assertRaises(localuser.UserNotFound,
-                          lambda: localuser.delete_user('john'))
+                          lambda: localuser.delete_user(u'john'))
 
     def test_get_user(self):
-        infos = {'fullname': 'John Doe',
+        infos = {'fullname': u'John Doe',
                  'email': 'john@tests.dom',
                  'password': "abc"}
-        localuser.update_user('john', infos)
+        localuser.update_user(u'john', infos)
         expected = {'username': 'john',
                     'email': 'john@tests.dom',
-                    'fullname': 'John Doe',
+                    'fullname': u'John Doe',
                     'sshkey': 'None'}
-        ret = localuser.model.get_user('john')
+        ret = localuser.model.get_user(u'john')
         del ret['hashed_password']
         self.assertDictEqual(ret, expected)
-        ret = localuser.model.get_user('john')
+        ret = localuser.model.get_user(u'john')
         del ret['hashed_password']
         self.assertDictEqual(ret, expected)
         self.assertRaises(localuser.UserNotFound,
-                          lambda: localuser.get_user('maria'))
+                          lambda: localuser.get_user(u'maria'))
 
     def test_bind_user(self):
-        base_infos = {'fullname': 'John Doe',
+        base_infos = {'fullname': u'John Doe',
                       'email': 'john@tests.dom', }
         infos = {'password': "abc"}
         public_infos = {'username': 'john', 'sshkey': 'None'}
         infos.update(base_infos)
         public_infos.update(base_infos)
-        localuser.update_user('john', infos)
+        localuser.update_user(u'john', infos)
         authorization = encode('john', "abc")
         self.assertEqual(public_infos,
                          localuser.bind_user(authorization),
