@@ -17,7 +17,6 @@
 from unittest import TestCase
 
 from mock import patch, call
-from contextlib import nested
 
 from managesf.tests import dummy_conf
 from managesf.model.yamlbkd.resources.group import GroupOps
@@ -35,17 +34,16 @@ class GroupOpsTest(TestCase):
         cls.auth_patch.stop()
 
     def test_create(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.create_group'),
-            patch('pysflib.sfgerrit.GerritUtils.add_group_member'),
-            patch('pysflib.sfgerrit.GerritUtils.delete_group_member'),
-        ]
         o = GroupOps(self.conf, None)
 
         kwargs = {'name': 'space/g1',
                   'description': 'A description',
                   'members': ['body@sftests.com', 'body2@sftests.com']}
-        with nested(*patches) as (cg, agm, dgm):
+        with patch('pysflib.sfgerrit.GerritUtils.create_group') as cg, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'add_group_member') as agm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_member') as dgm:
             cg.return_value = True
             agm.return_value = True
             dgm.return_value = True
@@ -62,7 +60,11 @@ class GroupOpsTest(TestCase):
             self.assertEqual(dgm.call_args_list[0],
                              call('space/g1', self.conf.admin['email']))
             self.assertEqual(len(logs), 0)
-        with nested(*patches) as (cg, agm, dgm):
+        with patch('pysflib.sfgerrit.GerritUtils.create_group') as cg, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'add_group_member') as agm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_member') as dgm:
             cg.side_effect = Exception('Random error')
             agm.return_value = False
             dgm.return_value = False
@@ -79,19 +81,20 @@ class GroupOpsTest(TestCase):
             self.assertEqual(len(logs), 4)
 
     def test_delete(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.get_group_id'),
-            patch('pysflib.sfgerrit.GerritUtils.get_group_members'),
-            patch('pysflib.sfgerrit.GerritUtils.delete_group_member'),
-            patch('pysflib.sfgerrit.GerritUtils.get_group_group_members'),
-            patch('pysflib.sfgerrit.GerritUtils.delete_group_group_member'),
-            patch('sqlalchemy.orm.session.Session.execute'),
-        ]
         o = GroupOps(self.conf, None)
 
         kwargs = {'name': 'space/g1'}
 
-        with nested(*patches) as (ggi, ggm, dgm, gggm, dggm, exe):
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_members') as ggm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_member') as dgm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_group_members') as gggm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_group_member') as dggm, \
+                patch('sqlalchemy.orm.session.Session.execute') as exe:
             ggm.return_value = [{'email': 'body@sftests.com'},
                                 {'email': 'body2@sftests.com'},
                                 {'email': self.conf.admin['email']}]
@@ -113,7 +116,17 @@ class GroupOpsTest(TestCase):
                              exe.call_args_list[0])
             self.assertEqual(len(logs), 0)
 
-        with nested(*patches) as (ggi, ggm, dgm, gggm, dggm, exe):
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_members') as ggm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_member') as dgm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_group_members') as gggm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_group_member') as dggm, \
+                patch('sqlalchemy.orm.session.Session.execute') as exe:
+
             ggm.return_value = []
             ggi.return_value = '666'
             gggm.return_value = [{'name': 'included_group'}]
@@ -132,7 +145,17 @@ class GroupOpsTest(TestCase):
                              exe.call_args_list[0])
             self.assertEqual(len(logs), 0)
 
-        with nested(*patches) as (ggi, ggm, dgm, gggm, dggm, exe):
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_members') as ggm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_member') as dgm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_group_members') as gggm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_group_member') as dggm, \
+                patch('sqlalchemy.orm.session.Session.execute') as exe:
+
             ggm.return_value = [{'email': 'body@sftests.com'},
                                 {'email': 'body2@sftests.com'},
                                 {'email': self.conf.admin['email']}]
@@ -149,22 +172,24 @@ class GroupOpsTest(TestCase):
             self.assertEqual(len(logs), 3)
 
     def test_update(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.get_group_id'),
-            patch('pysflib.sfgerrit.GerritUtils.get_group_members'),
-            patch('pysflib.sfgerrit.GerritUtils.add_group_member'),
-            patch('pysflib.sfgerrit.GerritUtils.delete_group_member'),
-            patch('pysflib.sfgerrit.GerritUtils.get_group_group_members'),
-            patch('pysflib.sfgerrit.GerritUtils.delete_group_group_member'),
-            patch.object(GroupOps, 'group_update_description'),
-        ]
         o = GroupOps(self.conf, None)
 
         kwargs = {'name': 'space/g1',
                   'description': 'An awesome project',
                   'members': ['body@sftests.com', 'body2@sftests.com']}
 
-        with nested(*patches) as (ggi, ggm, agm, dgm, gggm, dggm, gup):
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id'), \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_members') as ggm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'add_group_member') as agm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_member') as dgm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_group_members') as gggm, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'delete_group_group_member') as dggm, \
+                patch.object(GroupOps, 'group_update_description') as gup:
             ggm.return_value = [{'email': 'body3@sftests.com'},
                                 {'id': 'John Doe'}]
             gggm.return_value = [{'name': 'included_group'}]
@@ -185,18 +210,15 @@ class GroupOpsTest(TestCase):
             self.assertEqual(len(logs), 0)
 
     def test_extra_validations(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.get_account'),
-        ]
         kwargs = {'name': 'space/g1',
                   'members': ['body@sftests.com', 'body2@sftests.com']}
         o = GroupOps(self.conf, None)
-        with nested(*patches) as (ga, ):
+        with patch('pysflib.sfgerrit.GerritUtils.get_account') as ga:
             ga.return_value = {}
             logs = o.extra_validations(**kwargs)
             self.assertEqual(len(ga.call_args_list), 2)
             self.assertEqual(len(logs), 0)
-        with nested(*patches) as (ga, ):
+        with patch('pysflib.sfgerrit.GerritUtils.get_account') as ga:
             ga.return_value = False
             logs = o.extra_validations(**kwargs)
             self.assertEqual(len(ga.call_args_list), 2)
@@ -209,10 +231,6 @@ class GroupOpsTest(TestCase):
                           'find the member', logs)
 
     def test_get_all(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.get_groups'),
-            patch('pysflib.sfgerrit.GerritUtils.get_group_members'),
-        ]
         o = GroupOps(self.conf, None)
 
         def fake_get_groups():
@@ -254,7 +272,9 @@ class GroupOpsTest(TestCase):
             }
             return groups[group_id]
 
-        with nested(*patches) as (gg, ggm):
+        with patch('pysflib.sfgerrit.GerritUtils.get_groups') as gg, \
+                patch('pysflib.sfgerrit.GerritUtils.'
+                      'get_group_members') as ggm:
             gg.side_effect = fake_get_groups
             ggm.side_effect = fake_get_group_members
             logs, g_tree = o.get_all()

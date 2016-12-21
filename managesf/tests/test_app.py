@@ -21,7 +21,6 @@ import tempfile
 from unittest import TestCase
 from webtest import TestApp
 from pecan import load_app
-from contextlib import nested
 from mock import patch, MagicMock
 
 from basicauth import encode
@@ -292,16 +291,16 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(True, response.json['create_projects'])
 
     def test_project_get_all(self):
-        ctx = [patch.object(SFGerritProjectManager, 'get'),
-               patch.object(SFGerritReviewManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'),
-               patch.object(SFGerritProjectManager, 'get_projects_groups_id'),
-               patch.object(SFGerritProjectManager, 'get_groups_details'),
-               patch.object(SoftwareFactoryRedmine,
-                            'get_open_issues')]
-        with nested(*ctx) as (p_get, r_get, get_user_groups,
-                              get_projects_groups_id,
-                              get_groups_details, goi):
+        with patch.object(SFGerritProjectManager, 'get') as p_get,  \
+                patch.object(SFGerritReviewManager, 'get') as r_get, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as get_user_groups, \
+                patch.object(SFGerritProjectManager,
+                             'get_projects_groups_id') \
+                as get_projects_groups_id, \
+                patch.object(SFGerritProjectManager,
+                             'get_groups_details') as get_groups_details, \
+                patch.object(SoftwareFactoryRedmine, 'get_open_issues') as goi:
             p_get.side_effect = project_get
             r_get.return_value = [{'project': 'p0'}, ]
             get_user_groups.return_value = [{'id': 1, 'name': 'p0-ptl'},
@@ -348,16 +347,17 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(200, response.status_int)
 
     def test_project_get_one(self):
-        ctx = [patch.object(SFGerritProjectManager, 'get'),
-               patch.object(SFGerritReviewManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'),
-               patch.object(SFGerritProjectManager, 'get_projects_groups_id'),
-               patch.object(SFGerritProjectManager, 'get_groups_details'),
-               patch.object(SoftwareFactoryRedmine,
-                            'get_open_issues')]
-        with nested(*ctx) as (p_get, r_get, get_user_groups,
-                              get_projects_groups_id,
-                              get_groups_details, goi):
+        with patch.object(SFGerritProjectManager, 'get') as p_get, \
+                patch.object(SFGerritReviewManager, 'get') as r_get, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as get_user_groups, \
+                patch.object(SFGerritProjectManager,
+                             'get_projects_groups_id') \
+                as get_projects_groups_id, \
+                patch.object(SFGerritProjectManager,
+                             'get_groups_details') as get_groups_details, \
+                patch.object(SoftwareFactoryRedmine,
+                             'get_open_issues') as goi:
             p_get.side_effect = project_get
             r_get.return_value = [{'project': 'p0'}, ]
             get_user_groups.return_value = [{'id': 1, 'name': 'p0-ptl'}]
@@ -389,12 +389,11 @@ class TestManageSFAppProjectController(FunctionalTest):
             response = self.app.put('/project/p1', status="*")
             self.assertEqual(response.status_int, 401)
         # Create a project with name
-        ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch.object(project.SFGerritProjectManager,
-                            'get_user_groups'),
-               patch.object(SFRedmineProjectManager, 'create'),
-               patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, gug, rip, pfn):
+        with patch.object(project.SFGerritProjectManager, 'create') as gip, \
+                patch.object(project.SFGerritProjectManager,
+                             'get_user_groups') as gug, \
+                patch.object(SFRedmineProjectManager, 'create') as rip, \
+                patch(FIND_PROJECT_PATH) as pfn:
             gug.return_value = []
             pfn.return_value = {}
             response = self.app.put('/project/p1', status="*",
@@ -405,13 +404,12 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              'Project p1 has been created.')
         # Create a project with name - an error occurs
-        ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch.object(project.SFGerritProjectManager,
-                            'get_user_groups'),
-               patch.object(SFRedmineProjectManager, 'create',
-                            side_effect=raiseexc),
-               patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, gug, rip, fpn):
+        with patch.object(project.SFGerritProjectManager, 'create') as gip, \
+                patch.object(project.SFGerritProjectManager,
+                             'get_user_groups'), \
+                patch.object(SFRedmineProjectManager, 'create',
+                             side_effect=raiseexc) as rip, \
+                patch(FIND_PROJECT_PATH) as fpn:
             gug.return_value = []
             fpn.return_value = {}
             response = self.app.put('/project/p1', status="*",
@@ -423,13 +421,12 @@ class TestManageSFAppProjectController(FunctionalTest):
 
         # Create a project based on an upstream and test early fail
         # if upstream is not reachable
-        ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch.object(project.SFGerritProjectManager,
-                            'get_user_groups'),
-               patch.object(SFRedmineProjectManager, 'create'),
-               patch.object(utils.GerritRepo, 'check_upstream'),
-               patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, gug, rip, cu, pfn):
+        with patch.object(project.SFGerritProjectManager, 'create') as gip, \
+                patch.object(project.SFGerritProjectManager,
+                             'get_user_groups'), \
+                patch.object(SFRedmineProjectManager, 'create') as rip, \
+                patch.object(utils.GerritRepo, 'check_upstream') as cu, \
+                patch(FIND_PROJECT_PATH) as pfn:
             pfn.return_value = {}
             gug.return_value = []
             cu.return_value = [False, "fatal: unable to access remote"]
@@ -450,13 +447,12 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(response.status_int, 201)
 
         # Create a project with upstream and include all branches
-        ctx = [patch.object(project.SFGerritProjectManager, 'create'),
-               patch.object(project.SFGerritProjectManager,
-                            'get_user_groups'),
-               patch.object(SFRedmineProjectManager, 'create'),
-               patch.object(utils.GerritRepo, 'check_upstream'),
-               patch(FIND_PROJECT_PATH)]
-        with nested(*ctx) as (gip, gug, rip, cu, pfn):
+        with patch.object(project.SFGerritProjectManager, 'create') as gip, \
+                patch.object(project.SFGerritProjectManager,
+                             'get_user_groups'), \
+                patch.object(SFRedmineProjectManager, 'create') as rip, \
+                patch.object(utils.GerritRepo, 'check_upstream') as cu, \
+                patch(FIND_PROJECT_PATH) as pfn:
             pfn.return_value = {}
             cu.return_value = [True, None]
             data = {'upstream': 'git@github.com/account/repo.git',
@@ -485,12 +481,11 @@ class TestManageSFAppProjectController(FunctionalTest):
                                    extra_environ={'REMOTE_USER': 'admin'})
         self.assertEqual(response.status_int, 500)
         # Delete a project with name
-        ctx = [patch.object(SFGerritProjectManager, 'delete'),
-               patch.object(SFRedmineProjectManager, 'delete'),
-               patch(FIND_PROJECT_PATH),
-               patch.object(project.SFGerritProjectManager,
-                            'get_user_groups'), ]
-        with nested(*ctx) as (gdp, rdp, pfn, gug):
+        with patch.object(SFGerritProjectManager, 'delete') as gdp, \
+                patch.object(SFRedmineProjectManager, 'delete') as rdp, \
+                patch(FIND_PROJECT_PATH) as pfn, \
+                patch.object(project.SFGerritProjectManager,
+                             'get_user_groups') as gug:
             gug.return_value = []
             pfn.return_value = {'name': 'p1'}
             name = '===' + base64.urlsafe_b64encode('p1')
@@ -502,12 +497,11 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              'Project p1 has been deleted.')
         # Delete a project as PTL (default rule)
-        ctx = [patch.object(SFGerritProjectManager, 'delete'),
-               patch.object(SFRedmineProjectManager, 'delete'),
-               patch(FIND_PROJECT_PATH),
-               patch.object(project.SFGerritProjectManager,
-                            'get_user_groups'), ]
-        with nested(*ctx) as (gdp, rdp, pfn, gug):
+        with patch.object(SFGerritProjectManager, 'delete') as gdp, \
+                patch.object(SFRedmineProjectManager, 'delete') as rdp, \
+                patch(FIND_PROJECT_PATH) as pfn, \
+                patch.object(project.SFGerritProjectManager,
+                             'get_user_groups') as gug:
             gug.return_value = [{'name': 'p1-ptl'}, ]
             pfn.return_value = {'name': 'p1'}
             name = '===' + base64.urlsafe_b64encode('p1')
@@ -519,13 +513,12 @@ class TestManageSFAppProjectController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              'Project p1 has been deleted.')
         # Delete a project with name - an error occurs
-        ctx = [patch.object(SFGerritProjectManager, 'delete'),
-               patch.object(SFRedmineProjectManager, 'delete',
-                            side_effect=raiseexc),
-               patch(FIND_PROJECT_PATH),
-               patch.object(project.SFGerritProjectManager,
-                            'get_user_groups'), ]
-        with nested(*ctx) as (gip, rip, pfn, gug):
+        with patch.object(SFGerritProjectManager, 'delete'), \
+                patch.object(SFRedmineProjectManager, 'delete',
+                             side_effect=raiseexc), \
+                patch(FIND_PROJECT_PATH) as pfn, \
+                patch.object(project.SFGerritProjectManager,
+                             'get_user_groups') as gug:
             pfn.return_value = ('p1', None)
             response = self.app.delete('/project/p1', status="*",
                                        extra_environ={'REMOTE_USER': 'admin'})
@@ -563,9 +556,10 @@ class TestManageSFAppBackupController(FunctionalTest):
             self.assertEqual(response.status_int, 404)
 
     def test_backup_post(self):
-        ctx = [patch('managesf.controllers.backup.backup_start'),
-               patch.object(SFGerritProjectManager, 'get_user_groups')]
-        with nested(*ctx) as (backup_start, gug):
+        with patch('managesf.controllers.backup.'
+                   'backup_start') as backup_start, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             gug.return_value = []
             response = self.app.post('/backup', status="*")
             self.assertEqual(response.status_int, 401)
@@ -584,15 +578,15 @@ class TestManageSFAppMembershipController(FunctionalTest):
                   'ssh_keys': ['ora', 'oraora'],
                   'full_name': 'User %i' % x,
                   'username': 'user%i' % x} for x in range(10)]
-        ctx = [patch.object(SFRedmineUserManager, 'create'),
-               patch.object(StoryboardUserManager, 'create'),
-               patch.object(g_user.SFGerritUserManager, 'create'),
-               patch.object(SFRedmineUserManager, 'get'),
-               patch.object(StoryboardUserManager, 'get'),
-               patch.object(g_user.SFGerritUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
-                              r_get, s_get, g_get, gug, ):
+        with patch.object(SFRedmineUserManager, 'create') as redmine_create, \
+                patch.object(StoryboardUserManager, 'create') as sb_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as gerrit_create, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             r_get.return_value = None
             s_get.return_value = None
             g_get.return_value = None
@@ -633,14 +627,12 @@ class TestManageSFAppMembershipController(FunctionalTest):
             self.assertEqual(response.status_int, 400)
 
     def test_put(self):
-        ctx = [patch.object(SFRedmineMembershipManager,
-                            'create'),
-               patch.object(SFGerritMembershipManager,
-                            'create'),
-               patch.object(SFUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups')]
         environ = {'REMOTE_USER': 'totally_not_an_admin'}
-        with nested(*ctx) as (gaupg, raupg, c, gug):
+        with patch.object(SFRedmineMembershipManager, 'create'), \
+                patch.object(SFGerritMembershipManager, 'create'), \
+                patch.object(SFUserManager, 'get') as c, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             c.return_value = {'email': 'john@tests.dom'}
             gug.return_value = [{'name': 'p1-ptl'}, ]
             project_name = '===' + base64.urlsafe_b64encode('p1')
@@ -654,14 +646,12 @@ class TestManageSFAppMembershipController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              "User john@tests.dom has been added in group(s):"
                              " ptl-group, core-group for project p1")
-        ctx = [patch.object(SFGerritMembershipManager,
-                            'create',
-                            side_effect=raiseexc),
-               patch.object(SFRedmineMembershipManager,
-                            'create'),
-               patch.object(SFUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups')]
-        with nested(*ctx) as (gaupg, raupg, c, gug):
+        with patch.object(SFGerritMembershipManager, 'create',
+                          side_effect=raiseexc), \
+                patch.object(SFRedmineMembershipManager, 'create'), \
+                patch.object(SFUserManager, 'get') as c, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             c.return_value = {'email': 'john@tests.dom'}
             gug.return_value = [{'name': 'p1-ptl'}, ]
             response = self.app.put_json(
@@ -683,10 +673,10 @@ class TestManageSFAppMembershipController(FunctionalTest):
 
         environ = {'REMOTE_USER': 'just_a_dude'}
         project_name = '===' + base64.urlsafe_b64encode('p1')
-        ctx = [patch.object(SFGerritGroupManager, 'get'),
-               patch.object(SFUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (a, b, gug):
+        with patch.object(SFGerritGroupManager, 'get') as a, \
+                patch.object(SFUserManager, 'get') as b, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             b.return_value = {}
             a.side_effect = notfound
             gug.return_value = [{'name': 'p1-ptl'}, ]
@@ -694,15 +684,11 @@ class TestManageSFAppMembershipController(FunctionalTest):
                                        project_name), status="*",
                                        extra_environ=environ)
             self.assertEqual(response.status_int, 400)
-        ctx = [
-            patch.object(SFGerritMembershipManager,
-                         'delete'),
-            patch.object(SFRedmineMembershipManager,
-                         'delete'),
-            patch.object(SFUserManager, 'get'),
-            patch.object(SFGerritGroupManager, 'get'),
-            patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (gdupg, rdupg, c, d, gug):
+        with patch.object(SFGerritMembershipManager, 'delete'), \
+                patch.object(SFRedmineMembershipManager, 'delete'), \
+                patch.object(SFUserManager, 'get') as c, \
+                patch.object(SFGerritGroupManager, 'get'), \
+                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
             c.return_value = {}
             gug.return_value = [{'name': 'p1-ptl'}, ]
             response = self.app.delete(
@@ -727,16 +713,14 @@ class TestManageSFAppMembershipController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              "User john@tests.dom has been deleted from group "
                              "core-group for project p1.")
-        ctx = [
-            patch.object(SFGerritMembershipManager,
-                         'delete',
-                         side_effect=raiseexc),
-            patch.object(SFRedmineMembershipManager,
-                         'delete'),
-            patch.object(SFUserManager, 'get'),
-            patch.object(SFGerritGroupManager, 'get'),
-            patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (gdupg, rdupg, c, d, gug):
+        with patch.object(SFGerritMembershipManager,
+                          'delete', side_effect=raiseexc), \
+                patch.object(SFRedmineMembershipManager,
+                             'delete'), \
+                patch.object(SFUserManager, 'get') as c, \
+                patch.object(SFGerritGroupManager, 'get'), \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             c.return_value = {'email': 'john@tests.dom'}
             gug.return_value = [{'name': 'p1-ptl'}, ]
             response = self.app.delete(
@@ -762,11 +746,11 @@ class TestGroupController(FunctionalTest):
 
     def test_create_group(self):
         env = {'REMOTE_USER': 'user1'}
-        ctx = [patch.object(SFGerritGroupManager, 'create'),
-               patch.object(RedmineGroupManager, 'create'),
-               patch.object(SFUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (sgm, rgm, sfum, gug):
+        with patch.object(SFGerritGroupManager, 'create') as sgm, \
+                patch.object(RedmineGroupManager, 'create') as rgm, \
+                patch.object(SFUserManager, 'get') as sfum, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             gug.return_value = []
             sfum.return_value = {'email': "user1@sftests.com"}
             resp = self.app.put_json('/group/grp1',
@@ -778,7 +762,11 @@ class TestGroupController(FunctionalTest):
             rgm.assert_called_with('grp1', 'user1@sftests.com',
                                    'Nice dev team')
         self.assertEqual(resp.status_int, 201)
-        with nested(*ctx) as (sgm, rgm, sfum, gug):
+        with patch.object(SFGerritGroupManager, 'create') as sgm, \
+                patch.object(RedmineGroupManager, 'create') as rgm, \
+                patch.object(SFUserManager, 'get') as sfum, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             sgm.side_effect = self.exc1
             sfum.return_value = {'email': "user1@sftests.com"}
             gug.return_value = []
@@ -790,7 +778,11 @@ class TestGroupController(FunctionalTest):
                                    'Nice dev team')
             rgm.assert_not_called()
         self.assertEqual(resp.status_int, 409)
-        with nested(*ctx) as (sgm, rgm, sfum, gug):
+        with patch.object(SFGerritGroupManager, 'create') as sgm, \
+                patch.object(RedmineGroupManager, 'create') as rgm, \
+                patch.object(SFUserManager, 'get') as sfum, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups') as gug:
             rgm.side_effect = self.exc1
             sfum.return_value = {'email': "user1@sftests.com"}
             gug.return_value = []
@@ -808,12 +800,11 @@ class TestGroupController(FunctionalTest):
 
     def test_delete_group(self):
         env = {'REMOTE_USER': 'user1'}
-        ctx = [patch.object(SFGerritRoleManager, 'delete'),
-               patch.object(RedmineGroupManager, 'delete'),
-               patch.object(SFGerritGroupManager, 'get'),
-               patch.object(SFUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (srm, rgm, sgg, sfum, gug):
+        with patch.object(SFGerritRoleManager, 'delete') as srm, \
+                patch.object(RedmineGroupManager, 'delete') as rgm, \
+                patch.object(SFGerritGroupManager, 'get') as sgg, \
+                patch.object(SFUserManager, 'get') as sfum, \
+                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
             sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
             gug.return_value = [{'name': 'grp2'}, ]
             resp = self.app.delete('/group/grp1',
@@ -823,7 +814,11 @@ class TestGroupController(FunctionalTest):
             rgm.assert_not_called()
         # user is not part of the group
         self.assertEqual(resp.status_int, 401)
-        with nested(*ctx) as (srm, rgm, sgg, sfum, gug):
+        with patch.object(SFGerritRoleManager, 'delete') as srm, \
+                patch.object(RedmineGroupManager, 'delete') as rgm, \
+                patch.object(SFGerritGroupManager, 'get') as sgg, \
+                patch.object(SFUserManager, 'get') as sfum, \
+                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
             sfum.return_value = {'email': 'user1@sftests.com'}
             sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
             gug.return_value = [{'name': 'grp1'}, ]
@@ -837,9 +832,8 @@ class TestGroupController(FunctionalTest):
 
     def test_get_group(self):
         env = {'REMOTE_USER': 'user1'}
-        ctx = [patch.object(SFGerritProjectManager, 'get_user_groups'),
-               patch.object(SFGerritGroupManager, 'get'), ]
-        with nested(*ctx) as (gug, sgg):
+        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug, \
+                patch.object(SFGerritGroupManager, 'get') as sgg:
             sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
             gug.return_value = [{'name': 'grp1'}, ]
             resp = self.app.get('/group/grp1',
@@ -848,7 +842,8 @@ class TestGroupController(FunctionalTest):
         self.assertEqual(resp.status_int, 200)
         self.assertDictEqual(resp.json, sgg.return_value)
 
-        with nested(*ctx) as (gug, sgg):
+        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug, \
+                patch.object(SFGerritGroupManager, 'get') as sgg:
             sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}],
                                 'grp2': [{'email': 'user2@sftests.com'}]}
             gug.return_value = [{'name': 'grp1'}, {'name': 'grp2'}, ]
@@ -1006,10 +1001,9 @@ class TestProjectTestsController(FunctionalTest):
         with patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
             environ = {'REMOTE_USER': 'ptl_for_this_project'}
             gug.return_value = [{'name': 'toto-ptl'}, ]
-            ctx = [patch.object(SFGerritProjectManager, 'get'),
-                   patch.object(SFGerritReviewManager,
-                   'propose_test_definition')]
-            with nested(*ctx) as (gp, ptd):
+            with patch.object(SFGerritProjectManager, 'get') as gp, \
+                    patch.object(SFGerritReviewManager,
+                                 'propose_test_definition'):
                 gp.return_value = 'p1'
                 resp = self.app.put_json('/tests/toto',
                                          {'project-scripts': False},
@@ -1020,12 +1014,11 @@ class TestProjectTestsController(FunctionalTest):
         with patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
             environ = {'REMOTE_USER': 'ptl_for_this_project'}
             gug.return_value = [{'name': 'toto-ptl'}, ]
-            ctx = [patch.object(SFGerritProjectManager, 'get'),
-                   patch.object(SFGerritReviewManager,
-                                'propose_test_definition'),
-                   patch.object(SFGerritReviewManager,
-                                'propose_test_scripts')]
-            with nested(*ctx) as (gp, ptd, pts):
+            with patch.object(SFGerritProjectManager, 'get') as gp, \
+                    patch.object(SFGerritReviewManager,
+                                 'propose_test_definition'), \
+                    patch.object(SFGerritReviewManager,
+                                 'propose_test_scripts'):
                 gp.return_value = 'p1'
                 resp = self.app.put_json('/tests/toto',
                                          {'project-scripts': True},
@@ -1048,28 +1041,6 @@ class TestManageSFServicesUserController(FunctionalTest):
 
     def test_add_user_in_backends(self):
         environ = {'REMOTE_USER': 'admin'}
-        ctx = [patch.object(SFRedmineUserManager, 'create'),
-               patch.object(StoryboardUserManager, 'create'),
-               patch.object(g_user.SFGerritUserManager, 'create'),
-               patch.object(SFRedmineUserManager, 'get'),
-               patch.object(StoryboardUserManager, 'get'),
-               patch.object(g_user.SFGerritUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        create_ctx = [patch('managesf.services.gerrit.get_cookie'),
-                      patch.object(RedmineUtils, 'create_user'),
-                      patch.object(StoryboardUserManager, 'create'),
-                      patch.object(g_user.SFGerritUserManager, '_add_sshkeys'),
-                      patch.object(g_user.SFGerritUserManager,
-                                   '_add_account_as_external'),
-                      patch('pysflib.sfgerrit.GerritUtils.create_account'),
-                      patch.object(SFRedmineUserManager, 'get'),
-                      patch.object(StoryboardUserManager, 'get'),
-                      patch.object(g_user.SFGerritUserManager, 'get'),
-                      patch('pysflib.sfgerrit.GerritUtils.update_account'),
-                      patch.object(SFRedmineUserManager, 'update'),
-                      patch.object(StoryboardUserManager, 'update'),
-                      patch.object(SFGerritProjectManager, 'get_user_groups'),
-                      ]
         rm_user = MagicMock()
         rm_user.id = 9
         sb_user = MagicMock()
@@ -1099,8 +1070,15 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos3 = {'email': 'john@joestar.dom',
                   'ssh_keys': ['ora', 'oraora'],
                   'full_name': 'Jonathan Joestar', 'username': 'Jon'}
-        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
-                              r_get, s_get, g_get, gug, ):
+        with patch.object(SFRedmineUserManager, 'create') as redmine_create, \
+                patch.object(StoryboardUserManager, 'create') as sb_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as gerrit_create, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups'):
             r_get.return_value = None
             s_get.return_value = None
             g_get.return_value = None
@@ -1124,10 +1102,21 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertTrue("cauth_id" in gerrit_args)
             # TODO(mhu) test if mapping is set correctly
         # mock at a lower level
-        with nested(*create_ctx) as (get_cookie, rm_create_user, s_create, ssh,
-                                     external, create_account,
-                                     r_get, s_get, g_get,
-                                     g_update, s_update, r_update, gug):
+        with patch('managesf.services.gerrit.get_cookie') as get_cookie, \
+                patch.object(RedmineUtils, 'create_user') as rm_create_user, \
+                patch.object(StoryboardUserManager, 'create') as s_create, \
+                patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
+                patch.object(g_user.SFGerritUserManager,
+                             '_add_account_as_external'), \
+                patch('pysflib.sfgerrit.GerritUtils.create_account') \
+                as create_account, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
+                patch('pysflib.sfgerrit.GerritUtils.update_account'), \
+                patch.object(SFRedmineUserManager, 'update'), \
+                patch.object(StoryboardUserManager, 'update'), \
+                patch.object(SFGerritProjectManager, 'get_user_groups'):
             get_cookie.return_value = 'admin_cookie'
 
             rm_create_user.return_value = rm_user2
@@ -1143,8 +1132,15 @@ class TestManageSFServicesUserController(FunctionalTest):
                                               infos2['email'],
                                               infos2['full_name'])
 
-        with nested(*ctx) as (redmine_create, storyboard_create, gerrit_create,
-                              r_get, s_get, g_get, gug, ):
+        with patch.object(SFRedmineUserManager, 'create') as redmine_create, \
+                patch.object(StoryboardUserManager, 'create') as sb_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as gerrit_create, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
+                patch.object(SFGerritProjectManager,
+                             'get_user_groups'):
             # assert that raising UnavailableActionError won't fail
             def unavailable(*args, **kwargs):
                 raise exc.UnavailableActionError
@@ -1156,10 +1152,23 @@ class TestManageSFServicesUserController(FunctionalTest):
             response = self.app.post_json('/services_users/', infos3,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-        with nested(*create_ctx) as (get_cookie, rm_create_user, s_create, ssh,
-                                     external, create_account,
-                                     r_get, s_get, g_get,
-                                     g_update, s_update, r_update, gug, ):
+
+        with patch('managesf.services.gerrit.get_cookie') as get_cookie, \
+                patch.object(RedmineUtils, 'create_user') as rm_create_user, \
+                patch.object(StoryboardUserManager, 'create') as s_create, \
+                patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
+                patch.object(g_user.SFGerritUserManager,
+                             '_add_account_as_external'), \
+                patch('pysflib.sfgerrit.GerritUtils.create_account') \
+                as create_account, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
+                patch('pysflib.sfgerrit.GerritUtils.update_account'), \
+                patch.object(SFRedmineUserManager, 'update'), \
+                patch.object(StoryboardUserManager, 'update'), \
+                patch.object(SFGerritProjectManager, 'get_user_groups'):
+
             get_cookie.return_value = 'admin_cookie'
             # assert that user already existing in backend won't fail
 
@@ -1173,10 +1182,22 @@ class TestManageSFServicesUserController(FunctionalTest):
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-        with nested(*create_ctx) as (get_cookie, rm_create_user, s_create, ssh,
-                                     external, create_account,
-                                     r_get, s_get, g_get,
-                                     g_update, s_update, r_update, gug, ):
+
+        with patch('managesf.services.gerrit.get_cookie') as get_cookie, \
+                patch.object(RedmineUtils, 'create_user') as rm_create_user, \
+                patch.object(StoryboardUserManager, 'create') as s_create, \
+                patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
+                patch.object(g_user.SFGerritUserManager,
+                             '_add_account_as_external'), \
+                patch('pysflib.sfgerrit.GerritUtils.create_account') \
+                as create_account, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
+                patch('pysflib.sfgerrit.GerritUtils.update_account'), \
+                patch.object(SFRedmineUserManager, 'update'), \
+                patch.object(StoryboardUserManager, 'update'), \
+                patch.object(SFGerritProjectManager, 'get_user_groups'):
             get_cookie.return_value = 'admin_cookie'
             # assert that user found in backend will skip gracefully
             r_get.return_value = rm_user.id
@@ -1192,7 +1213,6 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos = {'email': 'jojo@starplatinum.dom',
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
-        ctx = [patch.object(SFRedmineUserManager, 'create'), ]
         with patch.object(RedmineUtils, 'create_user') as rm_create_user:
             # assert that other errors will fail
             def already(*args, **kwargs):
@@ -1205,7 +1225,7 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos = {'email': 'jojo@starplatinum.dom',
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'Jotaro Kujoh', }
-        with nested(*ctx) as (redmine_create, ):
+        with patch.object(RedmineUtils, 'create_user'):
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 400)
@@ -1224,19 +1244,21 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos = {'email': 'iggy@stooges.dom',
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'iggy the fool', 'username': 'iggy'}
-        ctx = [patch.object(SFRedmineUserManager, 'delete'),
-               patch.object(StoryboardUserManager, 'delete'),
-               patch.object(g_user.SFGerritUserManager, 'delete'),
-               patch.object(SFRedmineUserManager, 'create'),
-               patch.object(StoryboardUserManager, 'create'),
-               patch.object(g_user.SFGerritUserManager, 'create'),
-               patch.object(SFRedmineUserManager, 'get'),
-               patch.object(StoryboardUserManager, 'get'),
-               patch.object(g_user.SFGerritUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (redmine_delete, sb_delete, gerrit_delete,
-                              redmine_create, sb_create, gerrit_create,
-                              redmine_get, sb_get, gerrit_get, gug):
+        with patch.object(SFRedmineUserManager, 'delete') as redmine_delete, \
+                patch.object(StoryboardUserManager, 'delete') as sb_delete, \
+                patch.object(g_user.SFGerritUserManager,
+                             'delete') as gerrit_delete, \
+                patch.object(SFRedmineUserManager,
+                             'create') as redmine_create, \
+                patch.object(StoryboardUserManager,
+                             'create') as sb_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as gerrit_create, \
+                patch.object(SFRedmineUserManager, 'get') as redmine_get, \
+                patch.object(StoryboardUserManager, 'get') as sb_get, \
+                patch.object(g_user.SFGerritUserManager,
+                             'get') as gerrit_get, \
+                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
             gug.return_value = []
             # Test deletion of non existing user
             response = self.app.delete('/services_users/?username=iggy',
@@ -1257,9 +1279,22 @@ class TestManageSFServicesUserController(FunctionalTest):
             redmine_delete.assert_called_with(username='iggy', email=None)
             sb_delete.assert_called_with(username='iggy', email=None)
             gerrit_delete.assert_called_with(username='iggy', email=None)
-        with nested(*ctx) as (redmine_delete, sb_delete, gerrit_delete,
-                              redmine_create, sb_create, gerrit_create,
-                              redmine_get, sb_get, gerrit_get, gug, ):
+
+        with patch.object(SFRedmineUserManager, 'delete') as redmine_delete, \
+                patch.object(StoryboardUserManager, 'delete') as sb_delete, \
+                patch.object(g_user.SFGerritUserManager,
+                             'delete') as gerrit_delete, \
+                patch.object(SFRedmineUserManager,
+                             'create') as redmine_create, \
+                patch.object(StoryboardUserManager,
+                             'create') as sb_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as gerrit_create, \
+                patch.object(SFRedmineUserManager, 'get') as redmine_get, \
+                patch.object(StoryboardUserManager, 'get') as sb_get, \
+                patch.object(g_user.SFGerritUserManager,
+                             'get') as gerrit_get, \
+                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
             gug.return_value = []
             redmine_create.return_value = 100
             sb_create.return_value = 100
@@ -1289,21 +1324,24 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos_kira = {'email': 'kira@jojolion.dom',
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'yoshikage kira', 'username': 'kira'}
-        ctx = [patch.object(SFRedmineUserManager, 'create'),
-               patch.object(StoryboardUserManager, 'create'),
-               patch.object(g_user.SFGerritUserManager, 'create'),
-               patch.object(SFRedmineUserManager, 'get'),
-               patch.object(StoryboardUserManager, 'get'),
-               patch.object(g_user.SFGerritUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
-                              r_get, s_get, g_get, gug, ):
+        with patch.object(SFRedmineUserManager, 'delete'), \
+                patch.object(StoryboardUserManager, 'delete'), \
+                patch.object(g_user.SFGerritUserManager, 'delete'), \
+                patch.object(SFRedmineUserManager, 'create') as r_create, \
+                patch.object(StoryboardUserManager, 'create') as s_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as g_create, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
+                patch.object(SFGerritProjectManager, 'get_user_groups'):
+
             r_get.return_value = None
             s_get.return_value = None
             g_get.return_value = None
-            redmine_create.return_value = 12
-            sb_create.return_value = 12
-            gerrit_create.return_value = 13
+            r_create.return_value = 12
+            s_create.return_value = 12
+            g_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_kira,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
@@ -1322,27 +1360,33 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos_poln = {'email': 'polnareff@chariot.dom',
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Polnareff', 'username': 'chariot'}
-        ctx = [patch.object(SFRedmineUserManager, 'create'),
-               patch.object(StoryboardUserManager, 'create'),
-               patch.object(g_user.SFGerritUserManager, 'create'),
-               patch.object(SFRedmineUserManager, 'get'),
-               patch.object(StoryboardUserManager, 'get'),
-               patch.object(g_user.SFGerritUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
-                              r_get, s_get, g_get, gug):
+        with patch.object(SFRedmineUserManager, 'delete'), \
+                patch.object(StoryboardUserManager, 'delete'), \
+                patch.object(g_user.SFGerritUserManager, 'delete'), \
+                patch.object(SFRedmineUserManager,
+                             'create') as r_create, \
+                patch.object(StoryboardUserManager,
+                             'create') as s_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as g_create, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager,
+                             'get') as g_get, \
+                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
+
             r_get.return_value = None
             s_get.return_value = None
             g_get.return_value = None
-            redmine_create.return_value = 12
-            sb_create.return_value = 12
-            gerrit_create.return_value = 13
+            r_create.return_value = 12
+            s_create.return_value = 12
+            g_create.return_value = 13
             gug.return_value = []
             response = self.app.post_json('/services_users/', infos_jojo,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-            redmine_create.return_value = 14
-            gerrit_create.return_value = 15
+            r_create.return_value = 14
+            g_create.return_value = 15
             response = self.app.post_json('/services_users/', infos_poln,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
@@ -1388,24 +1432,25 @@ class TestManageSFServicesUserController(FunctionalTest):
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Jotaro Kujoh', 'username': 'jojo',
                       'external_id': 42}
-        ctx = [patch.object(SFRedmineUserManager, 'create'),
-               patch.object(StoryboardUserManager, 'create'),
-               patch.object(g_user.SFGerritUserManager, 'create'),
-               patch.object(SFRedmineUserManager, 'update'),
-               patch.object(StoryboardUserManager, 'update'),
-               patch.object(g_user.SFGerritUserManager, 'update'),
-               patch.object(SFRedmineUserManager, 'get'),
-               patch.object(StoryboardUserManager, 'get'),
-               patch.object(g_user.SFGerritUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
-                              r_up, s_up, g_up,
-                              r_get, s_get, g_get, gug):
+        with patch.object(SFRedmineUserManager, 'update') as r_up, \
+                patch.object(StoryboardUserManager, 'update') as s_up, \
+                patch.object(g_user.SFGerritUserManager, 'update') as g_up, \
+                patch.object(SFRedmineUserManager,
+                             'create') as r_create, \
+                patch.object(StoryboardUserManager,
+                             'create') as s_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as g_create, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(g_user.SFGerritUserManager,
+                             'get') as g_get, \
+                patch.object(SFGerritProjectManager, 'get_user_groups'):
             for mock in (r_up, s_up, g_up, r_get, s_get, g_get):
                 mock.return_value = None
-            redmine_create.return_value = 12
-            sb_create.return_value = 12
-            gerrit_create.return_value = 13
+            r_create.return_value = 12
+            s_create.return_value = 12
+            g_create.return_value = 13
 
             # User logs in
             response = self.app.post_json('/services_users/', infos_jojo,
@@ -1436,26 +1481,26 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos_jojo = {'email': 'jojo@starplatinum.dom',
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
-        ctx = [patch.object(SFRedmineUserManager, 'create'),
-               patch.object(StoryboardUserManager, 'create'),
-               patch.object(g_user.SFGerritUserManager, 'create'),
-               patch.object(SFRedmineUserManager, 'update'),
-               patch.object(StoryboardUserManager, 'update'),
-               patch.object(g_user.SFGerritUserManager, 'update'),
-               patch.object(SFRedmineUserManager, 'get'),
-               patch.object(StoryboardUserManager, 'get'),
-               patch.object(g_user.SFGerritUserManager, 'get'),
-               patch.object(SFGerritProjectManager, 'get_user_groups'), ]
-        with nested(*ctx) as (redmine_create, sb_create, gerrit_create,
-                              redmine_update, sb_update, gerrit_update,
-                              r_get, s_get, g_get, gug, ):
+        with patch.object(StoryboardUserManager, 'create') as s_create, \
+                patch.object(StoryboardUserManager, 'update') as s_update, \
+                patch.object(StoryboardUserManager, 'get') as s_get, \
+                patch.object(SFRedmineUserManager, 'create') as r_create, \
+                patch.object(SFRedmineUserManager, 'update') as r_update, \
+                patch.object(SFRedmineUserManager, 'get') as r_get, \
+                patch.object(g_user.SFGerritUserManager,
+                             'create') as g_create, \
+                patch.object(g_user.SFGerritUserManager,
+                             'update') as g_update, \
+                patch.object(g_user.SFGerritUserManager,
+                             'get') as g_get, \
+                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
+
             gug.return_value = []
-            r_get.return_value = None
-            s_get.return_value = None
-            g_get.return_value = None
-            redmine_create.return_value = 12
-            sb_create.return_value = 12
-            gerrit_create.return_value = 13
+            for mock in (r_get, r_update, s_get, s_update, g_get, g_update):
+                mock.return_value = None
+            r_create.return_value = 12
+            s_create.return_value = 12
+            g_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_jojo,
                                           extra_environ=environ, status="*")
             response = self.app.get('/services_users/?username=jojo',

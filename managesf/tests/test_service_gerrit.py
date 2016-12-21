@@ -16,7 +16,6 @@
 
 from unittest import TestCase
 from mock import patch, call
-from contextlib import nested
 from gerritlib.gerrit import Gerrit
 
 
@@ -48,19 +47,15 @@ class TestSFGerritRoleManager(BaseSFGerritService):
                          self.gerrit.role.is_admin('not_an_admin'))
 
     def test_create(self):
-        patches = [patch.object(GerritUtils,
-                                'create_group'),
-                   patch.object(GerritUtils,
-                                'add_group_member'), ]
-        with nested(*patches) as (c, a):
+        with patch.object(GerritUtils, 'create_group') as c, \
+                patch.object(GerritUtils, 'add_group_member') as a:
             self.gerrit.role.create("requestor", "rolename", "")
             c.assert_called_with("rolename", "No description available")
             a.assert_called_with("requestor", "rolename")
 
     def test_delete(self):
-        patches = [patch.object(Gerrit, '_ssh'), ]
-        with nested(*patches) as s:
-            s[0].return_value = (0, 0)
+        with patch.object(Gerrit, '_ssh') as s:
+            s.return_value = (0, 0)
             self.gerrit.role.delete('bad_role')
             tables = ['account_group_members',
                       'account_group_members_audit',
@@ -76,7 +71,7 @@ class TestSFGerritRoleManager(BaseSFGerritService):
             cmd = 'gerrit gsql -c \'delete from account_group_names ' \
                   'where name=\"bad_role\"'
             calls.append(call(cmd))
-            s[0].assert_has_calls(calls)
+            s.assert_has_calls(calls)
 
 
 class TestSFGerritUserManager(BaseSFGerritService):
@@ -88,11 +83,12 @@ class TestSFGerritUserManager(BaseSFGerritService):
                               "height": 26}]}
 
     def test_create(self):
-        patches = [patch.object(self.gerrit.user, '_add_account_as_external'),
-                   patch.object(self.gerrit.user, '_add_sshkeys'),
-                   patch('pysflib.sfgerrit.GerritUtils.create_account'), ]
-        with nested(*patches) as (add_external, add_sshkeys,
-                                  create):
+        with patch.object(self.gerrit.user,
+                          '_add_account_as_external') as add_external, \
+                    patch.object(self.gerrit.user,
+                                 '_add_sshkeys') as add_sshkeys, \
+                    patch('pysflib.sfgerrit.GerritUtils.'
+                          'create_account') as create:
             create.return_value = self.user_data
             self.gerrit.user.create('jojo', 'jojo@starplatinum.dom',
                                     'Jotaro Kujoh')
@@ -118,8 +114,7 @@ class TestSFGerritUserManager(BaseSFGerritService):
         self.assertRaises(TypeError,
                           self.gerrit.user.get,
                           'mail@address.com', 'extra_user_param')
-        patches = [patch('pysflib.sfgerrit.GerritUtils.get_account'), ]
-        with nested(*patches) as (get, ):
+        with patch('pysflib.sfgerrit.GerritUtils.get_account') as get:
             get.return_value = self.user_data
             u = self.gerrit.user.get(email='jojo@starplatinum.dom')
             get.assert_called_with('jojo@starplatinum.dom')
@@ -132,10 +127,9 @@ class TestSFGerritUserManager(BaseSFGerritService):
         self.assertRaises(TypeError,
                           self.gerrit.user.delete,
                           'mail@address.com', 'username')
-        patches = [patch.object(self.gerrit.user, 'get'),
-                   patch.object(self.gerrit.user, 'session'),
-                   patch('managesf.services.gerrit.user.G.Gerrit._ssh'), ]
-        with nested(*patches) as (get, session, ssh):
+        with patch.object(self.gerrit.user, 'get') as get, \
+                patch.object(self.gerrit.user, 'session') as session, \
+                patch('managesf.services.gerrit.user.G.Gerrit._ssh') as ssh:
             get.return_value = self.user_data['_account_id']
             sql = """DELETE FROM account_group_members WHERE account_id=5;
 DELETE FROM accounts WHERE account_id=5;
@@ -163,22 +157,13 @@ class TestSFGerritBackupManager(BaseSFGerritService):
 
 class TestSFGerritRepositoryManager(BaseSFGerritService):
     def test_create(self):
-        patches = [patch.object(GerritUtils,
-                                'get_group_id'),
-                   patch.object(utils.GerritRepo,
-                                'clone'),
-                   patch.object(utils.GerritRepo,
-                                'push_config'),
-                   patch.object(utils.GerritRepo,
-                                'push_master')]
-
         def ggi(prj):
             return {'ore': 1, 'ptl': 2, 'dev': 3}.get(prj[-3:], 0)
 
-        with nested(*patches) as (get_group_id,
-                                  clone,
-                                  push_config,
-                                  push_master):
+        with patch.object(GerritUtils, 'get_group_id') as get_group_id, \
+                patch.object(utils.GerritRepo, 'clone'), \
+                patch.object(utils.GerritRepo, 'push_config') as push_config, \
+                patch.object(utils.GerritRepo, 'push_master') as push_master:
             get_group_id.side_effect = ggi
             self.gerrit.repository.create('proj', 'proj description',
                                           None,
@@ -226,22 +211,13 @@ defaultbranch=master
             push_master.assert_called_with(master_paths)
 
     def test_create_readonly(self):
-        patches = [patch.object(GerritUtils,
-                                'get_group_id'),
-                   patch.object(utils.GerritRepo,
-                                'clone'),
-                   patch.object(utils.GerritRepo,
-                                'push_config'),
-                   patch.object(utils.GerritRepo,
-                                'push_master')]
-
         def ggi(prj):
             return {'ore': 1, 'ptl': 2, 'dev': 3}.get(prj[-3:], 0)
 
-        with nested(*patches) as (get_group_id,
-                                  clone,
-                                  push_config,
-                                  push_master):
+        with patch.object(GerritUtils, 'get_group_id') as get_group_id, \
+                patch.object(utils.GerritRepo, 'clone'), \
+                patch.object(utils.GerritRepo, 'push_config') as push_config, \
+                patch.object(utils.GerritRepo, 'push_master'):
             get_group_id.side_effect = ggi
             self.gerrit.repository.create('proj', 'proj description',
                                           None,
@@ -271,13 +247,9 @@ class TestSFGerritMembershipManager(BaseSFGerritService):
         self.assertRaises(exc.UnavailableActionError,
                           self.gerrit.membership.create,
                           'requestor', 'a', 'b', ['ptl-group', 'd'])
-        patches = [patch.object(GerritUtils,
-                                'get_user_groups_id'),
-                   patch.object(GerritUtils,
-                                'get_group_id'),
-                   patch.object(self.gerrit.role,
-                                'is_admin'), ]
-        with nested(*patches) as (gmg, ggi, ia):
+        with patch.object(GerritUtils, 'get_user_groups_id') as gmg, \
+                patch.object(GerritUtils, 'get_group_id') as ggi, \
+                patch.object(self.gerrit.role, 'is_admin') as ia:
             gmg.return_value = ['1', '2', '3']
             ggi.return_value = '4'
             ia.return_value = False
@@ -289,9 +261,11 @@ class TestSFGerritMembershipManager(BaseSFGerritService):
                               self.gerrit.membership.create,
                               'requestor', 'user',
                               'myproject', ['core-group', ])
-        patches.append(patch.object(GerritUtils,
-                                    'group_exists'))
-        with nested(*patches) as (gmg, ggi, ia, ge):
+
+        with patch.object(GerritUtils, 'get_user_groups_id') as gmg, \
+                patch.object(GerritUtils, 'get_group_id') as ggi, \
+                patch.object(self.gerrit.role, 'is_admin') as ia, \
+                patch.object(GerritUtils, 'group_exists') as ge:
             gmg.return_value = ['1', '2', '3']
             ggi.return_value = '4'
             ia.return_value = False
@@ -302,23 +276,14 @@ class TestSFGerritMembershipManager(BaseSFGerritService):
                               'myproject', ['dev-group', ])
 
     def test_create(self):
-        patches = [patch.object(GerritUtils,
-                                'get_user_groups_id'),
-                   patch.object(GerritUtils,
-                                'get_group_id'),
-                   patch.object(self.gerrit.role,
-                                'is_admin'),
-                   patch.object(GerritUtils,
-                                'add_group_member'),
-                   patch.object(GerritUtils,
-                                'group_exists'), ]
-
         # Testing a ptl requestor
-        with nested(*patches) as (get_my_groups_id,
-                                  get_group_id,
-                                  is_admin,
-                                  add_group_member,
-                                  group_exists):
+        with patch.object(GerritUtils,
+                          'get_user_groups_id') as get_my_groups_id, \
+                patch.object(GerritUtils, 'get_group_id') as get_group_id, \
+                patch.object(self.gerrit.role, 'is_admin') as is_admin, \
+                patch.object(GerritUtils,
+                             'add_group_member') as add_group_member, \
+                patch.object(GerritUtils, 'group_exists') as group_exists:
             get_my_groups_id.return_value = ('ptl_gid', )
             get_group_id.side_effect = ggi_side_effect
             is_admin.return_value = False
@@ -333,11 +298,14 @@ class TestSFGerritMembershipManager(BaseSFGerritService):
                      call('test_user@sftests', 'testproject-core'),
                      call('test_user@sftests', 'testproject-dev'), ]
             add_group_member.assert_has_calls(calls)
-        with nested(*patches) as (get_my_groups_id,
-                                  get_group_id,
-                                  is_admin,
-                                  add_group_member,
-                                  group_exists):
+
+        with patch.object(GerritUtils,
+                          'get_user_groups_id') as get_my_groups_id, \
+                patch.object(GerritUtils, 'get_group_id') as get_group_id, \
+                patch.object(self.gerrit.role, 'is_admin') as is_admin, \
+                patch.object(GerritUtils,
+                             'add_group_member') as add_group_member, \
+                patch.object(GerritUtils, 'group_exists') as group_exists:
             get_my_groups_id.return_value = ('ptl_gid', )
             get_group_id.side_effect = ggi_side_effect
             is_admin.return_value = False
@@ -350,11 +318,15 @@ class TestSFGerritMembershipManager(BaseSFGerritService):
             calls = [call('test_user@sftests', 'testproject-core'),
                      call('test_user@sftests', 'testproject-dev'), ]
             add_group_member.assert_has_calls(calls)
-        with nested(*patches) as (get_my_groups_id,
-                                  get_group_id,
-                                  is_admin,
-                                  add_group_member,
-                                  group_exists):
+
+        with patch.object(GerritUtils,
+                          'get_user_groups_id') as get_my_groups_id, \
+                patch.object(GerritUtils, 'get_group_id') as get_group_id, \
+                patch.object(self.gerrit.role, 'is_admin') as is_admin, \
+                patch.object(GerritUtils,
+                             'add_group_member') as add_group_member, \
+                patch.object(GerritUtils, 'group_exists') as group_exists:
+
             get_my_groups_id.return_value = ('ptl_gid', )
             get_group_id.side_effect = ggi_side_effect
             is_admin.return_value = False
@@ -365,12 +337,16 @@ class TestSFGerritMembershipManager(BaseSFGerritService):
                                           ['dev-group'])
             calls = [call('test_user@sftests', 'testproject-dev'), ]
             add_group_member.assert_has_calls(calls)
+
         # Test a core-dev user
-        with nested(*patches) as (get_my_groups_id,
-                                  get_group_id,
-                                  is_admin,
-                                  add_group_member,
-                                  group_exists):
+        with patch.object(GerritUtils,
+                          'get_user_groups_id') as get_my_groups_id, \
+                patch.object(GerritUtils, 'get_group_id') as get_group_id, \
+                patch.object(self.gerrit.role, 'is_admin') as is_admin, \
+                patch.object(GerritUtils,
+                             'add_group_member') as add_group_member, \
+                patch.object(GerritUtils, 'group_exists') as group_exists:
+
             get_my_groups_id.return_value = ('core_gid', )
             get_group_id.side_effect = ggi_side_effect
             is_admin.return_value = False
@@ -385,28 +361,19 @@ class TestSFGerritMembershipManager(BaseSFGerritService):
             add_group_member.assert_has_calls(calls)
 
     def test_delete(self):
-        patches = [patch.object(GerritUtils,
-                                'get_user_groups_id'),
-                   patch.object(GerritUtils,
-                                'get_group_id'),
-                   patch.object(self.gerrit.role,
-                                'is_admin'),
-                   patch.object(GerritUtils,
-                                'delete_group_member'),
-                   patch.object(GerritUtils,
-                                'group_exists'),
-                   patch.object(GerritUtils,
-                                'get_group_member_id'), ]
         self.assertRaises(exc.UnavailableActionError,
                           self.gerrit.membership.delete,
                           'requestor', 'u', 'proj', 'made_up_group')
         # Test a ptl user
-        with nested(*patches) as (get_my_groups_id,
-                                  get_group_id,
-                                  is_admin,
-                                  delete_group_member,
-                                  group_exists,
-                                  get_group_member_id):
+        with patch.object(GerritUtils,
+                          'get_user_groups_id') as get_my_groups_id, \
+                patch.object(GerritUtils, 'get_group_id') as get_group_id, \
+                patch.object(self.gerrit.role, 'is_admin') as is_admin, \
+                patch.object(GerritUtils,
+                             'delete_group_member') as delete_group_member, \
+                patch.object(GerritUtils, 'group_exists') as group_exists, \
+                patch.object(GerritUtils,
+                             'get_group_member_id') as get_group_member_id:
             get_my_groups_id.return_value = ('ptl_gid',)
             get_group_id.side_effect = ggi_side_effect
             is_admin.return_value = False
@@ -424,24 +391,14 @@ class TestSFGerritMembershipManager(BaseSFGerritService):
 
 class TestSFGerritProjectManager(BaseSFGerritService):
     def test_get(self):
-        patches = [patch.object(GerritUtils,
-                                'get_project'),
-                   patch.object(GerritUtils,
-                                'get_projects'),
-                   patch.object(self.gerrit.role,
-                                'is_admin'),
-                   patch.object(GerritUtils,
-                                'get_my_groups'),
-                   patch.object(GerritUtils,
-                                'get_user_groups'),
-                   patch.object(GerritUtils,
-                                'get_project_owner'), ]
-        with nested(*patches) as (get_project,
-                                  get_projects,
-                                  is_admin,
-                                  get_my_groups,
-                                  get_user_groups,
-                                  get_project_owner):
+        with patch.object(GerritUtils, 'get_project') as get_project, \
+                patch.object(GerritUtils, 'get_projects') as get_projects, \
+                patch.object(self.gerrit.role, 'is_admin') as is_admin, \
+                patch.object(GerritUtils, 'get_my_groups') as get_my_groups, \
+                patch.object(GerritUtils,
+                             'get_user_groups') as get_user_groups, \
+                patch.object(GerritUtils,
+                             'get_project_owner') as get_project_owner:
             get_project.return_value = 'p1'
             get_projects.return_value = ['p1', 'p2', 'p3', 'p4']
             is_admin.return_value = False
@@ -463,9 +420,7 @@ class TestSFGerritProjectManager(BaseSFGerritService):
                              self.gerrit.project.get(by_user=True))
 
     def test_get_groups(self):
-        patches = [patch.object(GerritUtils,
-                                'get_project_groups'), ]
-        with nested(*patches) as (gpg,):
+        with patch.object(GerritUtils, 'get_project_groups') as gpg:
             gpg.return_value = False
             self.assertEqual([],
                              self.gerrit.project.get_groups('p1'))
@@ -474,14 +429,13 @@ class TestSFGerritProjectManager(BaseSFGerritService):
                              self.gerrit.project.get_groups('p1'))
 
     def test_create(self):
-        patches = [patch.object(self.gerrit.role, 'create'),
-                   patch.object(self.gerrit.membership, 'create'),
-                   patch.object(GerritUtils, 'create_project'),
-                   patch.object(self.gerrit.repository, 'create'),
-                   patch.object(GerritUtils, 'project_exists'), ]
-        with nested(*patches) as (r_create, m_create,
-                                  create_project, rep_create,
-                                  project_exists):
+        with patch.object(self.gerrit.role, 'create') as r_create, \
+                patch.object(self.gerrit.membership, 'create'), \
+                patch.object(GerritUtils,
+                             'create_project') as create_project, \
+                patch.object(self.gerrit.repository,
+                             'create') as rep_create, \
+                patch.object(GerritUtils, 'project_exists') as project_exists:
             project_exists.return_value = False
             self.gerrit.project.create('p_name', 'u_name')
             role_calls = [call('u_name',
@@ -512,15 +466,13 @@ class TestSFGerritProjectManager(BaseSFGerritService):
             r_create.assert_has_calls(role_calls)
 
     def test_delete(self):
-        patches = [patch.object(GerritUtils, 'get_project_owner'),
-                   patch.object(GerritUtils,
-                                'get_user_groups_id'),
-                   patch.object(self.gerrit.role, 'is_admin'),
-                   patch.object(self.gerrit.role, 'delete'),
-                   patch.object(GerritUtils,
-                                'delete_project'), ]
-        with nested(*patches) as (get_project_owner, get_my_groups_id,
-                                  is_admin, role_delete, delete_project):
+        with patch.object(GerritUtils,
+                          'get_project_owner') as get_project_owner, \
+                patch.object(GerritUtils,
+                             'get_user_groups_id') as get_my_groups_id, \
+                patch.object(self.gerrit.role, 'is_admin') as is_admin, \
+                patch.object(self.gerrit.role, 'delete') as role_delete, \
+                patch.object(GerritUtils, 'delete_project') as delete_project:
             is_admin.return_value = False
             get_project_owner.return_value = 'nope'
             get_my_groups_id.return_value = ['nopity', 'nopenope']
@@ -539,12 +491,11 @@ class TestSFGerritProjectManager(BaseSFGerritService):
 
 class TestSFGerritGroupManager(BaseSFGerritService):
     def test_get(self):
-        patches = [patch.object(GerritUtils, 'get_project_groups_id'),
-                   patch.object(GerritUtils, 'get_projects'),
-                   patch.object(GerritUtils, 'get_group_id'),
-                   patch.object(GerritUtils, 'get_group_members'),
-                   patch.object(GerritUtils, 'get_groups')]
-        with nested(*patches) as (a, b, c, d, e):
+        with patch.object(GerritUtils, 'get_project_groups_id') as a, \
+                patch.object(GerritUtils, 'get_projects'), \
+                patch.object(GerritUtils, 'get_group_id') as c, \
+                patch.object(GerritUtils, 'get_group_members') as d, \
+                patch.object(GerritUtils, 'get_groups'):
             a.return_value = {'p1': {'owners': ['1'],
                                      'others': ['2']}}
             c.return_value = 3
@@ -553,10 +504,9 @@ class TestSFGerritGroupManager(BaseSFGerritService):
             self.assertIn('user1@sftests.com', ret['grp1'])
 
     def test_create(self):
-        patches = [patch.object(GerritUtils, 'create_group'),
-                   patch.object(GerritUtils, 'delete_group_member'),
-                   patch.object(GerritUtils, 'add_group_member')]
-        with nested(*patches) as (a, b, c):
+        with patch.object(GerritUtils, 'create_group') as a, \
+                patch.object(GerritUtils, 'delete_group_member') as b, \
+                patch.object(GerritUtils, 'add_group_member') as c:
             self.gerrit.group.create('grp1', 'user1@sftests.com',
                                      'Group desc')
             a.assert_called_with('grp1', 'Group desc')
@@ -564,13 +514,12 @@ class TestSFGerritGroupManager(BaseSFGerritService):
             c.assert_called_with('user1@sftests.com', 'grp1')
 
     def test_update(self):
-        patches = [patch.object(GerritUtils, 'get_project_groups_id'),
-                   patch.object(GerritUtils, 'get_projects'),
-                   patch.object(GerritUtils, 'get_group_id'),
-                   patch.object(GerritUtils, 'get_group_members'),
-                   patch.object(GerritUtils, 'add_group_member'),
-                   patch.object(GerritUtils, 'delete_group_member')]
-        with nested(*patches) as (a, b, c, d, e, f):
+        with patch.object(GerritUtils, 'get_project_groups_id') as a, \
+                patch.object(GerritUtils, 'get_projects'), \
+                patch.object(GerritUtils, 'get_group_id') as c, \
+                patch.object(GerritUtils, 'get_group_members') as d, \
+                patch.object(GerritUtils, 'add_group_member') as e, \
+                patch.object(GerritUtils, 'delete_group_member') as f:
             a.return_value = {'p1': {'owners': ['1'],
                                      'others': ['2']}}
             c.return_value = 3

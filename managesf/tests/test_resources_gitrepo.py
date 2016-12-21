@@ -21,7 +21,6 @@ import tempfile
 from unittest import TestCase
 
 from mock import patch, call
-from contextlib import nested
 
 from managesf.tests import dummy_conf
 from managesf.model.yamlbkd.resources.gitrepository import GitRepositoryOps
@@ -39,17 +38,16 @@ class GitRepositoryOpsTest(TestCase):
         cls.auth_patch.stop()
 
     def test_create(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.create_project'),
-            patch.object(GitRepositoryOps, 'install_acl'),
-            patch.object(GitRepositoryOps, 'install_git_review_file'),
-        ]
         o = GitRepositoryOps(self.conf, None)
 
         kwargs = {'name': 'space/g1',
                   'description': 'A description',
                   'acl': 'a1'}
-        with nested(*patches) as (cp, ia, ig):
+
+        with patch('pysflib.sfgerrit.GerritUtils.create_project') as cp, \
+                patch.object(GitRepositoryOps, 'install_acl') as ia, \
+                patch.object(GitRepositoryOps,
+                             'install_git_review_file') as ig:
             ia.return_value = []
             ig.return_value = []
             logs = o.create(**kwargs)
@@ -58,7 +56,10 @@ class GitRepositoryOpsTest(TestCase):
                              call('space/g1', 'A description',
                                   ['Administrators']))
             self.assertEqual(len(logs), 0)
-        with nested(*patches) as (cp, ia, ig):
+        with patch('pysflib.sfgerrit.GerritUtils.create_project') as cp, \
+                patch.object(GitRepositoryOps, 'install_acl') as ia, \
+                patch.object(GitRepositoryOps,
+                             'install_git_review_file') as ig:
             ia.return_value = []
             ig.return_value = []
             cp.side_effect = Exception('Random Error')
@@ -68,15 +69,13 @@ class GitRepositoryOpsTest(TestCase):
                           logs)
 
     def test_install_git_review_file(self):
-        patches = [
-            patch('managesf.services.gerrit.utils.GerritRepo.clone'),
-            patch('managesf.services.gerrit.utils.GerritRepo.push_master'),
-        ]
         o = GitRepositoryOps(self.conf, {})
 
         kwargs = {'name': 'space/g1'}
 
-        with nested(*patches) as (c, pm):
+        with patch('managesf.services.gerrit.utils.GerritRepo.clone') as c, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'push_master') as pm:
             logs = o.install_git_review_file(**kwargs)
             self.assertTrue(c.called)
             self.assertTrue(pm.called)
@@ -88,11 +87,6 @@ class GitRepositoryOpsTest(TestCase):
             self.assertEqual(len(logs), 0)
 
     def test_install_acl(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.get_group_id'),
-            patch('managesf.services.gerrit.utils.GerritRepo.clone'),
-            patch('managesf.services.gerrit.utils.GerritRepo.push_config'),
-        ]
         new = {
             'resources': {
                 'acls': {
@@ -120,7 +114,11 @@ class GitRepositoryOpsTest(TestCase):
               'Anonymous Users': '777',
               'Non-Interactive Users': '888'}
 
-        with nested(*patches) as (ggi, c, pc):
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'clone') as c, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'push_config') as pc:
             ggi.side_effect = lambda x: db[x]
             logs = o.install_acl(**kwargs)
             self.assertIn(call('Administrators'), ggi.call_args_list)
@@ -147,7 +145,11 @@ class GitRepositoryOpsTest(TestCase):
               'Non-Interactive Users': '888',
               'sf/g1': 999}
 
-        with nested(*patches) as (ggi, c, pc):
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'clone') as c, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'push_config') as pc:
             ggi.side_effect = lambda x: db[x]
             logs = o.install_acl(**kwargs)
             self.assertGreater(
@@ -162,7 +164,11 @@ class GitRepositoryOpsTest(TestCase):
                 int(str(pc.call_args).find("description = A description")), 0)
             self.assertEqual(len(logs), 0)
 
-        with nested(*patches) as (ggi, c, pc):
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'clone') as c, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'push_config') as pc:
             ggi.side_effect = lambda x: db[x]
             pc.side_effect = Exception('Random error')
             logs = o.install_acl(**kwargs)
@@ -182,13 +188,10 @@ class GitRepositoryOpsTest(TestCase):
                 self.assertIn('log2', logs)
 
     def test_delete(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.delete_project'),
-        ]
         o = GitRepositoryOps(self.conf, None)
 
         kwargs = {'name': 'space/g1'}
-        with nested(*patches) as (dp, ):
+        with patch('pysflib.sfgerrit.GerritUtils.delete_project') as dp:
             logs = o.delete(**kwargs)
             self.assertEqual(len(dp.call_args_list), 1)
             self.assertEqual(dp.call_args_list[0],
@@ -196,11 +199,6 @@ class GitRepositoryOpsTest(TestCase):
             self.assertEqual(len(logs), 0)
 
     def test_get_all(self):
-        patches = [
-            patch('pysflib.sfgerrit.GerritUtils.get_projects'),
-            patch('managesf.services.gerrit.utils.GerritRepo'),
-        ]
-
         a1 = """[project]
     description = This is the project p1
 [access "refs/*"]
@@ -276,7 +274,8 @@ class GitRepositoryOpsTest(TestCase):
             return FakeGerritRepo(name, conf)
 
         o = GitRepositoryOps(self.conf, None)
-        with nested(*patches) as (gps, gr):
+        with patch('pysflib.sfgerrit.GerritUtils.get_projects') as gps, \
+                patch('managesf.services.gerrit.utils.GerritRepo') as gr:
             gps.side_effect = fake_get_projects
             gr.side_effect = fake_repo_utils
             logs, tree = o.get_all()

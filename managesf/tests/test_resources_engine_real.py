@@ -17,21 +17,12 @@
 
 from unittest import TestCase
 from mock import patch
-from contextlib import nested
 
 from managesf.model.yamlbkd import engine
 
 
 class EngineRealResourcesTest(TestCase):
     def test_group_validation(self):
-        patches = [
-            patch('managesf.model.yamlbkd.engine.'
-                  'SFResourceBackendEngine._load_resources_data'),
-            patch('os.path.isdir'),
-            patch('os.mkdir'),
-            patch('managesf.model.yamlbkd.resources.group.'
-                  'GroupOps.extra_validations'),
-        ]
         master = {
             'resources': {
                 'groups': {
@@ -59,7 +50,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
 
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -89,7 +85,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
 
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -125,7 +126,12 @@ class EngineRealResourcesTest(TestCase):
                     }
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -161,7 +167,12 @@ class EngineRealResourcesTest(TestCase):
                     }
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -192,7 +203,12 @@ class EngineRealResourcesTest(TestCase):
                     }
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = ['Check group members [notfound@sftests.com '
                                'does not exists]: err API unable to find '
@@ -209,15 +225,6 @@ class EngineRealResourcesTest(TestCase):
                 "Resource [type: groups, ID: sf/g1] extra validations failed",
                 logs)
             self.assertEqual(len(logs), 2)
-
-        patches = [
-            patch('managesf.model.yamlbkd.engine.'
-                  'SFResourceBackendEngine._load_resources_data'),
-            patch('os.path.isdir'),
-            patch('os.mkdir'),
-            patch('managesf.model.yamlbkd.resources.group.GroupOps.'
-                  'check_account_members'),
-        ]
 
         master = {
             'resources': {
@@ -238,7 +245,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
 
-        with nested(*patches) as (l, i, m, cam):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.GroupOps.'
+                      'check_account_members') as cam:
             l.return_value = (master, new)
             cam.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -253,14 +265,6 @@ class EngineRealResourcesTest(TestCase):
             self.assertEqual(len(logs), 2)
 
     def test_acls_validation(self):
-        patches = [
-            patch('managesf.model.yamlbkd.engine.'
-                  'SFResourceBackendEngine._load_resources_data'),
-            patch('os.path.isdir'),
-            patch('os.mkdir'),
-            patch('managesf.model.yamlbkd.resources.gitacls.'
-                  'ACLOps.extra_validations'),
-        ]
         master = {
             'resources': {
                 'acls': {}
@@ -276,8 +280,12 @@ class EngineRealResourcesTest(TestCase):
                     }
                 }
             }
-
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -323,7 +331,12 @@ class EngineRealResourcesTest(TestCase):
                     }
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -367,7 +380,12 @@ class EngineRealResourcesTest(TestCase):
                     }
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -408,7 +426,12 @@ class EngineRealResourcesTest(TestCase):
                 'groups': {},
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -421,17 +444,6 @@ class EngineRealResourcesTest(TestCase):
                 'resource [type: groups, ID: sf/g1]',
                 logs)
             self.assertEqual(len(logs), 1)
-
-        patches = [
-            patch('managesf.model.yamlbkd.engine.'
-                  'SFResourceBackendEngine._load_resources_data'),
-            patch('os.path.isdir'),
-            patch('os.mkdir'),
-            # Re-enable the ACLs extra validation but mock
-            # the group one
-            patch('managesf.model.yamlbkd.resources.group.'
-                  'GroupOps.extra_validations'),
-        ]
 
         master = {
             'resources': {
@@ -478,7 +490,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
 
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -525,7 +542,12 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
 
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -583,8 +605,12 @@ wrong ! This string won't be accepted by Gerrit !
                     }
                 }
             }
-
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -635,7 +661,12 @@ wrong ! This string won't be accepted by Gerrit !
                     }
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -685,21 +716,18 @@ wrong ! This string won't be accepted by Gerrit !
                     }
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
 
     def test_gitrepo_validation(self):
-        patches = [
-            patch('managesf.model.yamlbkd.engine.'
-                  'SFResourceBackendEngine._load_resources_data'),
-            patch('os.path.isdir'),
-            patch('os.mkdir'),
-            patch('managesf.model.yamlbkd.resources.gitacls.'
-                  'ACLOps.extra_validations'),
-        ]
         master = {
             'resources': {
                 'acls': {
@@ -725,8 +753,12 @@ wrong ! This string won't be accepted by Gerrit !
                     }
                 }
             }
-
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -768,7 +800,12 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
 
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -808,7 +845,12 @@ wrong ! This string won't be accepted by Gerrit !
                 'acls': {},
                 }
             }
-        with nested(*patches) as (l, i, m, xv):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -820,16 +862,6 @@ wrong ! This string won't be accepted by Gerrit !
             self.assertEqual(len(logs), 1)
 
     def test_project_validation(self):
-        patches = [
-            patch('managesf.model.yamlbkd.engine.'
-                  'SFResourceBackendEngine._load_resources_data'),
-            patch('os.path.isdir'),
-            patch('os.mkdir'),
-            patch('managesf.model.yamlbkd.resources.gitacls.'
-                  'ACLOps.extra_validations'),
-            patch('managesf.model.yamlbkd.resources.group.'
-                  'GroupOps.extra_validations'),
-        ]
         master = {
             'resources': {
                 'projects': {},
@@ -873,7 +905,14 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
 
-        with nested(*patches) as (l, i, m, xv, xv2):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv2:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -907,7 +946,14 @@ wrong ! This string won't be accepted by Gerrit !
                     }
                 }
             }
-        with nested(*patches) as (l, i, m, xv, xv2):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv2:
             l.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
@@ -973,7 +1019,14 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
         }
-        with nested(*patches) as (l, i, m, xv, xv2):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv2:
             l.return_value = (master, new)
             xv.return_value = []
             xv2.return_value = []
@@ -993,14 +1046,6 @@ wrong ! This string won't be accepted by Gerrit !
             self.assertEqual(len(logs), 4)
 
     def test_get_missing_resources(self):
-        patches = [
-            patch('managesf.model.yamlbkd.engine.'
-                  'SFResourceBackendEngine.get'),
-            patch('managesf.model.yamlbkd.resources.gitrepository.'
-                  'GitRepositoryOps.get_all'),
-            patch('managesf.model.yamlbkd.resources.group.'
-                  'GroupOps.get_all'),
-        ]
         eng = engine.SFResourceBackendEngine(None, None)
         current_resources = {
             'resources': {
@@ -1084,8 +1129,12 @@ wrong ! This string won't be accepted by Gerrit !
                 },
             }
         }
-
-        with nested(*patches) as (g, gar, gag):
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine.get') as g, \
+                patch('managesf.model.yamlbkd.resources.gitrepository.'
+                      'GitRepositoryOps.get_all') as gar, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.get_all') as gag:
             gar.return_value = ([], gr_reality)
             gag.return_value = ([], g_reality)
             g.return_value = current_resources

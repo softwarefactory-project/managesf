@@ -17,7 +17,6 @@
 
 from unittest import TestCase
 from mock import patch, call, MagicMock
-from contextlib import nested
 from redmine import managers
 from redmine.exceptions import ValidationError
 
@@ -188,11 +187,10 @@ class TestSFRedmineRoleManager(BaseSFRedmineService):
                          self.redmine.role.is_admin('not_an_admin'))
 
     def test_get(self):
-        patches = [patch.object(RedmineUtils,
-                                'get_user_id_by_username'),
-                   patch.object(RedmineUtils,
-                                'get_project_roles_for_user'), ]
-        with nested(*patches) as (uid_mock, roles_mock):
+        with patch.object(RedmineUtils,
+                          'get_user_id_by_username') as uid_mock, \
+                patch.object(RedmineUtils,
+                             'get_project_roles_for_user') as roles_mock:
             uid_mock.return_value = 'test@test'
             roles_mock.return_value = ['Developer']
             self.assertEqual(['Developer'],
@@ -204,8 +202,7 @@ class TestSFRedmineRoleManager(BaseSFRedmineService):
 
 class TestSFRedmineUserManager(BaseSFRedmineService):
     def test_create(self):
-        patches = [patch.object(RedmineUtils, 'create_user')]
-        with nested(*patches) as (cu_mock,):
+        with patch.object(RedmineUtils, 'create_user') as cu_mock:
             self.redmine.user.create('test_username',
                                      'test@test',
                                      'test_lastname')
@@ -234,13 +231,11 @@ class TestSFRedmineUserManager(BaseSFRedmineService):
         self.assertRaises(TypeError,
                           self.redmine.user.delete,
                           'mail@address.com', 'username')
-        patches = [patch.object(RedmineUtils, 'get_user_id'),
-                   patch.object(managers.ResourceManager,
-                                'delete'),
-                   patch.object(RedmineUtils, 'get_user_id_by_username'), ]
-        with nested(*patches) as (gui, d, guibu):
+        with patch.object(RedmineUtils, 'get_user_id') as gui, \
+                patch.object(managers.ResourceManager, 'delete') as d, \
+                patch.object(RedmineUtils, 'get_user_id_by_username') as guib:
             gui.return_value = 1
-            guibu.return_value = 2
+            guib.return_value = 2
             self.redmine.user.delete(username='blip')
             d.assert_called_with(2)
             self.redmine.user.delete(email='blip')
@@ -254,9 +249,8 @@ class TestSFRedmineBackupManager(BaseSFRedmineService):
 
 class TestSFRedmineMembershipManager(BaseSFRedmineService):
     def test_get_uid(self):
-        patches = [patch.object(RedmineUtils, 'get_user_id'),
-                   patch.object(RedmineUtils, 'get_user_id_by_username')]
-        with nested(*patches) as (m, u):
+        with patch.object(RedmineUtils, 'get_user_id') as m, \
+                patch.object(RedmineUtils, 'get_user_id_by_username') as u:
             u.return_value = None
             m.return_value = 'testuserid2'
             self.assertEqual('testuserid2',
@@ -284,21 +278,16 @@ class TestSFRedmineMembershipManager(BaseSFRedmineService):
                               'myproject', ['dev-group', ])
 
     def test_create_no_prior_membership(self):
-        patches = [patch.object(self.redmine.role,
-                                'get'),
-                   patch.object(RedmineUtils,
-                                'get_role_id'),
-                   patch.object(self.redmine.membership,
-                                '_get_uid'),
-                   patch.object(RedmineUtils,
-                                'get_project_membership_for_user'),
-                   patch.object(RedmineUtils,
-                                'update_project_membership'), ]
-        with nested(*patches) as (role_get,
-                                  role_id_get,
-                                  uid_get,
-                                  project_membership_user_get,
-                                  project_membership_update):
+        with patch.object(self.redmine.role, 'get') as role_get, \
+                patch.object(RedmineUtils, 'get_role_id') as role_id_get, \
+                patch.object(self.redmine.membership,
+                             '_get_uid') as uid_get, \
+                patch.object(RedmineUtils,
+                             'get_project_membership_for_user') \
+                as project_membership_user_get, \
+                patch.object(RedmineUtils,
+                             'update_project_membership') \
+                as project_membership_update:
             role_get.return_value = ['Manager', 'Developer']
             role_id_get.return_value = 'generic_role_id'
             uid_get.return_value = 'meh'
@@ -326,24 +315,19 @@ class TestSFRedmineMembershipManager(BaseSFRedmineService):
                                                          [memberships])
 
     def test_create_with_prior_membership(self):
-        patches = [patch.object(self.redmine.role,
-                                'get'),
-                   patch.object(RedmineUtils,
-                                'get_role_id'),
-                   patch.object(self.redmine.membership,
-                                '_get_uid'),
-                   patch.object(RedmineUtils,
-                                'get_project_membership_for_user'),
-                   patch.object(RedmineUtils,
-                                'get_project_roles_for_user'),
-                   patch.object(RedmineUtils,
-                                'update_membership'), ]
-        with nested(*patches) as (role_get,
-                                  role_id_get,
-                                  uid_get,
-                                  project_membership_user_get,
-                                  project_roles_get,
-                                  membership_update):
+        with patch.object(self.redmine.role,
+                          'get') as role_get, \
+                patch.object(RedmineUtils, 'get_role_id') as role_id_get, \
+                patch.object(self.redmine.membership,
+                             '_get_uid') as uid_get, \
+                patch.object(RedmineUtils,
+                             'get_project_membership_for_user') \
+                as project_membership_user_get, \
+                patch.object(RedmineUtils,
+                             'get_project_roles_for_user') \
+                as project_roles_get, \
+                patch.object(RedmineUtils,
+                             'update_membership') as membership_update:
             role_get.return_value = ['Manager', 'Developer']
             role_id_get.return_value = 'generic_role_id'
             uid_get.return_value = 'meh'
@@ -367,15 +351,11 @@ class TestSFRedmineMembershipManager(BaseSFRedmineService):
                                                  ['generic_role_id', ] * 6)
 
     def test_delete_failure(self):
-        patches = [patch.object(self.redmine.membership,
-                                '_get_uid'),
-                   patch.object(self.redmine.membership,
-                                'get'),
-                   patch.object(self.redmine.role,
-                                'get'),
-                   patch.object(RedmineUtils,
-                                'get_project_membership_for_user'), ]
-        with nested(*patches) as (a, b, c, d):
+        with patch.object(self.redmine.membership, '_get_uid') as a, \
+                patch.object(self.redmine.membership, 'get') as b, \
+                patch.object(self.redmine.role, 'get') as c, \
+                patch.object(RedmineUtils,
+                             'get_project_membership_for_user') as d:
             a.return_value = 'testuser'
             b.return_value = 'membership'
             c.return_value = ['Developer', ]
@@ -397,9 +377,8 @@ class TestSFRedmineMembershipManager(BaseSFRedmineService):
 
 class TestSFRedmineProjectManager(BaseSFRedmineService):
     def test_get(self):
-        patches = [patch.object(managers.ResourceManager, 'get'),
-                   patch.object(managers.ResourceManager, 'all'), ]
-        with nested(*patches) as (g, a):
+        with patch.object(managers.ResourceManager, 'get') as g, \
+                patch.object(managers.ResourceManager, 'all') as a:
             g.return_value = ['p_test', ]
             a.return_value = ['p1', 'p2']
             self.assertEqual(['p_test', ],
@@ -409,9 +388,8 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
                              self.redmine.project.get())
 
     def test_create(self):
-        patches = [patch.object(self.redmine.project, '_create'),
-                   patch.object(self.redmine.membership, 'create'), ]
-        with nested(*patches) as (_c, m_c):
+        with patch.object(self.redmine.project, '_create') as _c, \
+                patch.object(self.redmine.membership, 'create') as m_c:
             self.redmine.project.create('ns/prj', 'u')
             _c.assert_called_with('ns_prj', '', False)
             membership_calls = [call(requestor='u',
@@ -432,9 +410,8 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
             _c.assert_called_with('p', 'eh', True)
 
     def test_create_project_exists(self):
-        patches = [patch.object(self.redmine.project, '_create'),
-                   patch.object(self.redmine.membership, 'create'), ]
-        with nested(*patches) as (_c, m_c):
+        with patch.object(self.redmine.project, '_create') as _c, \
+                patch.object(self.redmine.membership, 'create') as m_c:
             err = 'Identifier has already been taken'
             _c.side_effect = ValidationError(err)
             self.redmine.project.create('p', 'u')
@@ -456,9 +433,8 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
                               self.redmine.project.create, 'pp', 'uu')
 
     def test_delete(self):
-        patches = [patch.object(self.redmine.role, 'get'),
-                   patch.object(self.redmine.project, '_delete'), ]
-        with nested(*patches) as (g, d):
+        with patch.object(self.redmine.role, 'get') as g, \
+                patch.object(self.redmine.project, '_delete') as d:
             g.return_value = ['Manager', ]
             self.redmine.project.delete('nss/proj1', 'u')
             d.assert_called_with('nss_proj1')
@@ -466,34 +442,37 @@ class TestSFRedmineProjectManager(BaseSFRedmineService):
 
 class TestRedmineGroupManager(BaseSFRedmineService):
     def test_create(self):
-        patches = [patch.object(RedmineUtils, 'create_group'),
-                   patch.object(RedmineUtils, 'get_group_id'),
-                   patch.object(RedmineUtils, 'get_user_id'),
-                   patch.object(RedmineUtils, 'set_group_members')]
-        with nested(*patches) as (a, b, c, d):
+        with patch.object(RedmineUtils, 'create_group') as a, \
+                patch.object(RedmineUtils, 'get_group_id') as b, \
+                patch.object(RedmineUtils, 'get_user_id') as c, \
+                patch.object(RedmineUtils, 'set_group_members') as d:
             a.return_value = True
             b.return_value = 1
             c.return_value = 2
             self.redmine.group.create('grp1', 'user1@sftests.com')
             a.assert_called_with('grp1')
             d.assert_called_with(1, [2])
-        with nested(*patches) as (a, b, c, d):
+        with patch.object(RedmineUtils, 'create_group') as a, \
+                patch.object(RedmineUtils, 'get_group_id') as b, \
+                patch.object(RedmineUtils, 'get_user_id') as c, \
+                patch.object(RedmineUtils, 'set_group_members') as d:
             a.return_value = None
             self.assertRaises(exc.CreateGroupException,
                               self.redmine.group.create, 'grp1',
                               'user1@sftests.com')
 
     def test_update(self):
-        patches = [patch.object(RedmineUtils, 'get_group_id'),
-                   patch.object(RedmineUtils, 'get_user_id'),
-                   patch.object(RedmineUtils, 'set_group_members')]
-        with nested(*patches) as (a, b, c):
+        with patch.object(RedmineUtils, 'get_group_id') as a, \
+                patch.object(RedmineUtils, 'get_user_id') as b, \
+                patch.object(RedmineUtils, 'set_group_members') as c:
             a.return_value = 1
             b.side_effect = [10, 11]
             self.redmine.group.update('grp1', ['user1@sftests.com',
                                                'user2@sftests.com'])
             c.assert_called_with(1, [10, 11])
-        with nested(*patches) as (a, b, c):
+        with patch.object(RedmineUtils, 'get_group_id') as a, \
+                patch.object(RedmineUtils, 'get_user_id') as b, \
+                patch.object(RedmineUtils, 'set_group_members') as c:
             a.return_value = None
             self.assertRaises(exc.GroupNotFoundException,
                               self.redmine.group.update,
@@ -502,13 +481,13 @@ class TestRedmineGroupManager(BaseSFRedmineService):
                                'user2@sftests.com'])
 
     def test_delete(self):
-        patches = [patch.object(RedmineUtils, 'get_group_id'),
-                   patch.object(RedmineUtils, 'delete_group')]
-        with nested(*patches) as (a, b):
+        with patch.object(RedmineUtils, 'get_group_id') as a, \
+                patch.object(RedmineUtils, 'delete_group') as b:
             a.return_value = 1
             self.redmine.group.delete('grp1')
             b.assert_called_with(1)
-        with nested(*patches) as (a, b):
+        with patch.object(RedmineUtils, 'get_group_id') as a, \
+                patch.object(RedmineUtils, 'delete_group') as b:
             a.return_value = None
             self.assertRaises(exc.GroupNotFoundException,
                               self.redmine.group.delete, 'grp1')
