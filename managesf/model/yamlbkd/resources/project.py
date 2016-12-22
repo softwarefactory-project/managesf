@@ -69,7 +69,7 @@ class Project(BaseResource):
         ),
         'commit-hook': (
             str,
-            '^(SFRedmine|)$',
+            '^(SFRedmine|SFStoryboard|)$',
             False,
             "",
             True,

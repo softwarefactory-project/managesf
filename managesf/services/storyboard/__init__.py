@@ -18,6 +18,7 @@ from storyboardclient.v1.client import Client as StoryboardClient
 
 from managesf.services import base
 from managesf.services.storyboard import user
+from managesf.services.storyboard import hooks
 
 
 class Storyboard(base.BaseServicePlugin):
@@ -46,3 +47,4 @@ class SoftwareFactoryStoryboard(Storyboard):
     def __init__(self, conf):
         super(SoftwareFactoryStoryboard, self).__init__(conf)
         self.user = user.StoryboardUserManager(self)
+        self.hooks = hooks.StoryboardHooksManager(self)

@@ -39,6 +39,7 @@ class dummy_conf():
         'db_password': 'gerrit_db_password',
     }
     storyboard = {
+        'base_url': 'http://sftests.com/r/',
         'host': 'storyboard',
         'url': 'http://storyboard:20000/v1/',
         'service_token': 'SECRET',

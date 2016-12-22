@@ -76,3 +76,87 @@ class TestSFStoryboardUserManager(BaseSFStoryboardService):
             get_user.return_value = 42
             self.storyboard.user.delete(email="jdoe@doe.com")
             sql_exec.assert_called_once()
+
+    def test_hook(self):
+
+        class FakeClient:
+            class FakeTasks:
+                status = "todo"
+
+                def get(self, task):
+                    return self
+
+                def update(self, id, status):
+                    self.status = status
+
+            class FakeStories:
+                comments_db = []
+
+                def get(self, story):
+                    self.comments = self
+                    return self
+
+                def list(self):
+                    return self.comments_db
+
+                def create(self, content):
+                    class FakeComment:
+                        def __init__(self, content):
+                            self.content = content
+                    self.comments_db.append(FakeComment(content))
+
+            tasks = FakeTasks()
+            stories = FakeStories()
+
+        with patch.object(self.storyboard, 'get_client') as client:
+            fake_client = FakeClient()
+            client.return_value = fake_client
+            hooks = self.storyboard.hooks
+
+            # Test no issue referenced
+            ret = hooks.patchset_created(project='config',
+                                         commit_message="None")
+            self.assertEquals(ret, "No issue found in the commit message, "
+                                   "nothing to do.")
+
+            # Test basic workflow (todo->inprogress->merged)
+            ret = hooks.patchset_created(project='config',
+                                         commit_message="Task: #42")
+            self.assertEquals(ret, "Success")
+            self.assertEquals(fake_client.tasks.status, "inprogress")
+
+            ret = hooks.change_merged(project='config',
+                                      commit_message="Task: #42")
+            self.assertEquals(ret, "Success")
+            self.assertEquals(fake_client.tasks.status, "merged")
+
+            # Test related workflow
+            ret = hooks.patchset_created(project='config',
+                                         commit_message="Related-Task: #42")
+            self.assertEquals(ret, "Success")
+            self.assertEquals(fake_client.tasks.status, "inprogress")
+            ret = hooks.change_merged(project='config',
+                                      commit_message="Related-Task: #42")
+            self.assertEquals(fake_client.tasks.status, "inprogress")
+
+            # Test story hook
+            ret = hooks.patchset_created(project='config',
+                                         commit_message="Story: #42")
+            comments = fake_client.stories.comments_db
+            self.assertEquals(ret, "Success")
+            self.assertEquals(len(comments), 1)
+            self.assertIn("Fix proposed", comments[0].content)
+
+            # Test comments doesn't get added
+            ret = hooks.patchset_created(project='config',
+                                         commit_message="Story: #42")
+            comments = fake_client.stories.comments_db
+            self.assertEquals(ret, "Success")
+            self.assertEquals(len(comments), 1)
+
+            # Test change merged coment get added
+            ret = hooks.change_merged(project='config',
+                                      commit_message="Story: #42")
+            comments = fake_client.stories.comments_db
+            self.assertEquals(ret, "Success")
+            self.assertEquals(len(comments), 2)
