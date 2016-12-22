@@ -5,7 +5,8 @@ pecan==1.0.3
 WebOb==1.5.0a1
 gerritlib==0.4.0
 python-ldap==2.4.20
-requests==2.7.0
+ecdsa==0.11
+requests
 passlib==1.6.5
 basicauth==0.3
 sqlalchemy==1.0.8
@@ -13,7 +14,6 @@ urllib3==1.11
 paramiko<2
 pycrypto==2.6.1
 htpasswd==2.3
-pygerrit # see dependency in pysflib
 python-redmine==1.2.0
 sphinx==1.3.1
 PyYAML==3.11
