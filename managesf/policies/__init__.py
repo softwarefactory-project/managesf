@@ -33,6 +33,7 @@ from managesf.policies import services_users
 from managesf.policies import tests
 from managesf.policies import resources
 from managesf.policies import job
+from managesf.policies import node
 
 
 def list_rules():
@@ -50,5 +51,6 @@ def list_rules():
         tests.list_rules(),
         config.list_rules(),
         resources.list_rules(),
-        job.list_rules(), )
+        job.list_rules(),
+        node.list_rules(), )
 # introspection.list_rules(),

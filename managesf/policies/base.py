@@ -66,6 +66,38 @@ class GroupCheck(policy.Check):
         return False
 
 
+@policy.register('image')
+class ImageCheck(policy.Check):
+    """Check that there is a matching image in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'image' in target:
+            return match.lower() == target['image'].lower()
+        return False
+
+
+@policy.register('provider')
+class ProviderCheck(policy.Check):
+    """Check that there is a matching provider in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'provider' in target:
+            return match.lower() == target['provider'].lower()
+        return False
+
+
 @policy.register('target.group')
 class TargetGroupCheck(policy.Check):
     """Check the target group for membership related calls"""

@@ -204,6 +204,42 @@ class JobManager(BaseCRUDManager):
 
 
 @six.add_metaclass(abc.ABCMeta)
+class NodeManager(BaseCRUDManager):
+    """Abstract class handling nodes for an "agent provider"-type service"""
+
+    def get(self, node_id=None, **kwargs):
+        """lists one or several nodes depending on filtering with node's
+        id or kwargs"""
+        raise exc.UnavailableActionError()
+
+    def hold(self, node_id):
+        """prevents node node_id from being deleted after a completed job"""
+        raise exc.UnavailableActionError()
+
+    def delete(self, node_id):
+        """schedules node node_id for deletion"""
+        raise exc.UnavailableActionError()
+
+    def add_authorized_key(self, node_id, public_key, user=None):
+        """adds public_key as an authorized key on user's account on node_id"""
+        raise exc.UnavailableActionError()
+
+
+@six.add_metaclass(abc.ABCMeta)
+class ImageManager(BaseCRUDManager):
+    """Abstract class handling image building tasks for an
+    "agent provider"-type service"""
+
+    def get(self, provider_name=None, image_name=None, **kwargs):
+        """lists one or several images depending on filtering options"""
+        raise exc.UnavailableActionError()
+
+    def update(self, provider_name, image_name):
+        """updates (rebuild) the image image_name on provider provider_name"""
+        raise exc.UnavailableActionError()
+
+
+@six.add_metaclass(abc.ABCMeta)
 class BaseServicePlugin(object):
     """Base plugin for a service that can be managed by Software Factory.
     """
@@ -247,6 +283,17 @@ class BaseIssueTrackerServicePlugin(BaseServicePlugin):
 
     def get_active_users(self):
         """Return a list of active users"""
+
+
+@six.add_metaclass(abc.ABCMeta)
+class BaseAgentProviderServicePlugin(BaseServicePlugin):
+    """Base plugin for a service used to provide agents on which to run jobs,
+    for example Nodepool."""
+
+    def __init__(self, conf):
+        super(BaseAgentProviderServicePlugin, self).__init__(conf)
+        self.node = NodeManager(self)
+        self.image = ImageManager(self)
 
 
 @six.add_metaclass(abc.ABCMeta)

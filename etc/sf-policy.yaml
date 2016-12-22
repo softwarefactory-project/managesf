@@ -65,5 +65,12 @@
 'managesf.resources:apply': 'rule:admin_or_service'
 
 'managesf.job:get': 'rule:any'
-'managesf.job.stop: 'rule:admin_or_service'
-'managesf.job.run': 'rule:admin_or_service'
+'managesf.job:stop': 'rule:admin_or_service'
+'managesf.job:run': 'rule:admin_or_service'
+
+'managesf.node:get': 'rule:any'
+'managesf.node:hold': 'rule:admin_or_service'
+'managesf.node:delete': 'rule:admin_or_service'
+'managesf.node:image-get': 'rule:any'
+'managesf.node:image-update': 'rule:admin_or_service'
+'managesf.node:add_authorized_key': 'rule:admin_or_service'

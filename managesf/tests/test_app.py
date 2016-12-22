@@ -17,6 +17,9 @@ import json
 import shutil
 import base64
 import tempfile
+# from StringIO import StringIO
+# import time
+# import random
 
 from unittest import TestCase
 from webtest import TestApp
@@ -51,6 +54,8 @@ from managesf.services.redmine.user import SFRedmineUserManager
 from managesf.services.storyboard.user import StoryboardUserManager
 from managesf.services.redmine.group import RedmineGroupManager
 from managesf.services.jenkins.job import SFJenkinsJobManager
+from managesf.services.nodepool.node import SFNodepoolNodeManager as SFNNM
+from managesf.services.nodepool.image import SFNodepoolImageManager as SFNIM
 
 from managesf.tests import resources_test_utils as rtu
 from managesf.model.yamlbkd.resources.dummy import Dummy
@@ -81,7 +86,8 @@ class FunctionalTest(TestCase):
                        'pages': c.pages,
                        'policy': c.policy,
                        'resources': c.resources,
-                       'jenkins': c.jenkins, }
+                       'jenkins': c.jenkins,
+                       'nodepool': c.nodepool, }
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}
@@ -1839,6 +1845,223 @@ class TestJobsController(FunctionalTest):
                 self.assertTrue(all(stop.return_value[u] == j[u]
                                     for u in stop.return_value),
                                 j)
+
+
+# class SlowStringIO(StringIO):
+#    def __init__(self, contents, max_wait=2):
+#        StringIO.__init__(self, contents)
+#        self.max_wait = max_wait
+
+#    def __iter__(self):
+#        return self
+
+#    def next(self):
+#        wait = random.random() * self.max_wait
+#        time.sleep(wait)
+#        return StringIO.next(self)
+
+
+class TestNodesController(FunctionalTest):
+    def test_get(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNNM, 'get') as get:
+                get.return_value = [{'mock1': 'val1', },
+                                    {'mock2': 'val2', }, ]
+                # no filtering arg
+                resp = self.app.get('/nodes/',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+                # with id
+                resp = self.app.get('/nodes/id/27',
+                                    extra_environ=environ, status="*")
+                get.assert_called_with(27)
+                self.assertEqual(200, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+                # wrong id type
+                resp = self.app.get('/nodes/id/yeah_no',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+
+    def test_put(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNNM, 'get') as get, \
+                    patch.object(SFNNM, 'hold') as hold:
+                get.return_value = [{'mock1': 'val1', },
+                                    {'mock2': 'val2', }, ]
+                # no filtering arg
+                resp = self.app.put('/nodes/id/123/',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+                get.assert_called_with(123)
+                hold.assert_called_with(123)
+                # wrong id type
+                resp = self.app.put('/nodes/id/yeah_no',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+
+    def test_delete(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNNM, 'get') as get, \
+                    patch.object(SFNNM, 'delete') as delete:
+                get.return_value = [{'mock1': 'val1', },
+                                    {'mock2': 'val2', }, ]
+                # no filtering arg
+                resp = self.app.delete('/nodes/id/123/',
+                                       extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+                get.assert_called_with(123)
+                delete.assert_called_with(123)
+                # wrong id type
+                resp = self.app.put('/nodes/id/yeah_no',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(400, resp.status_int)
+
+    def test_errors(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNNM, 'get') as get, \
+                    patch.object(SFNNM, 'delete') as delete, \
+                    patch.object(SFNNM, 'hold') as hold:
+                get.side_effect = Exception('Not a chance')
+                resp = self.app.get('/nodes/id/123/',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(500, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertEqual('Not a chance',
+                                 j['nodepool']['error_description'])
+                k = "ssh-rsa abcdef== polnareff@chariot"
+                resp = self.app.post_json('/nodes/id/123/authorize_key/',
+                                          {'public_key': k, 'user': 'b'},
+                                          extra_environ=environ, status="*")
+                self.assertEqual(500, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertEqual('Not a chance',
+                                 j['nodepool']['error_description'])
+                hold.side_effect = Exception('Not a chance (hold)')
+                resp = self.app.put('/nodes/id/123/',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(500, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertEqual('Not a chance (hold)',
+                                 j['nodepool']['error_description'])
+                delete.side_effect = Exception('Not a chance (del)')
+                resp = self.app.delete('/nodes/id/123/',
+                                       extra_environ=environ, status="*")
+                self.assertEqual(500, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertEqual('Not a chance (del)',
+                                 j['nodepool']['error_description'])
+
+    def test_add_authorized_key(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNNM, 'get') as get:
+                # node not found
+                get.return_value = None
+                k = "ssh-rsa abcdef== jojo@starplatinum"
+                resp = self.app.post_json('/nodes/id/123/authorize_key/',
+                                          {'public_key': k, 'user': 'b'},
+                                          extra_environ=environ, status="*")
+                self.assertEqual(500, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertEqual('Node 123 not found',
+                                 j['nodepool']['error_description'])
+                resp = self.app.post_json('/nodes/id/123/authorize_key/',
+                                          {'public_key': 'ora', 'user': 'b'},
+                                          extra_environ=environ, status="*")
+                self.assertEqual(500, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertEqual('invalid public key ora(...)',
+                                 j['nodepool']['error_description'])
+            with patch.object(SFNNM, 'get') as get, \
+                    patch.object(SFNNM, 'add_authorized_key') as add:
+                resp = self.app.post_json('/nodes/id/123/authorize_key/',
+                                          {'public_key': k, 'user': 'b'},
+                                          extra_environ=environ, status="*")
+                self.assertEqual(201, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertEqual({'nodepool': 'OK'},
+                                 j)
+                add.assert_called_with(123, k, 'b')
+
+    def test_image_get(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNIM, 'get') as get:
+                get.return_value = [{'mock1': 'val1', },
+                                    {'mock2': 'val2', }, ]
+                # no filtering arg
+                resp = self.app.get('/nodes/image///',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                get.assert_called_with(None, None)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+                # with provider
+                resp = self.app.get('/nodes/image/blip//',
+                                    extra_environ=environ, status="*")
+                get.assert_called_with("blip", None)
+                self.assertEqual(200, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+                # with both
+                resp = self.app.get('/nodes/image/blip/blop/',
+                                    extra_environ=environ, status="*")
+                get.assert_called_with("blip", "blop")
+                self.assertEqual(200, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+
+#    def test_image_update(self):
+#        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+#            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+#            with patch.object(SFNIM, 'update') as update:
+#                update.return_value = SlowStringIO('well that went OK' * 4096,
+#                                                   max_wait=10)
+#                resp = self.app.put('/nodes/image/blip/blop/',
+#                                    extra_environ=environ, status="*")
+#                update.assert_called_with("blip", "blop")
+#                self.assertEqual(201, resp.status_int, resp.body)
+#                self.assertEqual('well that went OK' * 4096,
+#                                 resp.body)
 
 
 class TestResourcesController(FunctionalTest):
