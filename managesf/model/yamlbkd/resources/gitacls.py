@@ -21,6 +21,21 @@ from git.config import GitConfigParser
 
 from managesf.model.yamlbkd.resource import BaseResource
 
+KEYS_EXP_BOOLEAN_VALUES = (
+    'requireChangeId',
+    'mergeContent',
+    'requireContributorAgreement',
+    'requireSignedOffBy',
+)
+
+SUBMIT_ACTION_VALUES = (
+    'fast forward only',
+    'merge if necessary',
+    'rebase if necessary',
+    'always merge',
+    'cherry pick',
+)
+
 
 class ACLOps(object):
 
@@ -57,6 +72,20 @@ class ACLOps(object):
         sections = [s for s in c.sections() if c != 'project']
         for section_name in sections:
             for k, v in c.items(section_name):
+                if k in KEYS_EXP_BOOLEAN_VALUES:
+                    if v.lower() not in ('true', 'false'):
+                        logs.append(
+                            "ACLs file section (%s), key (%s) expect "
+                            "a valid boolean value (not: %s)" % (
+                                section_name, k, v))
+                    continue
+                if k == 'action' and section_name == 'submit':
+                    if v.lower() not in SUBMIT_ACTION_VALUES:
+                        logs.append(
+                            "ACLs file section (%s), key (%s) expect "
+                            "a valid submit strategy (not: %s)" % (
+                                section_name, k, v))
+                    continue
                 m = re.search('.*group (.*)$', v)
                 if m:
                     group_name = m.groups()[0]
