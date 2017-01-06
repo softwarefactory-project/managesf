@@ -33,7 +33,7 @@ from managesf.controllers.utils import template
 #
 # from pecan import configuration
 # from managesf.model.yamlbkd.resources.gitrepository import GitRepositoryOps
-# conf = configuration.conf_from_file('/var/www/managesf/config.py')
+# conf = configuration.conf_from_file('/etc/managesf/config.py')
 # g = GitRepositoryOps(conf, {})
 # g._set_client()
 # ###

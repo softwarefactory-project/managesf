@@ -16,7 +16,12 @@ modules = {'managesf.services.gerrit': m_mock,
            'sqlalchemy.orm': m_mock,
            'sqlalchemy.ext': m_mock,
            'sqlalchemy.orm.exc': m_mock,
-           'sqlalchemy.ext.declarative': m_mock}
+           'sqlalchemy.ext.declarative': m_mock,
+           'storyboardclient': m_mock,
+           'storyboardclient._apiclient': m_mock,
+           'storyboardclient._apiclient.exceptions': m_mock,
+           'storyboardclient.v1': m_mock,
+           'storyboardclient.v1.client': m_mock}
 
 m_patcher = patch.dict('sys.modules', modules)
 m_patcher.start()
