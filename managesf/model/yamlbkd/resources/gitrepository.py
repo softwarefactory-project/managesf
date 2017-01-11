@@ -156,7 +156,6 @@ class GitRepositoryOps(object):
         logs = []
 
         logs.extend(self.install_acl(**kwargs))
-        logs.extend(self.install_git_review_file(**kwargs))
 
         return logs
 

@@ -176,16 +176,11 @@ class GitRepositoryOpsTest(TestCase):
 
     def test_update(self):
         with patch.object(GitRepositoryOps, 'install_acl') as ia:
-            with patch.object(
-                    GitRepositoryOps, 'install_git_review_file') as ig:
-                ia.return_value = ['log']
-                ig.return_value = ['log2']
-                o = GitRepositoryOps(None, None)
-                logs = o.update(k='v')
-                self.assertTrue(ia.called)
-                self.assertTrue(ig.called)
-                self.assertIn('log', logs)
-                self.assertIn('log2', logs)
+            ia.return_value = ['log']
+            o = GitRepositoryOps(None, None)
+            logs = o.update(k='v')
+            self.assertTrue(ia.called)
+            self.assertIn('log', logs)
 
     def test_delete(self):
         o = GitRepositoryOps(self.conf, None)
