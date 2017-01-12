@@ -59,7 +59,7 @@ class Project(BaseResource):
             True,
             "The project documentation link",
         ),
-        'issue-tracker': (
+        'issue-tracker-url': (
             str,
             '.*',
             False,
@@ -67,7 +67,7 @@ class Project(BaseResource):
             True,
             "The project issue tracker link",
         ),
-        'commit-hook': (
+        'issue-tracker': (
             str,
             '^(SFRedmine|SFStoryboard|)$',
             False,

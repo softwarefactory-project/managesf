@@ -1055,7 +1055,7 @@ class HooksController(RestController):
             # TODO: return here after sf functional test stop depend on redmine
             hook = None
         else:
-            hook = project.get('commit-hook')
+            hook = project.get('issue-tracker')
         # If no hook, assume internal redmine
         if hook not in ('SFRedmine', 'SFStoryboard'):
             # TODO: fail here after sf functional test stop depend on redmine
