@@ -39,12 +39,13 @@ Commit message:
 gitweb: %(gitweb)s
 """
 
-STORIES = re.compile(r"^[Ss]tory:\s+\#?(\d+)", re.VERBOSE)
-TASKS = re.compile(r"^[Tt]ask:\s+\#?(\d+)", re.VERBOSE)
+STORIES = re.compile(r"^[Ss]tory:\s+\#?(\d+)", re.VERBOSE | re.MULTILINE)
+TASKS = re.compile(r"^[Tt]ask:\s+\#?(\d+)", re.VERBOSE | re.MULTILINE)
 
 RELATED_STORIES = re.compile(r"^[Rr]elated[ -][Ss]tory:\s+\#?(\d+)",
-                             re.VERBOSE)
-RELATED_TASKS = re.compile(r"^[Rr]elated[ -][Tt]ask:\s+\#?(\d+)", re.VERBOSE)
+                             re.VERBOSE | re.MULTILINE)
+RELATED_TASKS = re.compile(r"^[Rr]elated[ -][Tt]ask:\s+\#?(\d+)",
+                           re.VERBOSE | re.MULTILINE)
 
 
 def generic_storyboard_hook(kwargs, task_status,
@@ -74,6 +75,8 @@ def generic_storyboard_hook(kwargs, task_status,
         try:
             if client.tasks.get(task).status != task_status:
                 client.tasks.update(id=task, status=task_status)
+                logger.info("Updated task %s status to '%s'" % (task,
+                                                                task_status))
         except Exception, e:
             errors.append(str(e))
     for story in stories:
@@ -86,6 +89,8 @@ def generic_storyboard_hook(kwargs, task_status,
                     break
             if not commented:
                 story.comments.create(content=message)
+                logger.info("Commented on story %s '%s'" % (story.id,
+                                                            story.title))
         except Exception, e:
             errors.append(str(e))
     if not tasks and not related_tasks and not stories:

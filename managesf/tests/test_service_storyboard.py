@@ -82,6 +82,7 @@ class TestSFStoryboardUserManager(BaseSFStoryboardService):
         class FakeClient:
             class FakeTasks:
                 status = "todo"
+                id = 42
 
                 def get(self, task):
                     return self
@@ -91,6 +92,8 @@ class TestSFStoryboardUserManager(BaseSFStoryboardService):
 
             class FakeStories:
                 comments_db = []
+                id = 42
+                title = ""
 
                 def get(self, story):
                     self.comments = self
