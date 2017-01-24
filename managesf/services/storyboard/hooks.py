@@ -27,13 +27,16 @@ logger = logging.getLogger(__name__)
 
 gitweb_url_suffix = "/r/gitweb?p=%(project)s;a=commit;h=%(commit)s"
 CREATED = """Fix proposed to branch: %(branch)s by %(submitter)s
-Review: %(url)s
+Review: %(url)s %(title)s
 """
 MERGED = """The following change on Gerrit has been merged to: %(branch)s
+
 Review: %(url)s
+
 Submitter: %(submitter)s
 
 Commit message:
+
 %(commit)s
 
 gitweb: %(gitweb)s
@@ -52,14 +55,29 @@ def generic_storyboard_hook(kwargs, task_status,
                             gitweb_url, template_message, client):
     gitweb = gitweb_url % {'project': kwargs.get('project') + '.git',
                            'commit': kwargs.get('commit')}
-    submitter = kwargs.get('submitter',
-                           kwargs.get('uploader', ''))
+    submitter = kwargs.get('submitter')
+    if not submitter:
+        submitter = kwargs.get('uploader')
+    if not submitter:
+        submitter = kwargs.get('change_owner')
+
+    commit = kwargs.get('commit_message', '')
+
+    commit_lines = commit.split('\n')
+    if len(commit_lines) >= 6:
+        commit_title = commit_lines[5]
+        commit_message = '\n'.join(map(lambda x: "    %s" % x,
+                                       commit_lines[5:]))
+    else:
+        commit_title = ''
+        commit_message = ''
+
     message = template_message % {'branch': kwargs.get('branch'),
                                   'url': kwargs.get('change_url'),
                                   'submitter': submitter,
-                                  'commit': kwargs.get('commit_message', ''),
-                                  'gitweb': gitweb}
-    commit = kwargs.get('commit_message', '')
+                                  'commit': commit_message,
+                                  'gitweb': gitweb,
+                                  'title': commit_title}
 
     tasks = TASKS.findall(commit)
     if task_status == 'inprogress':
