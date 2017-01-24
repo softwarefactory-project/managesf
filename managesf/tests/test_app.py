@@ -2009,6 +2009,11 @@ class TestNodesController(FunctionalTest):
                 self.assertEqual({'nodepool': 'OK'},
                                  j)
                 add.assert_called_with(123, k, 'b')
+                # test non JSON data
+                resp = self.app.post('/nodes/id/123/authorize_key/',
+                                     {'public_key': k, 'user': 'b'},
+                                     extra_environ=environ, status="*")
+                self.assertEqual(201, resp.status_int)
 
     def test_image_get(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
@@ -2017,7 +2022,7 @@ class TestNodesController(FunctionalTest):
                 get.return_value = [{'mock1': 'val1', },
                                     {'mock2': 'val2', }, ]
                 # no filtering arg
-                resp = self.app.get('/nodes/image///',
+                resp = self.app.get('/nodes/images///',
                                     extra_environ=environ, status="*")
                 self.assertEqual(200, resp.status_int)
                 get.assert_called_with(None, None)
@@ -2028,7 +2033,7 @@ class TestNodesController(FunctionalTest):
                 self.assertEqual(2,
                                  len(j))
                 # with provider
-                resp = self.app.get('/nodes/image/blip//',
+                resp = self.app.get('/nodes/images/blip//',
                                     extra_environ=environ, status="*")
                 get.assert_called_with("blip", None)
                 self.assertEqual(200, resp.status_int)
@@ -2039,7 +2044,7 @@ class TestNodesController(FunctionalTest):
                 self.assertEqual(2,
                                  len(j))
                 # with both
-                resp = self.app.get('/nodes/image/blip/blop/',
+                resp = self.app.get('/nodes/images/blip/blop/',
                                     extra_environ=environ, status="*")
                 get.assert_called_with("blip", "blop")
                 self.assertEqual(200, resp.status_int)

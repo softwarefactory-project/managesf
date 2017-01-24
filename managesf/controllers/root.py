@@ -1261,7 +1261,7 @@ class NodesController(RestController):
 
         class SSHKeyController(RestController):
             @expose('json')
-            def post(self, node_id, public_key, user=None):
+            def post(self, node_id, public_key=None, user=None):
                 try:
                     node_id = int(node_id)
                 except:
@@ -1276,6 +1276,11 @@ class NodesController(RestController):
                     return abort(401,
                                  detail=msg)
                 provider = AGENTSPROVIDERS[0]
+                if not public_key:
+                    infos = request.json if request.content_length else {}
+                    public_key = infos.get('public_key')
+                if not public_key:
+                    return {'error_description': 'No key provided'}
                 try:
                     results = {}
                     provider.node.add_authorized_key(node_id,
@@ -1370,7 +1375,7 @@ class NodesController(RestController):
                 d = {n: {'error_description': unicode(e)}}
                 return d
 
-    image = ImageController()
+    images = ImageController()
     id = NodeByIdController()
 
     @expose('json')
