@@ -502,30 +502,3 @@ class TestSFGerritGroupManager(BaseSFGerritService):
             d.return_value = ['user1@sftests.com']
             ret = self.gerrit.group.get('grp1')
             self.assertIn('user1@sftests.com', ret['grp1'])
-
-    def test_create(self):
-        with patch.object(GerritUtils, 'create_group') as a, \
-                patch.object(GerritUtils, 'delete_group_member') as b, \
-                patch.object(GerritUtils, 'add_group_member') as c:
-            self.gerrit.group.create('grp1', 'user1@sftests.com',
-                                     'Group desc')
-            a.assert_called_with('grp1', 'Group desc')
-            b.assert_called_with('grp1', 'admin')
-            c.assert_called_with('user1@sftests.com', 'grp1')
-
-    def test_update(self):
-        with patch.object(GerritUtils, 'get_project_groups_id') as a, \
-                patch.object(GerritUtils, 'get_projects'), \
-                patch.object(GerritUtils, 'get_group_id') as c, \
-                patch.object(GerritUtils, 'get_group_members') as d, \
-                patch.object(GerritUtils, 'add_group_member') as e, \
-                patch.object(GerritUtils, 'delete_group_member') as f:
-            a.return_value = {'p1': {'owners': ['1'],
-                                     'others': ['2']}}
-            c.return_value = 3
-            d.return_value = [{'email': 'user1@sftests.com'}]
-            self.gerrit.group.update('grp1', ['user2@sftests.com'])
-            # user 2 is added
-            e.assert_called_with('user2@sftests.com', 'grp1')
-            # user 1 is removed
-            f.assert_called_with('grp1', 'user1@sftests.com')

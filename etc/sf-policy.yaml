@@ -31,11 +31,6 @@
 'managesf.membership:create': 'rule:admin_api or rule:ptl_api or (rule:core_api and (target.group:core-group or target.group:dev-group)) or (rule:dev_api and target.group:dev-group)'
 'managesf.membership:delete': 'rule:admin_api or rule:ptl_api or (rule:core_api and (target.group:core-group or target.group:dev-group)) or (rule:dev_api and target.group:dev-group)'
 
-'managesf.group:get': 'rule:authenticated_api'
-'managesf.group:create': 'rule:authenticated_api'
-'managesf.group:update': 'rule:admin_api or group:%(group)s'
-'managesf.group:delete': 'rule:admin_api or group:%(group)s'
-
 'managesf.pages:get': 'rule:admin_api or rule:ptl_api'
 'managesf.pages:create': 'rule:admin_api or rule:ptl_api'
 'managesf.pages:delete': 'rule:admin_api or rule:ptl_api'

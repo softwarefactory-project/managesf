@@ -323,57 +323,6 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.membership:delete',
                                          target, credentials))
 
-    def test_group_policies(self):
-        """Test the group policies that come with a default deployment"""
-        credentials = {}
-        target = {'group': 'glib-globs'}
-        self.assertFalse(policy.authorize('managesf.group:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.group:delete',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.group:update',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.group:get',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.group:get',
-                                          {}, credentials))
-        credentials = {'username': 'RickSanchez'}
-        self.assertTrue(policy.authorize('managesf.group:create',
-                                         target, credentials))
-        self.assertFalse(policy.authorize('managesf.group:delete',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.group:update',
-                                          target, credentials))
-        self.assertTrue(policy.authorize('managesf.group:get',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.group:get',
-                                         {}, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.group:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.group:delete',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.group:update',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.group:get',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.group:get',
-                                         {}, credentials))
-        credentials = {'username': 'RickSanchez',
-                       'groups': ['p0-ptl']}
-        self.assertTrue(policy.authorize('managesf.group:create',
-                                         target, credentials))
-        self.assertFalse(policy.authorize('managesf.group:delete',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.group:update',
-                                          target, credentials))
-        credentials = {'username': 'RickSanchez',
-                       'groups': ['p1-ptl', 'glib-globs']}
-        self.assertTrue(policy.authorize('managesf.group:delete',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.group:update',
-                                         target, credentials))
-
     def test_resources_policies(self):
         """Test the default resources endpoint policies"""
         credentials = {}

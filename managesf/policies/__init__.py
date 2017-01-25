@@ -21,7 +21,6 @@ import itertools
 from managesf.policies import base
 from managesf.policies import backup
 from managesf.policies import config
-from managesf.policies import group
 from managesf.policies import hooks
 from managesf.policies import htpasswd
 # from managesf.policies import introspection
@@ -42,7 +41,6 @@ def list_rules():
         backup.list_rules(),
         project.list_rules(),
         membership.list_rules(),
-        group.list_rules(),
         pages.list_rules(),
         localuser.list_rules(),
         services_users.list_rules(),

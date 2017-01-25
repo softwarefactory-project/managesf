@@ -45,14 +45,12 @@ from managesf.services.gerrit.membership import SFGerritMembershipManager
 from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit.review import SFGerritReviewManager
 from managesf.services.gerrit.group import SFGerritGroupManager
-from managesf.services.gerrit.role import SFGerritRoleManager
 from managesf.services.gerrit import user as g_user
 from managesf.services.redmine import SoftwareFactoryRedmine
 from managesf.services.redmine.membership import SFRedmineMembershipManager
 from managesf.services.redmine.project import SFRedmineProjectManager
 from managesf.services.redmine.user import SFRedmineUserManager
 from managesf.services.storyboard.user import StoryboardUserManager
-from managesf.services.redmine.group import RedmineGroupManager
 from managesf.services.jenkins.job import SFJenkinsJobManager
 from managesf.services.nodepool.node import SFNodepoolNodeManager as SFNNM
 from managesf.services.nodepool.image import SFNodepoolImageManager as SFNIM
@@ -736,127 +734,6 @@ class TestManageSFAppMembershipController(FunctionalTest):
             self.assertEqual(json.loads(response.body),
                              'Unable to process your request, failed '
                              'with unhandled error (server side): FakeExcMsg')
-
-
-class TestGroupController(FunctionalTest):
-
-    def exc1(*args, **kwargs):
-        raise exc.CreateGroupException('FakeExcMsg')
-
-    def exc2(*args, **kwargs):
-        raise exc.UpdateGroupException('FakeExcMsg')
-
-    def exc23(*args, **kwargs):
-        raise exc.GroupNotFoundException('FakeExcMsg')
-
-    def test_create_group(self):
-        env = {'REMOTE_USER': 'user1'}
-        with patch.object(SFGerritGroupManager, 'create') as sgm, \
-                patch.object(RedmineGroupManager, 'create') as rgm, \
-                patch.object(SFUserManager, 'get') as sfum, \
-                patch.object(SFGerritProjectManager,
-                             'get_user_groups') as gug:
-            gug.return_value = []
-            sfum.return_value = {'email': "user1@sftests.com"}
-            resp = self.app.put_json('/group/grp1',
-                                     {'description': 'Nice dev team'},
-                                     extra_environ=env,
-                                     status="*")
-            sgm.assert_called_with('grp1', 'user1@sftests.com',
-                                   'Nice dev team')
-            rgm.assert_called_with('grp1', 'user1@sftests.com',
-                                   'Nice dev team')
-        self.assertEqual(resp.status_int, 201)
-        with patch.object(SFGerritGroupManager, 'create') as sgm, \
-                patch.object(RedmineGroupManager, 'create') as rgm, \
-                patch.object(SFUserManager, 'get') as sfum, \
-                patch.object(SFGerritProjectManager,
-                             'get_user_groups') as gug:
-            sgm.side_effect = self.exc1
-            sfum.return_value = {'email': "user1@sftests.com"}
-            gug.return_value = []
-            resp = self.app.put_json('/group/grp1',
-                                     {'description': 'Nice dev team'},
-                                     extra_environ=env,
-                                     status="*")
-            sgm.assert_called_with('grp1', 'user1@sftests.com',
-                                   'Nice dev team')
-            rgm.assert_not_called()
-        self.assertEqual(resp.status_int, 409)
-        with patch.object(SFGerritGroupManager, 'create') as sgm, \
-                patch.object(RedmineGroupManager, 'create') as rgm, \
-                patch.object(SFUserManager, 'get') as sfum, \
-                patch.object(SFGerritProjectManager,
-                             'get_user_groups') as gug:
-            rgm.side_effect = self.exc1
-            sfum.return_value = {'email': "user1@sftests.com"}
-            gug.return_value = []
-            resp = self.app.put_json('/group/grp1',
-                                     {'description': 'Nice dev team'},
-                                     extra_environ=env,
-                                     status="*")
-            sgm.assert_called_with('grp1', 'user1@sftests.com',
-                                   'Nice dev team')
-            rgm.assert_called_with('grp1', 'user1@sftests.com',
-                                   'Nice dev team')
-        # We consider other services than Gerrit shouldn't
-        # return an error if at least Gerrit changes pass
-        self.assertEqual(resp.status_int, 201)
-
-    def test_delete_group(self):
-        env = {'REMOTE_USER': 'user1'}
-        with patch.object(SFGerritRoleManager, 'delete') as srm, \
-                patch.object(RedmineGroupManager, 'delete') as rgm, \
-                patch.object(SFGerritGroupManager, 'get') as sgg, \
-                patch.object(SFUserManager, 'get') as sfum, \
-                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
-            sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
-            gug.return_value = [{'name': 'grp2'}, ]
-            resp = self.app.delete('/group/grp1',
-                                   extra_environ=env,
-                                   status="*")
-            srm.assert_not_called()
-            rgm.assert_not_called()
-        # user is not part of the group
-        self.assertEqual(resp.status_int, 401)
-        with patch.object(SFGerritRoleManager, 'delete') as srm, \
-                patch.object(RedmineGroupManager, 'delete') as rgm, \
-                patch.object(SFGerritGroupManager, 'get') as sgg, \
-                patch.object(SFUserManager, 'get') as sfum, \
-                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
-            sfum.return_value = {'email': 'user1@sftests.com'}
-            sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
-            gug.return_value = [{'name': 'grp1'}, ]
-            resp = self.app.delete('/group/grp1',
-                                   extra_environ=env,
-                                   status="*")
-            srm.assert_called_with('grp1')
-            rgm.assert_called_with('grp1')
-        # user is part of the group so delete is accepted
-        self.assertEqual(resp.status_int, 204)
-
-    def test_get_group(self):
-        env = {'REMOTE_USER': 'user1'}
-        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug, \
-                patch.object(SFGerritGroupManager, 'get') as sgg:
-            sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}]}
-            gug.return_value = [{'name': 'grp1'}, ]
-            resp = self.app.get('/group/grp1',
-                                extra_environ=env,
-                                status="*")
-        self.assertEqual(resp.status_int, 200)
-        self.assertDictEqual(resp.json, sgg.return_value)
-
-        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug, \
-                patch.object(SFGerritGroupManager, 'get') as sgg:
-            sgg.return_value = {'grp1': [{'email': 'user1@sftests.com'}],
-                                'grp2': [{'email': 'user2@sftests.com'}]}
-            gug.return_value = [{'name': 'grp1'}, {'name': 'grp2'}, ]
-            resp = self.app.get('/group/',
-                                extra_environ=env,
-                                status="*")
-        self.assertEqual(resp.status_int, 200)
-        self.assertDictEqual(resp.json, sgg.return_value)
 
 
 class TestManageSFPagesController(FunctionalTest):
