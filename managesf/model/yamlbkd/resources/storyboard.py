@@ -45,16 +45,20 @@ class StoryboardOps(object):
 
     def extra_validations(self, **kwargs):
         logs = []
+        if len(kwargs['name']) < NAME_MIN_LEN:
+            logs.append("Storyboard project name %s length is invalid"
+                        " (Minimal len is %s)" % (
+                            kwargs['name'], NAME_MIN_LEN))
         sources_repositories = kwargs['source-repositories']
         for name in sources_repositories:
             if len(name) < NAME_MIN_LEN:
                 logs.append(
-                    "Storyboard project name length is invalid"
-                    " (Minimal len is %s)" % NAME_MIN_LEN)
+                    "Storyboard project name %s length is invalid"
+                    " (Minimal len is %s)" % (name, NAME_MIN_LEN))
             if not PROJECT_NAME_RE.match(name):
                 logs.append(
-                    "Storyboard project name is invalid"
-                    " (It should match the RE(%s))" % NAME_RE)
+                    "Storyboard project name %s is invalid"
+                    " (It should match the RE(%s))" % (name, NAME_RE))
         return logs
 
     def update_project(self, name, description):

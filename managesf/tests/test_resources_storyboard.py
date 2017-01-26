@@ -40,11 +40,13 @@ class StoryboardOpsTest(TestCase):
         conf = dummy_conf()
         s = StoryboardOps(conf, None)
         project = {
+            'name': 'project1',
             'source-repositories': ['repo1', 'repo2']
         }
         logs = s.extra_validations(**project)
         self.assertTrue(len(logs) == 0)
         project = {
+            'name': 'project2',
             'source-repositories': ['repo', '-hjook']
         }
         logs = s.extra_validations(**project)
