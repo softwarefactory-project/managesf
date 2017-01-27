@@ -1178,11 +1178,12 @@ class ResourcesController(RestController):
         eng = SFResourceBackendEngine(
             os.path.join(conf.resources['workdir'], 'apply'),
             conf.resources['subdir'])
-        if not infos:
+        if not infos or 'COMMIT' in infos:
+            commit = infos.get('COMMIT', 'master')
             status, logs = eng.apply(conf.resources['master_repo'],
-                                     'master^1',
+                                     '%s^1' % commit,
                                      conf.resources['master_repo'],
-                                     'master')
+                                     commit)
         else:
             try:
                 prev = infos.get('prev', None)
