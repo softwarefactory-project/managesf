@@ -21,9 +21,6 @@ from redmine import Redmine as RM
 
 from managesf.services import base
 from managesf.services.redmine import hooks
-from managesf.services.redmine import membership
-from managesf.services.redmine import project
-from managesf.services.redmine import role
 from managesf.services.redmine import user
 
 
@@ -35,10 +32,7 @@ class Redmine(base.BaseIssueTrackerServicePlugin):
 
     def __init__(self, conf):
         super(base.BaseIssueTrackerServicePlugin, self).__init__(conf)
-        self.project = project.RedmineProjectManager(self)
         self.user = user.UserManager(self)
-        self.membership = membership.MembershipManager(self)
-        self.role = role.RoleManager(self)
         self.hooks = hooks.RedmineHooksManager(self)
 
     def get_client(self, cookie=None):
@@ -62,10 +56,7 @@ class SoftwareFactoryRedmine(Redmine):
 
     def __init__(self, conf):
         super(base.BaseIssueTrackerServicePlugin, self).__init__(conf)
-        self.project = project.SFRedmineProjectManager(self)
         self.user = user.SFRedmineUserManager(self)
-        self.membership = membership.SFRedmineMembershipManager(self)
-        self.role = role.SFRedmineRoleManager(self)
         self.hooks = hooks.RedmineHooksManager(self)
 
     def get_client(self, cookie=None):

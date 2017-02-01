@@ -62,39 +62,6 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.config:get',
                                          target, credentials))
 
-    def test_project_policies(self):
-        """Test the default project endpoint policies"""
-        credentials = {}
-        target = {}
-        self.assertTrue(policy.authorize('managesf.project:get_one',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.project:get_all',
-                                         target, credentials))
-        credentials = {'username': 'RickSanchez'}
-        self.assertTrue(policy.authorize('managesf.project:get_one',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.project:get_all',
-                                         target, credentials))
-        target = {'project': 'phoenix'}
-        self.assertFalse(policy.authorize('managesf.project:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.project:delete',
-                                          target, credentials))
-        credentials['groups'] = ['phoenix-core', ]
-        self.assertFalse(policy.authorize('managesf.project:delete',
-                                          target, credentials))
-        credentials['groups'].append('phoenix-ptl')
-        self.assertTrue(policy.authorize('managesf.project:delete',
-                                         target, credentials))
-        credentials['groups'] = ['schwifty-ptl']
-        self.assertFalse(policy.authorize('managesf.project:delete',
-                                          target, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.project:delete',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.project:create',
-                                         target, credentials))
-
     def test_tests_policies(self):
         """Test the default tests endpoint policies"""
         credentials = {}
@@ -246,81 +213,6 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.backup:get',
                                          target, credentials))
         self.assertTrue(policy.authorize('managesf.backup:create',
-                                         target, credentials))
-
-    def test_membership_policies(self):
-        """Test the default membership endpoint policies"""
-        credentials = {}
-        target = {'project': 'p0',
-                  'user': 'Jerry',
-                  'group': 'dev-group'}
-        self.assertFalse(policy.authorize('managesf.membership:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.membership:delete',
-                                          target, credentials))
-        self.assertTrue(policy.authorize('managesf.membership:get',
-                                         {}, credentials))
-        credentials = {'username': 'RickSanchez'}
-        self.assertFalse(policy.authorize('managesf.membership:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.membership:delete',
-                                          target, credentials))
-        self.assertTrue(policy.authorize('managesf.membership:get',
-                                         {}, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.membership:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.membership:delete',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.membership:get',
-                                         {}, credentials))
-        credentials = {'username': 'RickSanchez',
-                       'groups': ['p0-ptl']}
-        self.assertTrue(policy.authorize('managesf.membership:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.membership:delete',
-                                         target, credentials))
-        credentials = {'username': 'RickSanchez',
-                       'groups': ['p1-ptl']}
-        self.assertFalse(policy.authorize('managesf.membership:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.membership:delete',
-                                          target, credentials))
-        credentials = {'username': 'RickSanchez',
-                       'groups': ['p0-core']}
-        target['group'] = 'ptl-group'
-        self.assertFalse(policy.authorize('managesf.membership:create',
-                                          target, credentials),
-                         policy._ENFORCER.rules)
-        self.assertFalse(policy.authorize('managesf.membership:delete',
-                                          target, credentials))
-        target['group'] = 'core-group'
-        self.assertTrue(policy.authorize('managesf.membership:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.membership:delete',
-                                         target, credentials))
-        target['group'] = 'dev-group'
-        self.assertTrue(policy.authorize('managesf.membership:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.membership:delete',
-                                         target, credentials))
-        credentials = {'username': 'RickSanchez',
-                       'groups': ['p0-dev']}
-        target['group'] = 'ptl-group'
-        self.assertFalse(policy.authorize('managesf.membership:create',
-                                          target, credentials),
-                         policy._ENFORCER.rules)
-        self.assertFalse(policy.authorize('managesf.membership:delete',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.membership:create',
-                                          target, credentials),
-                         policy._ENFORCER.rules)
-        self.assertFalse(policy.authorize('managesf.membership:delete',
-                                          target, credentials))
-        target['group'] = 'dev-group'
-        self.assertTrue(policy.authorize('managesf.membership:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.membership:delete',
                                          target, credentials))
 
     def test_resources_policies(self):
@@ -569,10 +461,8 @@ class TestPolicyEngineFromFile(TestCase):
         pol_file = tempfile.mkstemp()[1] + '.yaml'
         with open(pol_file, 'w') as p:
             yaml.dump(
-                {"managesf.project:get_one": "rule:any",
-                 "managesf.project:get_all": "rule:any",
-                 "managesf.project:create": "rule:any",
-                 "managesf.project:delete": "rule:any",
+                {"managesf.node:get": "rule:any",
+                 "managesf.node:create": "rule:any",
                  "is_morty": "username:morty",
                  "morty_api": "rule:is_morty"},
                 p, default_flow_style=False)
@@ -593,27 +483,27 @@ class TestPolicyEngineFromFile(TestCase):
         self.assertTrue(policy.authorize('admin_api',
                                          target,
                                          {'username': admin_account}))
-        self.assertTrue(policy.authorize('managesf.project:create',
+        self.assertTrue(policy.authorize('managesf.node:create',
                                          target, credentials))
-        self.assertTrue(policy.authorize('managesf.project:delete',
+        self.assertTrue(policy.authorize('managesf.node:get',
                                          target, credentials))
         self.assertFalse(policy.authorize('morty_api',
                                           target, credentials))
         credentials['username'] = 'Rick'
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertTrue(policy.authorize('managesf.project:create',
+        self.assertTrue(policy.authorize('managesf.node:create',
                                          target, credentials))
-        self.assertTrue(policy.authorize('managesf.project:delete',
+        self.assertTrue(policy.authorize('managesf.node:get',
                                          target, credentials))
         self.assertFalse(policy.authorize('morty_api',
                                           target, credentials))
         credentials['username'] = 'morty'
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertTrue(policy.authorize('managesf.project:create',
+        self.assertTrue(policy.authorize('managesf.node:get',
                                          target, credentials))
-        self.assertTrue(policy.authorize('managesf.project:delete',
+        self.assertTrue(policy.authorize('managesf.node:create',
                                          target, credentials))
         self.assertTrue(policy.authorize('morty_api',
                                          target, credentials))
@@ -641,9 +531,8 @@ class TestPolicyEngineFromFile(TestCase):
         pol_file = self.config['policy']['policy_file']
         with open(pol_file, 'w') as p:
             yaml.dump(
-                {"managesf.project:get_one": "rule:any",
-                 "managesf.project:get_all": "rule:any",
-                 "managesf.project:create": "rule:none",
+                {"managesf.node:get": "rule:any",
+                 "managesf.node:create": "rule:none",
                  "is_rick": "username:Rick",
                  "rick_api": "rule:is_rick"},
                 p, default_flow_style=False)
@@ -656,47 +545,45 @@ class TestPolicyEngineFromFile(TestCase):
         # make sure default rules are there
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.project:create',
+        self.assertFalse(policy.authorize('managesf.node:create',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.project:delete',
+        self.assertFalse(policy.authorize('managesf.node:image-update',
                                           target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))
         credentials['username'] = 'Rick'
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.project:create',
+        self.assertFalse(policy.authorize('managesf.node:create',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.project:delete',
+        self.assertFalse(policy.authorize('managesf.node:image-update',
                                           target, credentials))
         self.assertTrue(policy.authorize('rick_api',
                                          target, credentials))
         credentials['username'] = 'morty'
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.project:create',
+        self.assertFalse(policy.authorize('managesf.node:create',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.project:delete',
+        self.assertFalse(policy.authorize('managesf.node:image-update',
                                           target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))
         credentials['username'] = admin_account
         self.assertTrue(policy.authorize('admin_api',
                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.project:create',
+        self.assertFalse(policy.authorize('managesf.node:create',
                                           target, credentials))
         # the default rule should be used here
-        self.assertTrue(policy.authorize('managesf.project:delete',
+        self.assertTrue(policy.authorize('managesf.node:image-update',
                                          target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))
         # set back to normal
         with open(pol_file, 'w') as p:
             yaml.dump(
-                {"managesf.project:get_one": "rule:any",
-                 "managesf.project:get_all": "rule:any",
-                 "managesf.project:create": "rule:any",
-                 "managesf.project:delete": "rule:any",
+                {"managesf.node:get": "rule:any",
+                 "managesf.node:create": "rule:any",
                  "is_morty": "username:morty",
                  "morty_api": "rule:is_morty"},
                 p, default_flow_style=False)

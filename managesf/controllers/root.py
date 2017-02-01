@@ -13,8 +13,6 @@
 # under the License.
 
 import base64
-import time
-import urllib
 import logging
 import os.path
 
@@ -27,7 +25,7 @@ from stevedore import driver
 
 from managesf.controllers import backup, localuser, introspection, htp, pages
 from managesf.controllers import SFuser
-from managesf.services import base, gerrit
+from managesf.services import base
 from managesf.services import exceptions
 from managesf import policy
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
@@ -142,332 +140,6 @@ class BackupController(RestController):
         try:
             backup.backup_start()
             response.status = 204
-        except Exception as e:
-            return report_unhandled_error(e)
-
-
-class MembershipController(RestController):
-    @expose('json')
-    def get(self):
-        # TODO this doesn't do what it is expected
-        _policy = 'managesf.membership:get'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        return [(x['username'], x['email'], x['fullname'])
-                for x in sfmanager.user.all()]
-
-    @expose('json')
-    def put(self, project=None, user=None):
-        _policy = 'managesf.membership:create'
-        if not project or not user:
-            msg = "Missing project (%s) or user (%s)" % (project,
-                                                         user)
-            logger.exception(msg)
-            abort(400,
-                  detail=msg)
-
-        project = _decode_project_name(project)
-        if user:
-            user = urllib.unquote_plus(user)
-        inp = request.json if request.content_length else {}
-        if 'groups' not in inp:
-            abort(400)
-        if not all(authorize(_policy,
-                             target={'project': project,
-                                     'user': user,
-                                     'group': g}) for g in inp['groups']):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-
-        is_group = False
-        # Check if user or group exists
-        if not len(sfmanager.user.get(email=user).keys()):
-            # User is unknown so check if it is a group
-            code_review = [s for s in SF_SERVICES
-                           if isinstance(s,
-                                         base.BaseCodeReviewServicePlugin)][0]
-            try:
-                code_review.group.get(user, discard_pgroups=False)
-                is_group = True
-            except exceptions.GroupNotFoundException:
-                abort(400, "The user or group to add wasn't found")
-        requestor = request.remote_user
-        try:
-            # Add/update user for the project groups
-            for service in SF_SERVICES:
-                try:
-                    service.membership.create(requestor, user,
-                                              project, inp['groups'])
-                except exceptions.UnavailableActionError:
-                    pass
-            response.status = 201
-            return "%s %s has been added in group(s): %s for project %s" % \
-                ("Group" if is_group else "User",
-                 user, ", ".join(inp['groups']), project)
-        except Exception as e:
-            return report_unhandled_error(e)
-
-    @expose('json')
-    def delete(self, project=None, user=None, group=None):
-        _policy = 'managesf.membership:delete'
-        if not project or not user:
-            logger.exception("Missing project (%s) or user (%)s" % (project,
-                                                                    user))
-            abort(400,
-                  detail="Missing project (%s) or user (%s)" % (project,
-                                                                user))
-
-        project = _decode_project_name(project)
-        if user:
-            user = urllib.unquote_plus(user)
-        if not group:
-            grps = ['ptl-group',
-                    'core-group',
-                    'dev-group', ]
-        else:
-            grps = [group, ]
-        if not all(authorize(_policy,
-                             target={'project': project,
-                                     'user': user,
-                                     'group': g, }) for g in grps):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        is_group = False
-        # Check if user or group exists
-        if not len(sfmanager.user.get(email=user).keys()):
-            # User is unknown so check if it is a group
-            code_review = [s for s in SF_SERVICES
-                           if isinstance(s,
-                                         base.BaseCodeReviewServicePlugin)][0]
-            try:
-                code_review.group.get(user, discard_pgroups=False)
-                is_group = True
-            except exceptions.GroupNotFoundException:
-                abort(400, "The user or group to add wasn't found")
-        requestor = request.remote_user
-        try:
-            # delete user from all project groups
-            for service in SF_SERVICES:
-                try:
-                    service.membership.delete(requestor, user, project, group)
-                except exceptions.UnavailableActionError:
-                    pass
-            response.status = 200
-            if group:
-                return ("%s %s has been deleted from group %s " +
-                        "for project %s.") % (
-                            "Group" if is_group else "User",
-                            user, group, project)
-            else:
-                return ("%s %s has been deleted from all groups " +
-                        "for project %s.") % (
-                            "Group" if is_group else "User",
-                            user, project)
-        except Exception as e:
-            return report_unhandled_error(e)
-
-
-class ProjectController(RestController):
-
-    membership = MembershipController()
-
-    def __init__(self):
-        self.cache = {}
-        self.cache_timeout = 15
-
-    def set_cache(self, values):
-        token = request.cookies.get('auth_pubtkt')
-        if token:
-            self.cache[token] = (time.time(), values)
-
-    def get_cache(self):
-        token = request.cookies.get('auth_pubtkt')
-        if token:
-            last, values = self.cache.get(token, (None, None))
-            if last and last + self.cache_timeout > time.time():
-                return values
-        return {}
-
-    def _reload_cache(self):
-        """ Build the cache. This is done by requesting services
-        API.
-        """
-        projects = {}
-
-        # TODO(mhu) this must be independent from gerrit
-        code_review = [s for s in SF_SERVICES
-                       if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
-        requestor = request.remote_user
-
-        # Get my groups (1 request)
-        my_groups = code_review.project.get_user_groups(requestor)
-        my_groups_id = [g['id'] for g in my_groups]
-
-        # Get the list of projects (1 request)
-        projects_list = code_review.project.get()
-
-        # Initiate resp struct by project name
-        for p in projects_list:
-            projects[p] = {'open_reviews': 0,
-                           'open_issues': 0,
-                           'admin': 0,
-                           'groups': {}}
-
-        # Get list of groups of projects (1 request)
-        # This returns all groups id of projects as well as the owner groups
-        projects_groups = code_review.project.get_projects_groups_id(
-            projects_list)
-
-        # Consult requestor groups list and define projects with admin rights
-        # for the requestor
-        for p in projects_list:
-            # Verify that group is one of those owned by the requestor
-            for gid in my_groups_id:
-                if gid in projects_groups[p]['owners']:
-                    projects[p]['admin'] = 1
-
-        # Filter can be done by name but not by id. So request the full
-        # list of groups + members details (1 request)
-        all_groups_details = code_review.project.get_groups_details([])
-
-        # Fill group details for projects where user is admin
-        for p in projects_list:
-            if projects[p]['admin'] == 1:
-                pg_ids = projects_groups[p]['owners'] + \
-                    projects_groups[p]['others']
-                for group_name, details in all_groups_details.items():
-                    if details['id'] in pg_ids:
-                        if group_name.endswith(('-ptl', '-core', '-dev')):
-                            group_type = group_name.split('-')[-1]
-                            projects[p]['groups'][group_type] = details
-
-        # Skip this if there is no issue tracker
-        tracker = [s for s in SF_SERVICES
-                   if isinstance(s, base.BaseIssueTrackerServicePlugin)]
-        if tracker:
-            tracker = tracker[0]
-            # 1 or more requests (depends on issues and pagination)
-            for issue in tracker.get_open_issues().get('issues'):
-                prj = issue.get('project').get('name')
-                if prj in projects:
-                    projects[prj]['open_issues'] += 1
-
-        # Done in 1 requests
-        for review in code_review.review.get():
-            prj = review.get('project')
-            if prj in projects:
-                projects[prj]['open_reviews'] += 1
-
-        self.set_cache(projects)
-
-    @expose('json')
-    def get_all(self):
-        _policy = 'managesf.project:get_all'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        projects = self.get_cache()
-        if projects:
-            return projects
-
-        self._reload_cache()
-        return self.get_cache()
-
-    def _find_project(self, name):
-        cache = self.get_cache()
-        if not cache:
-            self._reload_cache()
-            cache = self.get_cache()
-
-        return cache.get(name)
-
-    @expose('json')
-    def get_one(self, project_id):
-        _policy = 'managesf.project:get_one'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        name = _decode_project_name(project_id)
-        project = self._find_project(name)
-        if not project:
-            logger.exception("Project %s does not exists" % project_id)
-            return abort(400)
-        return project
-
-    @expose('json')
-    def put(self, name):
-        _policy = 'managesf.project:create'
-
-        if not name:
-            logger.exception("Project name required")
-            abort(400)
-
-        name = _decode_project_name(name)
-        if not authorize(_policy,
-                         target={'project': name}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        project = self._find_project(name)
-        if project:
-            logger.exception("Project %s already exists" % name)
-            abort(400)
-        try:
-            # create project
-            inp = request.json if request.content_length else {}
-            user = request.remote_user
-
-            # Early check of upstream availability
-            if 'upstream' in inp:
-                ssh_key = None
-                if 'upstream-ssh-key' in inp:
-                    ssh_key = inp['upstream-ssh-key']
-                success, msg = gerrit.utils.GerritRepo.check_upstream(
-                    inp["upstream"], ssh_key)
-                if not success:
-                    response.status = 400
-                    return msg
-
-            for service in SF_SERVICES:
-                try:
-                    service.project.create(name, user, inp)
-                except exceptions.UnavailableActionError:
-                    pass
-            response.status = 201
-            self.set_cache(None)
-            return "Project %s has been created." % name
-        except Exception as e:
-            return report_unhandled_error(e)
-
-    @expose('json')
-    def delete(self, name):
-        name = _decode_project_name(name)
-        _policy = 'managesf.project:delete'
-        if not authorize(_policy,
-                         target={'project': name}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        project = self._find_project(name)
-        if name == 'config':
-            response.status = 400
-            return "Deletion of config project denied"
-        if not project:
-            logger.exception("Project %s does not exist" % name)
-            abort(400)
-        user = request.remote_user
-        try:
-            # delete project
-            for service in SF_SERVICES:
-                try:
-                    service.project.delete(name, user)
-                except exceptions.UnavailableActionError:
-                    pass
-            response.status = 200
-            self.set_cache(None)
-            return "Project %s has been deleted." % name
         except Exception as e:
             return report_unhandled_error(e)
 
@@ -972,22 +644,6 @@ class TestsController(RestController):
         return True
 
 
-# TODO obsoleted by policies
-# need to be replaced by a policies checker controller
-class ConfigController(RestController):
-    @expose('json')
-    def get(self):
-        _policy = 'managesf.config:get'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        permissions = {}
-        permissions['create_projects'] = authorize('managesf.project:create',
-                                                   target={})
-        return permissions
-
-
 class ResourcesController(RestController):
     def check_policy(self, _policy):
         if not authorize(_policy,
@@ -1419,7 +1075,6 @@ AGENTSPROVIDERS = [s for s in SF_SERVICES
 
 
 class RootController(object):
-    project = ProjectController()
     backup = BackupController()
     user = LocalUserController()
     bind = LocalUserBindController()
@@ -1428,7 +1083,6 @@ class RootController(object):
     tests = TestsController()
     services_users = ServicesUsersController()
     hooks = HooksController()
-    config = ConfigController()
     pages = PagesController()
     resources = ResourcesController()
     jobs = JobsController()

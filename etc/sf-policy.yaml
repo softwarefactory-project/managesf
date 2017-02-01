@@ -17,19 +17,10 @@
 'any': '@'
 'none': '!'
 
-'managesf.project:get_one': 'rule:any'
-'managesf.project:get_all': 'rule:any'
-'managesf.project:create': 'rule:admin_api'
-'managesf.project:delete': 'rule:admin_api or rule:ptl_api'
-
 'managesf.backup:get': 'rule:admin_api'
 'managesf.backup:create': 'rule:admin_api'
 
 'managesf.restore:restore': 'rule:admin_api'
-
-'managesf.membership:get': 'rule:any'
-'managesf.membership:create': 'rule:admin_api or rule:ptl_api or (rule:core_api and (target.group:core-group or target.group:dev-group)) or (rule:dev_api and target.group:dev-group)'
-'managesf.membership:delete': 'rule:admin_api or rule:ptl_api or (rule:core_api and (target.group:core-group or target.group:dev-group)) or (rule:dev_api and target.group:dev-group)'
 
 'managesf.pages:get': 'rule:admin_api or rule:ptl_api'
 'managesf.pages:create': 'rule:admin_api or rule:ptl_api'

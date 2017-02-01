@@ -13,7 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from managesf import templates
 from subprocess import Popen, PIPE
 from pwd import getpwnam
 from grp import getgrnam
@@ -21,10 +20,6 @@ import os
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-def template(t):
-    return templates.__path__[0] + '/' + t
 
 
 def chown(path, user, group):

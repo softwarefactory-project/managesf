@@ -21,7 +21,6 @@ from git.config import GitConfigParser
 from managesf.services.gerrit import SoftwareFactoryGerrit
 from managesf.model.yamlbkd.resource import BaseResource
 from managesf.services.gerrit import utils
-from managesf.controllers.utils import template
 
 # ## DEBUG statements to ease run that standalone ###
 # import logging
@@ -164,8 +163,15 @@ class GitRepositoryOps(object):
 
         name = kwargs['name']
 
+        gitreview_template = """[gerrit]
+host=%(gerrit-host)s
+port=%(gerrit-host-port)s
+project=%(name)s
+defaultbranch=master
+"""
+
         paths = {}
-        content = file(template('gitreview')).read() % (
+        content = gitreview_template % (
             {'gerrit-host': self.conf.gerrit['top_domain'],
              'gerrit-host-port': self.conf.gerrit['ssh_port'],
              'name': name})
