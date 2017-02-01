@@ -127,6 +127,14 @@ class Project(BaseResource):
             True,
             "The local issue tracker activated for this project",
         ),
+        'review-dashboard': (
+            str,
+            '^([a-zA-Z0-9\-_])*$',
+            False,
+            "",
+            True,
+            "A gerrit dashboard name reference",
+        ),
         'mailing-lists': (
             list,
             '.+@.+',
