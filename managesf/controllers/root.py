@@ -43,7 +43,7 @@ CLIENTERRORMSG = "Unable to process your request, failed with "\
 
 # instanciate service plugins
 SF_SERVICES = []
-DEFAULT_SERVICES = ['SFGerrit', 'SFRedmine', 'SFStoryboard', 'SFJenkins',
+DEFAULT_SERVICES = ['SFGerrit', 'SFStoryboard', 'SFJenkins',
                     'SFNodepool']
 SERVICES = {}
 
@@ -504,16 +504,8 @@ class HooksController(RestController):
         if not project:
             logger.info("Hooks: Repository %s is not part of any project" %
                         change.get('project'))
-            # TODO: return here after sf functional test stop depend on redmine
-            hook = None
-        else:
-            hook = project.get('issue-tracker')
-        # If no hook, assume internal redmine
-        if hook not in ('SFRedmine', 'SFStoryboard'):
-            # TODO: fail here after sf functional test stop depend on redmine
-            logger.info("Hooks: Unknown hook %s, defaulting to redmine" %
-                        hook)
-            hook = 'SFRedmine'
+            return abort(204, detail=u"No issue-tracker defined")
+        hook = project.get('issue-tracker')
 
         status = 200
         try:

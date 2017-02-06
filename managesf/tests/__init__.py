@@ -21,7 +21,6 @@ class dummy_conf():
         'host': 'auth.tests.dom',
     }
     services = ['SFGerrit',
-                'SFRedmine',
                 'SFStoryboard',
                 'SFJenkins',
                 'SFNodepool',
@@ -48,11 +47,6 @@ class dummy_conf():
         'db_name': 'gerrit_db',
         'db_user': 'gerrit_db_user',
         'db_password': 'gerrit_db_password',
-    }
-    redmine = {
-        'api_key': 'XXX',
-        'host': 'redmine.tests.dom',
-        'url': 'http://redmine.tests.dom',
     }
     jenkins = {
         'api_url': 'http://jenkins.tests.dom:8080/jenkins/',

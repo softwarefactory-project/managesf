@@ -15,7 +15,6 @@ in the configuration file, in the "services" section, like so:
 .. code-block:: none
 
   services = [
-    'SFRedmine',
     'SFGerrit',
   ]
 
@@ -26,22 +25,6 @@ be modified.
 
 Available services
 ------------------
-
-SFRedmine
-.........
-
-Redmine issue tracker packaged within Software Factory by default. Authentication
-is managed by cauth.
-
-*configuration section:* redmine
-
-=============================  =================================================
-  Option                          Description
-=============================  =================================================
-  host                            the Redmine host
-  url                             the issue tracker API URL
-  api_key                         the Redmine API key
-=============================  =================================================
 
 SFGerrit
 .........

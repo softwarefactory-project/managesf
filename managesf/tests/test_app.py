@@ -23,9 +23,7 @@ from pecan import load_app
 from mock import patch, MagicMock
 
 from basicauth import encode
-from redmine.exceptions import ValidationError
 
-from pysflib.sfredmine import RedmineUtils
 from managesf.tests import dummy_conf
 
 from managesf.services import exceptions as exc
@@ -35,7 +33,6 @@ from managesf.services import exceptions as exc
 
 from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit import user as g_user
-from managesf.services.redmine.user import SFRedmineUserManager
 from managesf.services.storyboard.user import StoryboardUserManager
 from managesf.services.jenkins.job import SFJenkinsJobManager
 from managesf.services.nodepool.node import SFNodepoolNodeManager as SFNNM
@@ -55,7 +52,6 @@ class FunctionalTest(TestCase):
         c = dummy_conf()
         self.config = {'services': c.services,
                        'gerrit': c.gerrit,
-                       'redmine': c.redmine,
                        'app': c.app,
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
@@ -418,25 +414,20 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos3 = {'email': 'john@joestar.dom',
                   'ssh_keys': ['ora', 'oraora'],
                   'full_name': 'Jonathan Joestar', 'username': 'Jon'}
-        with patch.object(SFRedmineUserManager, 'create') as redmine_create, \
-                patch.object(StoryboardUserManager, 'create') as sb_create, \
+        with patch.object(StoryboardUserManager, 'create') as sb_create, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as gerrit_create, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch.object(SFGerritProjectManager,
                              'get_user_groups'):
-            r_get.return_value = None
             s_get.return_value = None
             g_get.return_value = None
-            redmine_create.return_value = rm_user.id
             sb_create.return_value = sb_user.id
             gerrit_create.return_value = gerrit_created["_account_id"]
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-            _, redmine_args = redmine_create.call_args
             _, gerrit_args = gerrit_create.call_args
             for k, v in (
                 ("username", infos.get('username')),
@@ -444,47 +435,35 @@ class TestManageSFServicesUserController(FunctionalTest):
                 ("full_name", infos.get('full_name')),
                 ("ssh_keys", infos['ssh_keys'])
             ):
-                self.assertEqual(redmine_args[k], v)
                 self.assertEqual(gerrit_args[k], v)
-            self.assertTrue("cauth_id" in redmine_args)
             self.assertTrue("cauth_id" in gerrit_args)
             # TODO(mhu) test if mapping is set correctly
         # mock at a lower level
         with patch('managesf.services.gerrit.get_cookie') as get_cookie, \
-                patch.object(RedmineUtils, 'create_user') as rm_create_user, \
                 patch.object(StoryboardUserManager, 'create') as s_create, \
                 patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
                 patch('pysflib.sfgerrit.GerritUtils.create_account') \
                 as create_account, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch('pysflib.sfgerrit.GerritUtils.update_account'), \
-                patch.object(SFRedmineUserManager, 'update'), \
                 patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
             get_cookie.return_value = 'admin_cookie'
 
-            rm_create_user.return_value = rm_user2
             s_create.return_value = sb_user2.id
             create_account.return_value = gerrit2_created
-            r_get.return_value = None
             s_get.return_value = None
             g_get.return_value = None
             response = self.app.post_json('/services_users/', infos2,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-            rm_create_user.assert_called_with(infos2['username'],
-                                              infos2['email'],
-                                              infos2['full_name'])
 
-        with patch.object(SFRedmineUserManager, 'create') as redmine_create, \
-                patch.object(StoryboardUserManager, 'create') as sb_create, \
+        with patch.object(StoryboardUserManager, 'create') as sb_create, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as gerrit_create, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch.object(SFGerritProjectManager,
@@ -492,8 +471,6 @@ class TestManageSFServicesUserController(FunctionalTest):
             # assert that raising UnavailableActionError won't fail
             def unavailable(*args, **kwargs):
                 raise exc.UnavailableActionError
-            redmine_create.side_effect = unavailable
-            r_get.side_effect = unavailable
             s_get.side_effect = unavailable
             g_get.return_value = 14
             gerrit_create.return_value = 14
@@ -502,81 +479,46 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertEqual(response.status_int, 201)
 
         with patch('managesf.services.gerrit.get_cookie') as get_cookie, \
-                patch.object(RedmineUtils, 'create_user') as rm_create_user, \
                 patch.object(StoryboardUserManager, 'create') as s_create, \
                 patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
                 patch('pysflib.sfgerrit.GerritUtils.create_account') \
                 as create_account, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch('pysflib.sfgerrit.GerritUtils.update_account'), \
-                patch.object(SFRedmineUserManager, 'update'), \
                 patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
 
             get_cookie.return_value = 'admin_cookie'
-            # assert that user already existing in backend won't fail
-
-            def already(*args, **kwargs):
-                raise ValidationError('Resource already exists')
-            r_get.return_value = rm_user.id
             s_get.return_value = sb_user.id
             g_get.return_value = gerrit_created["_account_id"]
             create_account.return_value = gerrit_created
-            rm_create_user.side_effect = already
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
 
         with patch('managesf.services.gerrit.get_cookie') as get_cookie, \
-                patch.object(RedmineUtils, 'create_user') as rm_create_user, \
                 patch.object(StoryboardUserManager, 'create') as s_create, \
                 patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
                 patch('pysflib.sfgerrit.GerritUtils.create_account') \
                 as create_account, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch('pysflib.sfgerrit.GerritUtils.update_account'), \
-                patch.object(SFRedmineUserManager, 'update'), \
                 patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
             get_cookie.return_value = 'admin_cookie'
             # assert that user found in backend will skip gracefully
-            r_get.return_value = rm_user.id
             s_get.return_value = sb_user.id
             g_get.return_value = gerrit_created["_account_id"]
             create_account.return_value = gerrit_created
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-
-    def test_add_user_in_backends_failures(self):
-        environ = {'REMOTE_USER': self.config['admin']['name']}
-        infos = {'email': 'jojo@starplatinum.dom',
-                 'ssh_keys': ['ora', 'oraora'],
-                 'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
-        with patch.object(RedmineUtils, 'create_user') as rm_create_user:
-            # assert that other errors will fail
-            def already(*args, **kwargs):
-                raise ValidationError('No idea what I am doing')
-            rm_create_user.side_effect = already
-            response = self.app.post_json('/services_users/', infos,
-                                          extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 500)
-        # forget the username
-        infos = {'email': 'jojo@starplatinum.dom',
-                 'ssh_keys': ['ora', 'oraora'],
-                 'full_name': 'Jotaro Kujoh', }
-        with patch.object(RedmineUtils, 'create_user'):
-            response = self.app.post_json('/services_users/', infos,
-                                          extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 400)
 
     def test_delete_user_in_backends_non_admin(self):
         environ = {'REMOTE_USER': 'dio'}
@@ -592,17 +534,13 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos = {'email': 'iggy@stooges.dom',
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'iggy the fool', 'username': 'iggy'}
-        with patch.object(SFRedmineUserManager, 'delete') as redmine_delete, \
-                patch.object(StoryboardUserManager, 'delete') as sb_delete, \
+        with patch.object(StoryboardUserManager, 'delete') as sb_delete, \
                 patch.object(g_user.SFGerritUserManager,
                              'delete') as gerrit_delete, \
-                patch.object(SFRedmineUserManager,
-                             'create') as redmine_create, \
                 patch.object(StoryboardUserManager,
                              'create') as sb_create, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as gerrit_create, \
-                patch.object(SFRedmineUserManager, 'get') as redmine_get, \
                 patch.object(StoryboardUserManager, 'get') as sb_get, \
                 patch.object(g_user.SFGerritUserManager,
                              'get') as gerrit_get, \
@@ -613,10 +551,8 @@ class TestManageSFServicesUserController(FunctionalTest):
                                        extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 404)
             # test deletion of existing user
-            redmine_create.return_value = 99
             sb_create.return_value = 99
             gerrit_create.return_value = 99
-            redmine_get.return_value = None
             sb_get.return_value = None
             gerrit_get.return_value = None
             self.app.post_json('/services_users/', infos,
@@ -624,30 +560,23 @@ class TestManageSFServicesUserController(FunctionalTest):
             response = self.app.delete('/services_users/?username=iggy',
                                        extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 204)
-            redmine_delete.assert_called_with(username='iggy', email=None)
             sb_delete.assert_called_with(username='iggy', email=None)
             gerrit_delete.assert_called_with(username='iggy', email=None)
 
-        with patch.object(SFRedmineUserManager, 'delete') as redmine_delete, \
-                patch.object(StoryboardUserManager, 'delete') as sb_delete, \
+        with patch.object(StoryboardUserManager, 'delete') as sb_delete, \
                 patch.object(g_user.SFGerritUserManager,
                              'delete') as gerrit_delete, \
-                patch.object(SFRedmineUserManager,
-                             'create') as redmine_create, \
                 patch.object(StoryboardUserManager,
                              'create') as sb_create, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as gerrit_create, \
-                patch.object(SFRedmineUserManager, 'get') as redmine_get, \
                 patch.object(StoryboardUserManager, 'get') as sb_get, \
                 patch.object(g_user.SFGerritUserManager,
                              'get') as gerrit_get, \
                 patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
             gug.return_value = []
-            redmine_create.return_value = 100
             sb_create.return_value = 100
             gerrit_create.return_value = 100
-            redmine_get.return_value = None
             sb_get.return_value = None
             gerrit_get.return_value = None
             self.app.post_json('/services_users/', infos,
@@ -656,8 +585,6 @@ class TestManageSFServicesUserController(FunctionalTest):
                 '/services_users/?email=iggy@stooges.dom',
                 extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 204)
-            redmine_delete.assert_called_with(username=None,
-                                              email='iggy@stooges.dom')
             sb_delete.assert_called_with(username=None,
                                          email='iggy@stooges.dom')
             gerrit_delete.assert_called_with(username=None,
@@ -672,22 +599,17 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos_kira = {'email': 'kira@jojolion.dom',
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'yoshikage kira', 'username': 'kira'}
-        with patch.object(SFRedmineUserManager, 'delete'), \
-                patch.object(StoryboardUserManager, 'delete'), \
+        with patch.object(StoryboardUserManager, 'delete'), \
                 patch.object(g_user.SFGerritUserManager, 'delete'), \
-                patch.object(SFRedmineUserManager, 'create') as r_create, \
                 patch.object(StoryboardUserManager, 'create') as s_create, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as g_create, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
 
-            r_get.return_value = None
             s_get.return_value = None
             g_get.return_value = None
-            r_create.return_value = 12
             s_create.return_value = 12
             g_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_kira,
@@ -708,32 +630,25 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos_poln = {'email': 'polnareff@chariot.dom',
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Polnareff', 'username': 'chariot'}
-        with patch.object(SFRedmineUserManager, 'delete'), \
-                patch.object(StoryboardUserManager, 'delete'), \
+        with patch.object(StoryboardUserManager, 'delete'), \
                 patch.object(g_user.SFGerritUserManager, 'delete'), \
-                patch.object(SFRedmineUserManager,
-                             'create') as r_create, \
                 patch.object(StoryboardUserManager,
                              'create') as s_create, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as g_create, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager,
                              'get') as g_get, \
                 patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
 
-            r_get.return_value = None
             s_get.return_value = None
             g_get.return_value = None
-            r_create.return_value = 12
             s_create.return_value = 12
             g_create.return_value = 13
             gug.return_value = []
             response = self.app.post_json('/services_users/', infos_jojo,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
-            r_create.return_value = 14
             g_create.return_value = 15
             response = self.app.post_json('/services_users/', infos_poln,
                                           extra_environ=environ, status="*")
@@ -780,23 +695,18 @@ class TestManageSFServicesUserController(FunctionalTest):
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Jotaro Kujoh', 'username': 'jojo',
                       'external_id': 42}
-        with patch.object(SFRedmineUserManager, 'update') as r_up, \
-                patch.object(StoryboardUserManager, 'update') as s_up, \
+        with patch.object(StoryboardUserManager, 'update') as s_up, \
                 patch.object(g_user.SFGerritUserManager, 'update') as g_up, \
-                patch.object(SFRedmineUserManager,
-                             'create') as r_create, \
                 patch.object(StoryboardUserManager,
                              'create') as s_create, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as g_create, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager,
                              'get') as g_get, \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
-            for mock in (r_up, s_up, g_up, r_get, s_get, g_get):
+            for mock in (s_up, g_up, s_get, g_get):
                 mock.return_value = None
-            r_create.return_value = 12
             s_create.return_value = 12
             g_create.return_value = 13
 
@@ -832,9 +742,6 @@ class TestManageSFServicesUserController(FunctionalTest):
         with patch.object(StoryboardUserManager, 'create') as s_create, \
                 patch.object(StoryboardUserManager, 'update') as s_update, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
-                patch.object(SFRedmineUserManager, 'create') as r_create, \
-                patch.object(SFRedmineUserManager, 'update') as r_update, \
-                patch.object(SFRedmineUserManager, 'get') as r_get, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as g_create, \
                 patch.object(g_user.SFGerritUserManager,
@@ -844,9 +751,8 @@ class TestManageSFServicesUserController(FunctionalTest):
                 patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
 
             gug.return_value = []
-            for mock in (r_get, r_update, s_get, s_update, g_get, g_update):
+            for mock in (s_get, s_update, g_get, g_update):
                 mock.return_value = None
-            r_create.return_value = 12
             s_create.return_value = 12
             g_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_jojo,
@@ -959,95 +865,6 @@ class TestHooksController(FunctionalTest):
             resp = self.app.post_json('/hooks/toto', {'arg1': 1, 'arg2': 2},
                                       extra_environ=environ, status="*")
             self.assertEqual(400, resp.status_int)
-
-    def test_patchset_created(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'), \
-                patch('managesf.model.yamlbkd.engine.'
-                      'SFResourceBackendEngine.get') as r:
-            r.return_value = {'resources': {}}
-            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
-            hooks_kwargs = {'change': 123,
-                            'is_draft': False,
-                            'change_url': 'blop',
-                            'project': 'testytest',
-                            'branch': 'branchy',
-                            'topic': 'thunder',
-                            'uploader': 'Doe',
-                            'commit': 456,
-                            'patchset': 1,
-                            'commit_message': 'fix the thing Closes: #789'}
-            with patch.object(RedmineUtils,
-                              'set_issue_status') as set_issue_status:
-                set_issue_status.return_value = True
-                resp = self.app.post_json('/hooks/patchset_created',
-                                          hooks_kwargs,
-                                          extra_environ=environ, status="*")
-                self.assertEqual(200, resp.status_int)
-                issue_msg = """Fix proposed to branch: branchy by Doe
-Review: blop
-"""
-                set_issue_status.assert_called_with('789',
-                                                    2,
-                                                    message=issue_msg)
-                j = json.loads(resp.body)
-                self.assertEqual('Success',
-                                 j['msg'])
-                # oh no ! something went wrong with redmine
-                set_issue_status.return_value = False
-                resp = self.app.post_json('/hooks/patchset_created',
-                                          hooks_kwargs,
-                                          extra_environ=environ, status="*")
-                self.assertEqual(400, resp.status_int)
-                j = json.loads(resp.body)
-                self.assertEqual("Could not change status of issue #789",
-                                 j['msg'])
-
-    def test_change_merged(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'), \
-                patch('managesf.model.yamlbkd.engine.'
-                      'SFResourceBackendEngine.get') as r:
-            r.return_value = {'resources': {}}
-            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
-            hooks_kwargs = {'change': 123,
-                            'change_url': 'blop',
-                            'project': 'testytest',
-                            'branch': 'b',
-                            'topic': 'thunder',
-                            'submitter': 'Doe',
-                            'commit': 456,
-                            'commit_message': 'fix the thing Closes: #789'}
-            with patch.object(RedmineUtils,
-                              'set_issue_status') as set_issue_status:
-                set_issue_status.return_value = True
-                resp = self.app.post_json('/hooks/change_merged',
-                                          hooks_kwargs,
-                                          extra_environ=environ, status="*")
-                self.assertEqual(200, resp.status_int)
-                issue_msg = (
-                    """The following change on Gerrit has been merged to: b
-Review: blop
-Submitter: Doe
-
-Commit message:
-fix the thing Closes: #789
-
-gitweb: http://redmine.tests.dom/r/gitweb?p=testytest.git;a=commit;h=456
-""")
-                set_issue_status.assert_called_with('789',
-                                                    5,
-                                                    message=issue_msg)
-                j = json.loads(resp.body)
-                self.assertEqual('Success',
-                                 j['msg'])
-                # oh no ! something went wrong with redmine
-                set_issue_status.return_value = False
-                resp = self.app.post_json('/hooks/change_merged',
-                                          hooks_kwargs,
-                                          extra_environ=environ, status="*")
-                self.assertEqual(400, resp.status_int)
-                j = json.loads(resp.body)
-                self.assertEqual("Could not change status of issue #789",
-                                 j['msg'])
 
 
 class TestJobsController(FunctionalTest):

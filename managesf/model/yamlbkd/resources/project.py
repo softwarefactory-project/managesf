@@ -121,7 +121,7 @@ class Project(BaseResource):
         ),
         'issue-tracker': (
             str,
-            '^(SFRedmine|SFStoryboard|)$',
+            '^(SFStoryboard|)$',
             False,
             "",
             True,

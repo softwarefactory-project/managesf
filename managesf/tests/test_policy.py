@@ -35,7 +35,6 @@ class TestPolicyEngine(TestCase):
         c = dummy_conf()
         self.config = {'services': c.services,
                        'gerrit': c.gerrit,
-                       'redmine': c.redmine,
                        'app': c.app,
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
@@ -393,7 +392,6 @@ class TestPolicyEngineFromFile(TestCase):
         c = dummy_conf()
         self.config = {'services': c.services,
                        'gerrit': c.gerrit,
-                       'redmine': c.redmine,
                        'app': c.app,
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
