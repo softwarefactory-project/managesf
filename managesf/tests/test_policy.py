@@ -44,7 +44,6 @@ class TestPolicyEngine(TestCase):
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'mysql': c.mysql,
-                       'pages': c.pages,
                        'policy': c.policy, }
         self.app = TestApp(load_app(self.config))
 
@@ -60,25 +59,6 @@ class TestPolicyEngine(TestCase):
                                           target, credentials))
         credentials = {'username': 'BirdPerson'}
         self.assertTrue(policy.authorize('managesf.config:get',
-                                         target, credentials))
-
-    def test_tests_policies(self):
-        """Test the default tests endpoint policies"""
-        credentials = {}
-        target = {'project': 'Gazorpazorp'}
-        self.assertFalse(policy.authorize('managesf.tests:add',
-                                          target, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.tests:add',
-                                         target, credentials))
-        credentials = {'username': 'RickSanchez'}
-        self.assertFalse(policy.authorize('managesf.tests:add',
-                                          target, credentials))
-        credentials['groups'] = ['Gazorpazorp-core', ]
-        self.assertFalse(policy.authorize('managesf.tests:add',
-                                          target, credentials))
-        credentials['groups'] = ['Gazorpazorp-ptl', ]
-        self.assertTrue(policy.authorize('managesf.tests:add',
                                          target, credentials))
 
     def test_hooks_policies(self):
@@ -113,47 +93,6 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.htpasswd:create_update',
                                          target, credentials))
         self.assertTrue(policy.authorize('managesf.htpasswd:delete',
-                                         target, credentials))
-
-    def test_pages_policies(self):
-        """Test the default pages endpoint policies"""
-        credentials = {}
-        target = {}
-        self.assertFalse(policy.authorize('managesf.pages:get',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.pages:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.pages:delete',
-                                          target, credentials))
-        credentials = {'username': 'RickSanchez',
-                       'groups': []}
-        self.assertFalse(policy.authorize('managesf.pages:get',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.pages:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.pages:delete',
-                                          target, credentials))
-        target = {'project': 'phoenix'}
-        credentials['groups'].append('phoenix-core')
-        self.assertFalse(policy.authorize('managesf.pages:get',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.pages:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.pages:delete',
-                                          target, credentials))
-        credentials['groups'].append('phoenix-ptl')
-        self.assertTrue(policy.authorize('managesf.pages:get',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.pages:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.pages:delete',
-                                         target, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.pages:get',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.pages:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.pages:delete',
                                          target, credentials))
 
     def test_localuser_policies(self):
@@ -454,7 +393,6 @@ class TestPolicyEngineFromFile(TestCase):
                        'htpasswd': c.htpasswd,
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
-                       'pages': c.pages,
                        'policy': c.policy,
                        'jenkins': c.jenkins,
                        'nodepool': c.nodepool, }

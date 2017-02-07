@@ -22,10 +22,6 @@
 
 'managesf.restore:restore': 'rule:admin_api'
 
-'managesf.pages:get': 'rule:admin_api or rule:ptl_api'
-'managesf.pages:create': 'rule:admin_api or rule:ptl_api'
-'managesf.pages:delete': 'rule:admin_api or rule:ptl_api'
-
 'managesf.localuser:get': 'rule:authenticated_api'
 'managesf.localuser:create_update': 'rule:admin_api or username:%(username)s'
 'managesf.localuser:delete': 'rule:admin_api or username:%(username)s'
@@ -41,8 +37,6 @@
 'managesf.htpasswd:delete': 'rule:authenticated_api'
 
 'managesf.hooks:trigger': 'rule:admin_or_service'
-
-'managesf.tests:add': 'rule:admin_api or rule:ptl_api'
 
 'managesf.config:get': 'rule:authenticated_api'
 

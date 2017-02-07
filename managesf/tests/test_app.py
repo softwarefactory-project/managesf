@@ -34,7 +34,6 @@ from managesf.services import exceptions as exc
 # TODO: should be done dynamically depending on what plugins we want
 
 from managesf.services.gerrit.project import SFGerritProjectManager
-from managesf.services.gerrit.review import SFGerritReviewManager
 from managesf.services.gerrit import user as g_user
 from managesf.services.redmine.user import SFRedmineUserManager
 from managesf.services.storyboard.user import StoryboardUserManager
@@ -44,9 +43,6 @@ from managesf.services.nodepool.image import SFNodepoolImageManager as SFNIM
 
 from managesf.tests import resources_test_utils as rtu
 from managesf.model.yamlbkd.resources.dummy import Dummy
-
-
-FIND_PROJECT_PATH = 'managesf.controllers.root.ProjectController._find_project'
 
 
 def raiseexc(*args, **kwargs):
@@ -68,7 +64,6 @@ class FunctionalTest(TestCase):
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'mysql': c.mysql,
-                       'pages': c.pages,
                        'policy': c.policy,
                        'resources': c.resources,
                        'jenkins': c.jenkins,
@@ -308,77 +303,6 @@ class TestManageSFAppBackupController(FunctionalTest):
             self.assertTrue(backup_start.called)
 
 
-class TestManageSFPagesController(FunctionalTest):
-    def test_unauthenticated(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
-            gug.return_value = []
-            resp = self.app.get('/pages/p1', status="*")
-            self.assertEqual(resp.status_int, 401)
-
-            resp = self.app.post_json('/pages/p1', {}, status="*")
-            self.assertEqual(resp.status_int, 401)
-
-            resp = self.app.delete('/pages/p1', status="*")
-            self.assertEqual(resp.status_int, 401)
-
-    def test_authenticated(self):
-        env = {'REMOTE_USER': 'user1'}
-        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
-            gug.return_value = [{'name': 'p2-dev'}, ]
-            resp = self.app.post_json('/pages/p1', {'url': 'http://target'},
-                                      extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 401)
-
-            # Now user1 is a project PTL
-            gug.return_value = [{'name': 'p1-ptl'}, {'name': 'p2-ptl'}, ]
-            resp = self.app.post_json('/pages/p1', {'url': 'http://target'},
-                                      extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 201)
-            resp = self.app.post_json('/pages/p1', {'url': 'http://target'},
-                                      extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 200)
-            resp = self.app.post_json('/pages/p2', {'url': 'http://target2'},
-                                      extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 201)
-
-            # Try to fetch configured target for p1 and p2
-            resp = self.app.get('/pages/p1',
-                                extra_environ=env, status="*")
-            self.assertEqual(resp.json, 'http://target')
-            resp = self.app.get('/pages/p2',
-                                extra_environ=env, status="*")
-            self.assertEqual(resp.json, 'http://target2')
-            gug.return_value = [{'name': 'p2-dev'}, ]
-            resp = self.app.get('/pages/p1',
-                                extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 401)
-
-            # Try to add an invalid target
-            gug.return_value = [{'name': 'p3-ptl'}, ]
-            resp = self.app.post_json('/pages/p3', {'url': 'invalid'},
-                                      extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 400)
-
-            # Try to delete a target
-            gug.return_value = [{'name': 'p2-dev'}, ]
-            resp = self.app.delete('/pages/p1',
-                                   extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 401)
-            gug.return_value = [{'name': 'p1-ptl'}, {'name': 'p2-ptl'}, ]
-            resp = self.app.delete('/pages/p1',
-                                   extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 200)
-            resp = self.app.delete('/pages/p2',
-                                   extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 200)
-
-            # Try to delete a non existing target
-            gug.return_value = [{'name': 'p3-ptl'}, ]
-            resp = self.app.delete('/pages/p3',
-                                   extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 404)
-
-
 class TestManageSFHtpasswdController(FunctionalTest):
     def test_unauthenticated(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
@@ -448,36 +372,6 @@ class TestManageSFHtpasswdController(FunctionalTest):
 
             resp = self.app.delete('/htpasswd/', extra_environ=env, status="*")
             self.assertEqual(resp.status_int, 406)
-
-
-class TestProjectTestsController(FunctionalTest):
-    def test_init_project_test(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
-            environ = {'REMOTE_USER': 'ptl_for_this_project'}
-            gug.return_value = [{'name': 'toto-ptl'}, ]
-            with patch.object(SFGerritProjectManager, 'get') as gp, \
-                    patch.object(SFGerritReviewManager,
-                                 'propose_test_definition'):
-                gp.return_value = 'p1'
-                resp = self.app.put_json('/tests/toto',
-                                         {'project-scripts': False},
-                                         extra_environ=environ, status="*")
-                self.assertEqual(resp.status_int, 201)
-
-    def test_init_project_test_with_project_scripts(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
-            environ = {'REMOTE_USER': 'ptl_for_this_project'}
-            gug.return_value = [{'name': 'toto-ptl'}, ]
-            with patch.object(SFGerritProjectManager, 'get') as gp, \
-                    patch.object(SFGerritReviewManager,
-                                 'propose_test_definition'), \
-                    patch.object(SFGerritReviewManager,
-                                 'propose_test_scripts'):
-                gp.return_value = 'p1'
-                resp = self.app.put_json('/tests/toto',
-                                         {'project-scripts': True},
-                                         extra_environ=environ, status="*")
-                self.assertEqual(resp.status_int, 201)
 
 
 class TestManageSFServicesUserController(FunctionalTest):

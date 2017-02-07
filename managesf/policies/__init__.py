@@ -27,7 +27,6 @@ from managesf.policies import htpasswd
 from managesf.policies import localuser
 from managesf.policies import pages
 from managesf.policies import services_users
-from managesf.policies import tests
 from managesf.policies import resources
 from managesf.policies import job
 from managesf.policies import node
@@ -42,7 +41,6 @@ def list_rules():
         services_users.list_rules(),
         htpasswd.list_rules(),
         hooks.list_rules(),
-        tests.list_rules(),
         config.list_rules(),
         resources.list_rules(),
         job.list_rules(),

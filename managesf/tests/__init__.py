@@ -114,7 +114,4 @@ class dummy_conf():
     htpasswd = {
         'filename': tempfile.mkstemp()[1]
     }
-    pages = {
-        'maps': tempfile.mkstemp()[1]
-    }
     policy = {}

@@ -23,7 +23,7 @@ from pecan.rest import RestController
 from pecan import request, response
 from stevedore import driver
 
-from managesf.controllers import backup, localuser, introspection, htp, pages
+from managesf.controllers import backup, localuser, introspection, htp
 from managesf.controllers import SFuser
 from managesf.services import base
 from managesf.services import exceptions
@@ -142,85 +142,6 @@ class BackupController(RestController):
             response.status = 204
         except Exception as e:
             return report_unhandled_error(e)
-
-
-class PagesController(RestController):
-
-    @expose('json')
-    def post(self, project):
-        user = request.remote_user
-        _policy = 'managesf.pages:create'
-        if not project:
-            logger.exception("Project name required")
-            abort(400, detail="Project name required")
-
-        project = _decode_project_name(project)
-        if not authorize(_policy,
-                         target={'project': project}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        infos = request.json if request.content_length else {}
-        try:
-            ret = pages.update_content_url(project, infos)
-        except pages.InvalidInfosInput as e:
-            abort(400, detail=unicode(e))
-        except pages.PageNotFound as e:
-            abort(404, detail=unicode(e))
-        except Exception as e:
-            return report_unhandled_error(e)
-        if ret:
-            retmsg = "The pages target has been created for project %s" \
-                     % project
-            response.status = 201
-        else:
-            retmsg = "The pages target has been updated for project %s" \
-                     % project
-        logger.info("User %s has modified the pages target for project %s" % (
-                    user, project))
-        return retmsg
-
-    @expose('json')
-    def get(self, project):
-        _policy = 'managesf.pages:get'
-        if not project:
-            logger.exception("Project name required")
-            abort(400, detail="Project name required")
-
-        project = _decode_project_name(project)
-        if not authorize(_policy,
-                         target={'project': project}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            ret = pages.get_content_url(project)
-        except pages.PageNotFound as e:
-            abort(404, detail=unicode(e))
-        except Exception as e:
-            return report_unhandled_error(e)
-        return ret
-
-    @expose('json')
-    def delete(self, project):
-        user = request.remote_user
-        _policy = 'managesf.pages:delete'
-        if not project:
-            logger.exception("Project name required")
-            abort(400, detail="Project name required")
-
-        project = _decode_project_name(project)
-        if not authorize(_policy,
-                         target={'project': project}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            pages.delete_content_url(project)
-        except pages.PageNotFound as e:
-            abort(404, detail=unicode(e))
-        except Exception as e:
-            return report_unhandled_error(e)
-        logger.info("User %s has deleted the pages target for project %s" % (
-                    user, project))
-        return "The pages target has been deleted for project %s" % project
 
 
 class LocalUserController(RestController):
@@ -604,44 +525,6 @@ class HooksController(RestController):
                 hook, hook_name, msg))
         response.status = status
         return {'msg': msg}
-
-
-class TestsController(RestController):
-
-    @expose('json')
-    def put(self, project_name=''):
-        _policy = 'managesf.tests:add'
-        if not authorize(_policy,
-                         target={'project': project_name}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        # TODO(mhu) this must be independent from gerrit
-        code_review = [s for s in SF_SERVICES
-                       if isinstance(s, base.BaseCodeReviewServicePlugin)][0]
-        if not code_review.project.get(project_name=project_name):
-            abort(404)
-
-        try:
-            msg = 'Configuring job pipelines for project %s'
-            logger.debug(msg % project_name)
-            code_review.review.propose_test_definition(project_name,
-                                                       request.remote_user)
-        except Exception as e:
-            abort(500, detail=unicode(e))
-        if request.json:
-            project_scripts = request.json.get('project-scripts', False)
-
-        if project_scripts:
-            try:
-                msg = 'Adding tests to config for project %s'
-                logger.debug(msg % project_name)
-                code_review.review.propose_test_scripts(project_name,
-                                                        request.remote_user)
-            except Exception as e:
-                abort(500, detail=unicode(e))
-
-        response.status = 201
-        return True
 
 
 class ResourcesController(RestController):
@@ -1080,10 +963,8 @@ class RootController(object):
     bind = LocalUserBindController()
     htpasswd = HtpasswdController()
     about = introspection.IntrospectionController()
-    tests = TestsController()
     services_users = ServicesUsersController()
     hooks = HooksController()
-    pages = PagesController()
     resources = ResourcesController()
     jobs = JobsController()
     if len(AGENTSPROVIDERS) > 0:
