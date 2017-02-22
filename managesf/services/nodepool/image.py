@@ -15,21 +15,57 @@
 # under the License.
 
 
+import atexit
 import logging
 
+from managesf import model
 from managesf.services import base
 from managesf.services.nodepool.common import get_values, get_age
-# from managesf.services.nodepool.common import validate_input
+from managesf.services.nodepool.common import validate_input
 
 
 logger = logging.getLogger(__name__)
 
 
+crud = model.ImageUpdatesCRUD()
+
+
 LIST_CMD = 'nodepool image-list | sed -e 1,3d -e "$ d"'
 LIST_FIELDS = ['id', 'provider_name', 'image_name', 'hostname', 'version',
                'image_id', 'server_id', 'state', 'age']
-UPDATE_CMD = ('nodepool -l /etc/nodepool/logging.conf '
-              'image-update %(provider)s %(image)s')
+UPDATE_CMD = ('nodepool image-update %(provider)s %(image)s')
+
+
+UPDATES_CACHE = {}
+REFRESH_LOCKED = False
+
+
+def _refresh_cache():
+    global REFRESH_LOCKED
+    if REFRESH_LOCKED:
+        logger.debug("image update cache is locked, refresh it later")
+        return
+    to_remove = []
+    REFRESH_LOCKED = True
+    logger.debug("locking image update cache for refresh")
+    for u in UPDATES_CACHE:
+        if UPDATES_CACHE[u]['stdout'].channel.exit_status_ready():
+            stdout = UPDATES_CACHE[u]['stdout']
+            stderr = UPDATES_CACHE[u]['stderr']
+            client = UPDATES_CACHE[u]['client']
+            exit_code = int(stdout.channel.recv_exit_status())
+            if exit_code > 0:
+                status = "FAILURE"
+            else:
+                status = "SUCCESS"
+            crud.update(id=u, status=status, exit_code=str(exit_code),
+                        output=stdout.read(), stderr=stderr.read())
+            client.close()
+            to_remove.append(u)
+    for u in to_remove:
+        del UPDATES_CACHE[u]
+    REFRESH_LOCKED = False
+    logger.debug("image update cache unlocked")
 
 
 class SFNodepoolImageManager(base.ImageManager):
@@ -70,20 +106,74 @@ class SFNodepoolImageManager(base.ImageManager):
                 images_info.append(image)
         return images_info
 
-# TODO look more into the app_iter mechanism before going this way
-#    def update(self, provider_name, image_name):
-#        """updates (rebuild) the image image_name on provider provider_name"""
-#        if (not validate_input(provider_name) or
-#           not validate_input(image_name)):
-#            msg = "invalid provider %r and/or image %r" % (provider_name,
-#                                                           image_name)
-#            raise Exception(msg)
-#        client = self.plugin.get_client()
-#        args = {'provider': provider_name,
-#                'image': image_name}
-#        logger.debug("[%s] calling %s" % (self.plugin.service_name,
-#                                          UPDATE_CMD % args))
-#        cmd = UPDATE_CMD % args
-#        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
-#        client.close()
-#        return stdout
+    def start_update(self, provider_name, image_name):
+        """updates (rebuild) the image image_name on provider provider_name"""
+        _refresh_cache()
+        if (not validate_input(provider_name) or
+           not validate_input(image_name)):
+            msg = "invalid provider %r and/or image %r" % (provider_name,
+                                                           image_name)
+            raise Exception(msg)
+        client = self.plugin.get_client()
+        args = {'provider': provider_name,
+                'image': image_name}
+        update_id = int(crud.create(**args))
+        logger.debug("[%s] calling %s" % (self.plugin.service_name,
+                                          UPDATE_CMD % args))
+        cmd = UPDATE_CMD % args
+        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+        UPDATES_CACHE[update_id] = {'stdout': stdout,
+                                    'stderr': stderr,
+                                    'client': client}
+        UPDATES_CACHE[update_id].update(args)
+        return update_id
+
+    def get_update_info(self, id):
+        """fetches relevant info on an image update possibly still
+        in progress"""
+        _refresh_cache()
+        x = crud.get(id)
+        if x:
+            return {'id': id,
+                    'status': x['status'],
+                    'provider': x['provider'],
+                    'image': x['image'],
+                    'exit_code': x['exit_code'],
+                    'output': x['output'],
+                    'error': x['stderr']}
+        elif int(id) in UPDATES_CACHE:
+            # TODO(mhu) Find a way to return the output in progress. Could we
+            # copy the file-like stdout object?
+            return {'id': id,
+                    'status': 'IN_PROGRESS',
+                    'provider': UPDATES_CACHE['provider'],
+                    'image': UPDATES_CACHE['image'],
+                    'exit_code': None,
+                    'output': None,
+                    'error': None}
+        else:
+            return {}
+
+
+# For the DBZ fans
+def final_flush():
+    from sqlalchemy.exc import OperationalError
+    try:
+        _refresh_cache()
+        for u in UPDATES_CACHE:
+            stdout = UPDATES_CACHE[u]['stdout']
+            stderr = UPDATES_CACHE[u]['stderr']
+            client = UPDATES_CACHE[u]['client']
+            status = "INTERRUPTED"
+            crud.update(id=u, status=status, output=stdout.read(),
+                        stderr=stderr.read())
+            client.close()
+    except OperationalError as e:
+        msg = "[img-update] Error handling final cache flush on db: %s"
+        logger.error(msg % e)
+    except Exception as e:
+        msg = "[img-update] Unknown error handling final cache flush: %s"
+        logger.error(msg % e)
+
+
+atexit.register(final_flush)

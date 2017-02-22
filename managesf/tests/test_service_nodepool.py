@@ -15,6 +15,8 @@
 # under the License.
 
 
+import os
+import time
 from StringIO import StringIO
 from unittest import TestCase
 from mock import patch, ANY
@@ -35,11 +37,19 @@ IMAGE_GET_STDOUT += "| 2383 | rcip-prod | sfstack-centos-7           | template-
 
 
 class Fakechannel:
-    def __init__(self, code):
+    def __init__(self, code, exec_time=2):
         self.code = code
+        self.start_time = time.time()
+        self.exec_time = exec_time
 
     def recv_exit_status(self):
         return self.code
+
+    # simulate execution time
+    def exit_status_ready(self):
+        if time.time() - self.start_time > self.exec_time:
+            return True
+        return False
 
 
 class Stdout(StringIO):
@@ -53,6 +63,13 @@ class BaseSFNodepoolService(TestCase):
     def setupClass(cls):
         cls.conf = dummy_conf()
         cls.nodepool = nodepool.SoftwareFactoryNodepool(cls.conf)
+        nodepool.image.model.conf = cls.conf
+
+    def setUp(self):
+        nodepool.image.model.init_model()
+
+    def tearDown(self):
+        os.unlink(self.conf.sqlalchemy['url'][len('sqlite:///'):])
 
 
 class TestSFNodepoolManager(BaseSFNodepoolService):
@@ -226,23 +243,73 @@ class TestSFNodepoolManager(BaseSFNodepoolService):
         self.assertRaisesRegexp(Exception, "99",
                                 self.nodepool.image.get)
 
-#    @patch('managesf.services.nodepool.paramiko')
-#    def test_image_update(self, paramiko):
-#        self.assertRaisesRegexp(Exception, "invalid provider",
-#                                self.nodepool.image.update,
-#                                provider_name="-h; rm -rf /; echo ",
-#                                image_name="PWNED")
-#        self.assertRaisesRegexp(Exception, "invalid provider",
-#                                self.nodepool.image.update,
-#                                image_name="-h; rm -rf /; echo ",
-#                                provider_name="PWNED")
-#        stdout = 'rebuilding image'
-#        stderr = ''
-#        paramiko.SSHClient().exec_command.return_value = (StringIO(''),
-#                                                          StringIO(stdout),
-#                                                          StringIO(stderr))
-#        u = self.nodepool.image.update('provider', 'image')
-#        m = ('nodepool -l /etc/nodepool/logging.conf '
-#             'image-update provider image')
-#        paramiko.SSHClient().exec_command.assert_called_with(m, get_pty=True)
-#        self.assertEqual(stdout, u.read(), u)
+    @patch('managesf.services.nodepool.paramiko')
+    def test_image_update(self, paramiko):
+        self.assertRaisesRegexp(Exception, "invalid provider",
+                                self.nodepool.image.start_update,
+                                provider_name="-h; rm -rf /; echo ",
+                                image_name="PWNED")
+        self.assertRaisesRegexp(Exception, "invalid provider",
+                                self.nodepool.image.start_update,
+                                image_name="-h; rm -rf /; echo ",
+                                provider_name="PWNED")
+
+        # Simple workflow
+        stdout = Stdout(u'rebuilding image')
+        stdout.channel.exec_time = 0
+        stderr = u''
+        process = (StringIO(''),
+                   stdout,
+                   StringIO(stderr))
+        paramiko.SSHClient().exec_command.return_value = process
+        u = self.nodepool.image.start_update('provider', 'image')
+        m = ('nodepool image-update provider image')
+        paramiko.SSHClient().exec_command.assert_called_with(m, get_pty=True)
+        self.assertTrue(isinstance(u, int), type(u))
+        self.assertTrue(u in nodepool.image.UPDATES_CACHE)
+        v = self.nodepool.image.get_update_info(u)
+        self.assertEqual(u, v['id'])
+        self.assertEqual(0, int(v['exit_code']))
+        self.assertEqual('SUCCESS', v['status'])
+        self.assertEqual('rebuilding image', v['output'])
+        self.assertEqual(stderr, v['error'])
+        # cache should have been updated
+        self.assertTrue(u not in nodepool.image.UPDATES_CACHE)
+
+        # Long operation
+        stdout = Stdout(u'rebuilding image another time')
+        stdout.channel.exec_time = 10000
+        process = (StringIO(''),
+                   stdout,
+                   StringIO(stderr))
+        paramiko.SSHClient().exec_command.return_value = process
+        u = self.nodepool.image.start_update('provider', 'image')
+        v = self.nodepool.image.get_update_info(u)
+        self.assertEqual(u, v['id'])
+        self.assertEqual('IN_PROGRESS', v['status'])
+        # still cached, until completion
+        self.assertTrue(u in nodepool.image.UPDATES_CACHE)
+        # finish the build
+        stdout.channel.exec_time = 0
+        v = self.nodepool.image.get_update_info(u)
+        self.assertEqual(u, v['id'])
+        self.assertEqual(0, int(v['exit_code']))
+        self.assertEqual('SUCCESS', v['status'])
+        self.assertEqual('rebuilding image another time', v['output'])
+        # cache should have been updated
+        self.assertTrue(u not in nodepool.image.UPDATES_CACHE)
+
+        # Error during image update
+        stdout = Stdout(u'Uh oh!', exit_code=128)
+        stdout.channel.exec_time = 0
+        stderr = u'A very helpful error message'
+        process = (StringIO(''),
+                   stdout,
+                   StringIO(stderr))
+        paramiko.SSHClient().exec_command.return_value = process
+        u = self.nodepool.image.start_update('provider', 'image')
+        v = self.nodepool.image.get_update_info(u)
+        self.assertEqual(u, v['id'])
+        self.assertEqual('FAILURE', v['status'])
+        self.assertEqual(stderr, v['error'])
+        self.assertEqual(128, int(v['exit_code']))

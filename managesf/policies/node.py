@@ -41,7 +41,10 @@ rules = [
         name=POLICY_ROOT % 'image-get',
         check_str=base.RULE_ANY),
     policy.RuleDefault(
-        name=POLICY_ROOT % 'image-update',
+        name=POLICY_ROOT % 'image-start-update',
+        check_str=base.RULE_ADMIN_OR_SERVICE),
+    policy.RuleDefault(
+        name=POLICY_ROOT % 'image-update-status',
         check_str=base.RULE_ADMIN_OR_SERVICE),
 ]
 

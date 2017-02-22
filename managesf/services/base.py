@@ -234,8 +234,13 @@ class ImageManager(BaseCRUDManager):
         """lists one or several images depending on filtering options"""
         raise exc.UnavailableActionError()
 
-    def update(self, provider_name, image_name):
+    def start_update(self, provider_name, image_name):
         """updates (rebuild) the image image_name on provider provider_name"""
+        raise exc.UnavailableActionError()
+
+    def get_update_info(self, id):
+        """fetches relevant info on an image update possibly still
+        in progress"""
         raise exc.UnavailableActionError()
 
 

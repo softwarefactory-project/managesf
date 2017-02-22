@@ -16,7 +16,7 @@
 import logging
 
 from pecan import conf  # noqa
-from sqlalchemy import create_engine, Column, String, Unicode
+from sqlalchemy import create_engine, Column, String, Unicode, UnicodeText
 from sqlalchemy import Boolean, Integer, exc, event
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
@@ -235,6 +235,59 @@ class SFUserCRUD:
                 raise KeyError('Too many candidates for deletion')
             except NoResultFound:
                 return False
+
+
+class NodepoolImageUpdate(Base):
+    __tablename__ = 'NODEPOOL_IMAGE_UPDATES'
+    id = Column(Integer(), primary_key=True)
+    status = Column(String(255), default="IN_PROGRESS")
+    provider = Column(String(1024), nullable=False)
+    image = Column(String(1024), nullable=False)
+    exit_code = Column(Integer(), default=-1)
+    stderr = Column(UnicodeText(), default="")
+    output = Column(UnicodeText(4294967295), default="")
+
+
+class ImageUpdatesCRUD():
+    def create(self, provider, image):
+        with session_scope() as session:
+            if provider and image:
+                img_update = NodepoolImageUpdate(
+                              provider=provider,
+                              image=image)
+                session.add(img_update)
+                session.commit()
+                return img_update.id
+            else:
+                msg = "Missing info required for image update: %s|%s"
+                raise KeyError(msg % (provider, image))
+
+    def update(self, id, status=None, exit_code=None,
+               output=None, stderr=None):
+        with session_scope() as session:
+            try:
+                u = session.query(NodepoolImageUpdate).filter_by(id=id).one()
+                if status:
+                    u.status = status
+                if exit_code:
+                    u.exit_code = int(exit_code)
+                if output:
+                    u.output = output
+                if stderr:
+                    u.stderr = stderr
+                session.commit()
+            except NoResultFound:
+                logger.warn("Could not update image-update %s: not found" % id)
+                return
+
+    def get(self, id):
+        with session_scope() as session:
+            # TODO(mhu) Lookup by images, providers, statuses if needed?
+            try:
+                u = session.query(NodepoolImageUpdate).filter_by(id=id).one()
+                return row2dict(u)
+            except NoResultFound:
+                return {}
 
 
 def init_model():

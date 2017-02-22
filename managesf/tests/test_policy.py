@@ -229,7 +229,9 @@ class TestPolicyEngine(TestCase):
                                           {}, credentials))
         self.assertTrue(policy.authorize('managesf.node:image-get',
                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-update',
+        self.assertFalse(policy.authorize('managesf.node:image-start-update',
+                                          {}, credentials))
+        self.assertFalse(policy.authorize('managesf.node:image-update-status',
                                           {}, credentials))
         credentials = {'username': 'shimajiro'}
         self.assertTrue(policy.authorize('managesf.node:get',
@@ -242,7 +244,9 @@ class TestPolicyEngine(TestCase):
                                           {}, credentials))
         self.assertTrue(policy.authorize('managesf.node:image-get',
                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-update',
+        self.assertFalse(policy.authorize('managesf.node:image-start-update',
+                                          {}, credentials))
+        self.assertFalse(policy.authorize('managesf.node:image-update-status',
                                           {}, credentials))
         credentials = {'username': 'admin'}
         self.assertTrue(policy.authorize('managesf.node:get',
@@ -255,7 +259,9 @@ class TestPolicyEngine(TestCase):
                                          {}, credentials))
         self.assertTrue(policy.authorize('managesf.node:image-get',
                                          {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-update',
+        self.assertTrue(policy.authorize('managesf.node:image-start-update',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.node:image-update-status',
                                          {}, credentials))
         credentials = {'username': 'SF_SERVICE_USER'}
         self.assertTrue(policy.authorize('managesf.node:get',
@@ -268,7 +274,9 @@ class TestPolicyEngine(TestCase):
                                          {}, credentials))
         self.assertTrue(policy.authorize('managesf.node:image-get',
                                          {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-update',
+        self.assertTrue(policy.authorize('managesf.node:image-start-update',
+                                         {}, credentials))
+        self.assertTrue(policy.authorize('managesf.node:image-update-status',
                                          {}, credentials))
 
     def test_default_policies(self):
@@ -485,7 +493,7 @@ class TestPolicyEngineFromFile(TestCase):
                                           target, credentials))
         self.assertFalse(policy.authorize('managesf.node:create',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-update',
+        self.assertFalse(policy.authorize('managesf.node:image-start-update',
                                           target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))
@@ -494,7 +502,7 @@ class TestPolicyEngineFromFile(TestCase):
                                           target, credentials))
         self.assertFalse(policy.authorize('managesf.node:create',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-update',
+        self.assertFalse(policy.authorize('managesf.node:image-start-update',
                                           target, credentials))
         self.assertTrue(policy.authorize('rick_api',
                                          target, credentials))
@@ -503,7 +511,7 @@ class TestPolicyEngineFromFile(TestCase):
                                           target, credentials))
         self.assertFalse(policy.authorize('managesf.node:create',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-update',
+        self.assertFalse(policy.authorize('managesf.node:image-start-update',
                                           target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))
@@ -513,7 +521,7 @@ class TestPolicyEngineFromFile(TestCase):
         self.assertFalse(policy.authorize('managesf.node:create',
                                           target, credentials))
         # the default rule should be used here
-        self.assertTrue(policy.authorize('managesf.node:image-update',
+        self.assertTrue(policy.authorize('managesf.node:image-start-update',
                                          target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))

@@ -1398,18 +1398,35 @@ class TestNodesController(FunctionalTest):
                 self.assertEqual(2,
                                  len(j))
 
-#    def test_image_update(self):
-#        with patch.object(SFGerritProjectManager, 'get_user_groups'):
-#            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
-#            with patch.object(SFNIM, 'update') as update:
-#                update.return_value = SlowStringIO('well that went OK' * 4096,
-#                                                   max_wait=10)
-#                resp = self.app.put('/nodes/image/blip/blop/',
-#                                    extra_environ=environ, status="*")
-#                update.assert_called_with("blip", "blop")
-#                self.assertEqual(201, resp.status_int, resp.body)
-#                self.assertEqual('well that went OK' * 4096,
-#                                 resp.body)
+    def test_image_update(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNIM, 'start_update') as start_update:
+                start_update.return_value = 54
+                resp = self.app.put('/nodes/images/update/blip/blop/',
+                                    extra_environ=environ, status="*")
+                start_update.assert_called_with("blip", "blop")
+                self.assertEqual(201, resp.status_int, resp.body)
+                self.assertTrue(str(start_update.return_value) in resp.body,
+                                resp.body)
+            with patch.object(SFNIM, 'get_update_info') as get_info:
+                dummy = {'id': 51,
+                         'status': 'bleh',
+                         'provider': 'blip',
+                         'image': 'blop',
+                         'exit_code': 23,
+                         'output': 'huehuehue',
+                         'error': 'hohoho'}
+                get_info.return_value = dummy
+                resp = self.app.get('/nodes/images/update/51/',
+                                    extra_environ=environ, status="*")
+                get_info.assert_called_with(u'51')
+                self.assertEqual(200, resp.status_int, resp.body)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                for u in dummy:
+                    self.assertEqual(str(dummy[u]), str(j[u]))
 
 
 class TestResourcesController(FunctionalTest):
