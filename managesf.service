@@ -6,8 +6,8 @@ After=syslog.target network.target mariadb.service
 Type=simple
 User=managesf
 Group=managesf
-EnvironmentFile=-/etc/sysconfig/managesf
-ExecStart=/usr/bin/managesf-api
+SyslogIdentifier=managesf
+ExecStart=/usr/sbin/uwsgi --plugin python --http-socket :20001 --pecan /etc/managesf/config.py
 
 [Install]
 WantedBy=multi-user.target

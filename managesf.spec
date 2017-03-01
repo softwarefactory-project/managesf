@@ -39,7 +39,6 @@ BuildRequires:  GitPython
 BuildRequires:  python-requests
 BuildRequires:  python-jenkins
 
-
 Requires:       python2-pysflib
 Requires:       python-pecan
 Requires:       python2-pbr
@@ -63,6 +62,7 @@ Requires:       python2-deepdiff
 Requires:       GitPython
 Requires:       python-requests
 Requires:       python-jenkins
+Requires:       uwsgi-plugin-python
 
 %description
 python API used to centralize management of services deployed under Software Factory
@@ -114,5 +114,8 @@ exit 0
 %attr(0750, managesf, managesf) %{_var}/log/managesf
 
 %changelog
+* Wed Mar 01 2017 Fabien Boucher <fboucher@redhat.com> - 0.11.0-1
+- Add uwsgi dependency and update unit file
+
 * Fri Feb 24 2017 Fabien Boucher <fboucher@redhat.com> - 0.11.0-1
 - Initial packaging
