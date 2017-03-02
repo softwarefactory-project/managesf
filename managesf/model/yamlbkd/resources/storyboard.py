@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 NAME_RE = "^[a-zA-Z0-9]+([_\-\./]?[a-zA-Z0-9]+)*$"
 PROJECT_NAME_RE = re.compile(NAME_RE)
 NAME_MIN_LEN = 5
+NAME_MAX_LEN = 50
 
 
 class StoryboardOps(object):
@@ -46,15 +47,23 @@ class StoryboardOps(object):
     def extra_validations(self, **kwargs):
         logs = []
         if len(kwargs['name']) < NAME_MIN_LEN:
-            logs.append("Storyboard project name %s length is invalid"
+            logs.append("Storyboard project group name %s length is invalid"
                         " (Minimal len is %s)" % (
                             kwargs['name'], NAME_MIN_LEN))
+        if len(kwargs['name']) > NAME_MAX_LEN:
+            logs.append("Storyboard project group name %s length is invalid"
+                        " (Maximal len is %s)" % (
+                            kwargs['name'], NAME_MAX_LEN))
         sources_repositories = kwargs['source-repositories']
         for name in sources_repositories:
             if len(name) < NAME_MIN_LEN:
                 logs.append(
                     "Storyboard project name %s length is invalid"
                     " (Minimal len is %s)" % (name, NAME_MIN_LEN))
+            if len(name) > NAME_MAX_LEN:
+                logs.append(
+                    "Storyboard project name %s length is invalid"
+                    " (Maximal len is %s)" % (name, NAME_MAX_LEN))
             if not PROJECT_NAME_RE.match(name):
                 logs.append(
                     "Storyboard project name %s is invalid"
