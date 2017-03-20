@@ -7,3 +7,4 @@ Welcome to the managesf/sfmanager documentation!
    install
    restapi
    plugins
+   resources

@@ -1,8 +1,8 @@
 %global         sum A python API used to centralize management of services deployed under Software Factory
 
 Name:           managesf
-Version:        0.10
-Release:        1%{?dist}
+Version:        0.11.0
+Release:        2%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -67,12 +67,25 @@ Requires:       uwsgi-plugin-python
 %description
 python API used to centralize management of services deployed under Software Factory
 
+%package doc
+Summary:        Managesf documentation
+
+BuildRequires:  python-sphinx
+Buildrequires:  python-mock
+
+%description doc
+Managesf documentation
+
+
 %prep
 %autosetup -n %{name}-%{version}
 
 %build
 export PBR_VERSION=%{version}
 %{__python2} setup.py build
+PYTHONPATH=. %{__python2} docs/generate-resources-docs.py > docs/source/resources.rst
+sphinx-build -b html -d docs/build/doctrees docs/source docs/build/html
+
 
 %install
 export PBR_VERSION=%{version}
@@ -82,6 +95,9 @@ mkdir -p %{buildroot}/%{_var}/log/managesf
 install -p -D -m 644 %{buildroot}/usr/etc/managesf/sf-policy.yaml %{buildroot}/%{_sysconfdir}/managesf/sf-policy.yaml
 rm %{buildroot}/usr/etc/managesf/sf-policy.yaml
 install -p -D -m 644 %{SOURCE1} %{buildroot}/%{_unitdir}/%{name}.service
+mkdir -p %{buildroot}/usr/share/doc/managesf
+mv docs/build/html/* %{buildroot}/usr/share/doc/managesf/
+
 
 %check
 # Deactivate tests here as one is failing and I cannot find the reason
@@ -113,7 +129,13 @@ exit 0
 %attr(0750, managesf, managesf) %{_var}/lib/managesf
 %attr(0750, managesf, managesf) %{_var}/log/managesf
 
+%files doc
+/usr/share/doc/managesf
+
 %changelog
+* Mon Mar 20 2017 Tristan Cacqueray <tdecacqu@redhat.com> - 0.11.0-2
+- Add html documentation
+
 * Wed Mar 01 2017 Fabien Boucher <fboucher@redhat.com> - 0.11.0-1
 - Add uwsgi dependency and update unit file
 
