@@ -1,5 +1,5 @@
 [gerrit]
 host=softwarefactory-project.io
 port=29418
-project=managesf
+project=software-factory/managesf
 defaultbranch=master
