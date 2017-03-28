@@ -213,7 +213,7 @@ class SFResourceBackendEngine(object):
                             validation_logs.extend(logs)
                             raise ResourceInvalidException(
                                 "Resource [type: %s, ID: %s] extra "
-                                "validations failed")
+                                "validations failed" % (rtype, rid))
                         # Check key changes are possible
                         if not all([r.is_mutable(k) for
                                     k in data['changed']]):
@@ -271,6 +271,7 @@ class SFResourceBackendEngine(object):
                             logs = MAPPING[rtype].CALLBACKS[ctype](
                                 conf, new, _data)
                     except Exception, e:
+                        logger.exception("apply_changes failed %s" % e)
                         logs.append(
                             "Resource [type: %s, ID: %s] %s op error (%s)." % (
                                 rtype, rid, ctype, str(e)))

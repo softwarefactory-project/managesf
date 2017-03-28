@@ -16,11 +16,13 @@
 import os
 import re
 import tempfile
+import logging
 
 from git.config import GitConfigParser
 
 from managesf.model.yamlbkd.resource import BaseResource
 
+logger = logging.getLogger(__name__)
 KEYS_EXP_BOOLEAN_VALUES = (
     'requireChangeId',
     'mergeContent',
@@ -60,6 +62,7 @@ class ACLOps(object):
             c = GitConfigParser(path)
             c.read()
         except Exception, e:
+            logger.exception("GitConfigParser failed %s" % e)
             logs.append(str(e))
         finally:
             os.unlink(path)
