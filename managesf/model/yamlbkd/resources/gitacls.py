@@ -23,6 +23,16 @@ from git.config import GitConfigParser
 from managesf.model.yamlbkd.resource import BaseResource
 
 logger = logging.getLogger(__name__)
+
+KEYS_EXP_GROUP_REGEXS = (
+    'owner',
+    'read',
+    'submit',
+    'create',
+    'push',
+    'label-[^ ]+'
+)
+
 KEYS_EXP_BOOLEAN_VALUES = (
     'requireChangeId',
     'mergeContent',
@@ -78,14 +88,27 @@ class ACLOps(object):
                 if k in KEYS_EXP_BOOLEAN_VALUES:
                     if v.lower() not in ('true', 'false'):
                         logs.append(
-                            "ACLs file section (%s), key (%s) expect "
+                            "ACLs file section (%s), key (%s) expects "
                             "a valid boolean value (not: %s)" % (
                                 section_name, k, v))
                     continue
+                if any([re.match(rex, k) for rex in KEYS_EXP_GROUP_REGEXS]):
+                    if k.startswith('label-'):
+                        if not re.match('.+ group .+$', v):
+                            logs.append(
+                                "ACLs file section (%s), key (%s) expects "
+                                "a note rule and a group to be specified "
+                                "(not: %s)" % (section_name, k, v))
+                    else:
+                        if not re.match('group .+$', v):
+                            logs.append(
+                                "ACLs file section (%s), key (%s) expects "
+                                "a group to be specified (not: %s)" % (
+                                    section_name, k, v))
                 if k == 'action' and section_name == 'submit':
                     if v.lower() not in SUBMIT_ACTION_VALUES:
                         logs.append(
-                            "ACLs file section (%s), key (%s) expect "
+                            "ACLs file section (%s), key (%s) expects "
                             "a valid submit strategy (not: %s)" % (
                                 section_name, k, v))
                     continue

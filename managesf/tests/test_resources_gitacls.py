@@ -36,12 +36,6 @@ class TestACLOps(TestCase):
         logs = o.extra_validations(**kwargs)
         self.assertEqual(len(logs), 0)
 
-        kwargs = {'file': """[project]
-\tdescription = "My awesome project"
-[access "refs/*"]
-\tread = group coders
-""",
-                  'groups': ['mygid']}
         new = {
             'resources': {
                 'groups': {
@@ -53,6 +47,43 @@ class TestACLOps(TestCase):
                 }
             }
         }
+
+        kwargs = {'file': """[project]
+\tdescription = "My awesome project"
+[access "refs/*"]
+\tread = coders
+""",
+                  'groups': ['mygid']}
+
+        o = ACLOps(None, new)
+        logs = o.extra_validations(**kwargs)
+        self.assertEqual(len(logs), 1)
+        self.assertIn('ACLs file section (access "refs/*"), key '
+                      '(read) expects a group to be specified (not: coders)',
+                      logs)
+
+        kwargs = {'file': """[project]
+\tdescription = "My awesome project"
+[access "refs/*"]
+\tlabel-Code-Review = -2..+2 coders
+""",
+                  'groups': ['mygid']}
+
+        o = ACLOps(None, new)
+        logs = o.extra_validations(**kwargs)
+        self.assertEqual(len(logs), 1)
+        self.assertIn('ACLs file section (access "refs/*"), key '
+                      '(label-Code-Review) expects a note rule and '
+                      'a group to be specified (not: -2..+2 coders)',
+                      logs)
+
+        kwargs = {'file': """[project]
+\tdescription = "My awesome project"
+[access "refs/*"]
+\tread = group coders
+\tlabel-Code-Review = -2..+2 group coders
+""",
+                  'groups': ['mygid']}
         o = ACLOps(None, new)
         logs = o.extra_validations(**kwargs)
         self.assertEqual(len(logs), 0)
@@ -70,7 +101,11 @@ class TestACLOps(TestCase):
         }
         o = ACLOps(None, new)
         logs = o.extra_validations(**kwargs)
-        self.assertEqual(len(logs), 1)
+        self.assertEqual(len(logs), 2)
         self.assertIn('ACLs file section (access "refs/*"), key '
                       '(read) relies on an unknown group name: coders',
+                      logs)
+        self.assertIn('ACLs file section (access "refs/*"), key '
+                      '(label-Code-Review) relies on an unknown '
+                      'group name: coders',
                       logs)
