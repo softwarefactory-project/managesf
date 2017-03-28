@@ -16,6 +16,7 @@
 import json
 import urllib
 import sqlalchemy
+import logging
 
 from requests.exceptions import HTTPError
 
@@ -38,6 +39,7 @@ from managesf.model.yamlbkd.resource import BaseResource
 # ###
 
 
+logger = logging.getLogger(__name__)
 UNMANAGED_GERRIT_GROUPS = ('Administrators',
                            'Non-Interactive Users')
 
@@ -75,6 +77,7 @@ class GroupOps(object):
                 logs.append("Group list: err API returned HTTP 404/409")
                 return logs, groups
         except Exception, e:
+            logger.exception("get_groups failed %s" % e)
             logs.append("Group list: err API returned %s" % e)
             return logs, groups
         groups = {}
@@ -95,6 +98,7 @@ class GroupOps(object):
                     groups[gname]['members'] = [
                         m['email'] for m in members if 'email' in m.keys()]
             except Exception, e:
+                logger.exception("get_group_members failed %s" % e)
                 logs.append(
                     "Group list members [%s]: err API "
                     "returned %s" % (gname, e))
@@ -114,6 +118,7 @@ class GroupOps(object):
             if ret is False:
                 logs.append("Group create: err API returned HTTP 404/409")
         except Exception, e:
+            logger.exception("create_group failed %s" % e)
             logs.append("Group create: err API returned %s" % e)
 
         # Remove auto added admin
@@ -125,6 +130,7 @@ class GroupOps(object):
                             "err API returned HTTP 404/409" % (
                                 self.conf.admin['email']))
         except Exception, e:
+            logger.exception("delete_group_member failed %s" % e)
             logs.append("Group create [del member: admin]: "
                         "err API returned %s" % (
                             self.conf.admin['email'], e))
@@ -137,6 +143,7 @@ class GroupOps(object):
                         logs.append("Group create [add member: %s]: "
                                     "err API returned HTTP 404/409" % member)
                 except Exception, e:
+                    logger.exception("add_group_member failed %s" % e)
                     logs.append("Group create [add member: %s]: "
                                 "err API returned %s" % (member, e))
 
@@ -172,6 +179,7 @@ class GroupOps(object):
                     logs.append("Group delete [del member: %s]: "
                                 "err API returned HTTP 404/409" % member)
             except Exception, e:
+                logger.exception("delete_group_member failed %s" % e)
                 logs.append("Group delete [del member: %s]: "
                             "err API returned %s" % (member, e))
 
@@ -185,6 +193,7 @@ class GroupOps(object):
                     logs.append("Group delete [del included group %s]: "
                                 "err API returned HTTP 404/409" % grp)
             except Exception, e:
+                logger.exception("delete_group_group_member failed %s" % e)
                 logs.append("Group delete [del included group %s]: "
                             "err API returned %s" % (grp, e))
 
@@ -196,6 +205,7 @@ class GroupOps(object):
             ses.execute(sql)
             ses.commit()
         except Exception as e:
+            logger.exception("DELETE FROM account_group failed %s" % e)
             logs.append("Group delete: err SQL returned %s" % e)
 
         return logs
@@ -222,6 +232,7 @@ class GroupOps(object):
                     logs.append("Group update [add member: %s]: "
                                 "err API returned HTTP 404/409" % mb)
             except Exception, e:
+                logger.exception("add_group_member failed %s" % e)
                 logs.append("Group update [add member: %s]: "
                             "err API returned %s" % (mb, e))
 
@@ -232,6 +243,7 @@ class GroupOps(object):
                     logs.append("Group update [del member: %s]: "
                                 "err API returned HTTP 404/409" % mb)
             except Exception, e:
+                logger.exception("delete_group_member failed %s" % e)
                 logs.append("Group update [del member: %s]: "
                             "err API returned %s" % (mb, e))
 
@@ -241,6 +253,7 @@ class GroupOps(object):
                 logs.append("Group update [update description]: "
                             "err API returned HTTP 404/409")
         except Exception, e:
+            logger.exception("group_update_description failed %s" % e)
             logs.append("Group update [update description]: "
                         "err API returned %s" % e)
 
@@ -254,6 +267,7 @@ class GroupOps(object):
                     logs.append("Group update [del included group %s]: "
                                 "err API returned HTTP 404/409" % grp)
             except Exception, e:
+                logger.exception("delete_group_group_member failed %s" % e)
                 logs.append("Group update [del included group %s]: "
                             "err API returned %s" % (grp, e))
 

@@ -15,6 +15,7 @@
 
 import re
 import hashlib
+import logging
 
 from git.config import GitConfigParser
 
@@ -37,6 +38,7 @@ from managesf.services.gerrit import utils
 # g._set_client()
 # ###
 
+logger = logging.getLogger(__name__)
 DEFAULT_GROUPS = ('Non-Interactive Users',
                   'Administrators',
                   'Anonymous Users')
@@ -66,6 +68,7 @@ class GitRepositoryOps(object):
             if repos is False:
                 logs.append("Repo list: err API returned HTTP 404/409")
         except Exception, e:
+            logger.exception("get_projects failed %s" % e)
             logs.append("Repo list: err API returned %s" % e)
 
         for name in repos:
@@ -129,6 +132,7 @@ class GitRepositoryOps(object):
             if ret is False:
                 logs.append("Repo create: err API returned HTTP 404/409")
         except Exception, e:
+            logger.exception("create_project failed %s" % e)
             logs.append("Repo create: err API returned %s" % e)
 
         logs.extend(self.install_acl(**kwargs))
@@ -147,6 +151,7 @@ class GitRepositoryOps(object):
             if ret is False:
                 logs.append("Repo delete: err API returned HTTP 404/409")
         except Exception, e:
+            logger.exception("delete_project failed %s" % e)
             logs.append("Repo delete: err API returned %s" % e)
 
         return logs
@@ -183,6 +188,7 @@ defaultbranch=master
             r.clone()
             r.push_master(paths)
         except Exception, e:
+            logger.exception("GerritRepo push_master failed %s" % e)
             logs.append(str(e))
 
         return logs
@@ -246,6 +252,7 @@ global:Registered-Users\tRegistered Users"""
             paths['groups'] = groups_file
             r.push_config(paths)
         except Exception, e:
+            logger.exception("GerritRepo push_config failed %s" % e)
             logs.append(str(e))
         return logs
 
