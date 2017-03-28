@@ -23,6 +23,13 @@ from git.config import GitConfigParser
 from managesf.model.yamlbkd.resource import BaseResource
 
 logger = logging.getLogger(__name__)
+
+KEYS_EXP_GROUP_VALUES = (
+    'owner',
+    'read',
+    'submit',
+)
+
 KEYS_EXP_BOOLEAN_VALUES = (
     'requireChangeId',
     'mergeContent',
@@ -82,6 +89,12 @@ class ACLOps(object):
                             "a valid boolean value (not: %s)" % (
                                 section_name, k, v))
                     continue
+                if k in KEYS_EXP_GROUP_VALUES:
+                    if not re.match('.*group .+$', v):
+                        logs.append(
+                            "ACLs file section (%s), key (%s) expect "
+                            "a group to be specified (not: %s)" % (
+                                section_name, k, v))
                 if k == 'action' and section_name == 'submit':
                     if v.lower() not in SUBMIT_ACTION_VALUES:
                         logs.append(

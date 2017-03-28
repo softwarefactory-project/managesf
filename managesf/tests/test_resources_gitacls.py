@@ -36,12 +36,6 @@ class TestACLOps(TestCase):
         logs = o.extra_validations(**kwargs)
         self.assertEqual(len(logs), 0)
 
-        kwargs = {'file': """[project]
-\tdescription = "My awesome project"
-[access "refs/*"]
-\tread = group coders
-""",
-                  'groups': ['mygid']}
         new = {
             'resources': {
                 'groups': {
@@ -53,6 +47,27 @@ class TestACLOps(TestCase):
                 }
             }
         }
+
+        kwargs = {'file': """[project]
+\tdescription = "My awesome project"
+[access "refs/*"]
+\tread = coders
+""",
+                  'groups': ['mygid']}
+
+        o = ACLOps(None, new)
+        logs = o.extra_validations(**kwargs)
+        self.assertEqual(len(logs), 1)
+        self.assertIn('ACLs file section (access "refs/*"), key '
+                      '(read) expect a group to be specified (not: coders)',
+                      logs)
+
+        kwargs = {'file': """[project]
+\tdescription = "My awesome project"
+[access "refs/*"]
+\tread = group coders
+""",
+                  'groups': ['mygid']}
         o = ACLOps(None, new)
         logs = o.extra_validations(**kwargs)
         self.assertEqual(len(logs), 0)
