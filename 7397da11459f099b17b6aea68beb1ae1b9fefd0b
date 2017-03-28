@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_7cd8ef53",
+        "filename": "managesf/model/yamlbkd/resources/gitacls.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-03-28T22:01:16Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this also include label-.*, create and push ?",
+      "revId": "7397da11459f099b17b6aea68beb1ae1b9fefd0b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
