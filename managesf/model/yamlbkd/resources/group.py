@@ -225,17 +225,6 @@ class GroupOps(object):
         to_add = set(members) - set(current_members)
         to_del = set(current_members) - set(members)
 
-        for mb in to_add:
-            try:
-                ret = self.client.add_group_member(mb, name)
-                if ret is False:
-                    logs.append("Group update [add member: %s]: "
-                                "err API returned HTTP 404/409" % mb)
-            except Exception, e:
-                logger.exception("add_group_member failed %s" % e)
-                logs.append("Group update [add member: %s]: "
-                            "err API returned %s" % (mb, e))
-
         for mb in to_del:
             try:
                 ret = self.client.delete_group_member(name, mb)
@@ -245,6 +234,17 @@ class GroupOps(object):
             except Exception, e:
                 logger.exception("delete_group_member failed %s" % e)
                 logs.append("Group update [del member: %s]: "
+                            "err API returned %s" % (mb, e))
+
+        for mb in to_add:
+            try:
+                ret = self.client.add_group_member(mb, name)
+                if ret is False:
+                    logs.append("Group update [add member: %s]: "
+                                "err API returned HTTP 404/409" % mb)
+            except Exception, e:
+                logger.exception("add_group_member failed %s" % e)
+                logs.append("Group update [add member: %s]: "
                             "err API returned %s" % (mb, e))
 
         try:
