@@ -35,8 +35,15 @@ LIST_FIELDS = ['id', 'provider_name', 'image_name', 'hostname', 'version',
                'image_id', 'server_id', 'state', 'age']
 UPDATE_CMD = ('nodepool image-update %(provider)s %(image)s')
 
+DIB_LIST_CMD = 'nodepool dib-image-list | sed -e 1,3d -e "$ d"'
+DIB_LIST_FIELDS = ['id', 'image', 'filename', 'version', 'state', 'age']
 
-UPDATES_CACHE = {}
+DIB_BUILD_CMD = 'nodepool image-build %(image)s'
+IMAGE_UPLOAD_CMD = "nodepool image-upload %(provider)s %(image)s"
+
+# BUILDER_LOGS_CMD = 'journalctl -u nodepool-builder --no-pager'
+
+ACTIONS_CACHE = {}
 REFRESH_LOCKED = False
 
 
@@ -48,11 +55,11 @@ def _refresh_cache():
     to_remove = []
     REFRESH_LOCKED = True
     logger.debug("locking image update cache for refresh")
-    for u in UPDATES_CACHE:
-        if UPDATES_CACHE[u]['stdout'].channel.exit_status_ready():
-            stdout = UPDATES_CACHE[u]['stdout']
-            stderr = UPDATES_CACHE[u]['stderr']
-            client = UPDATES_CACHE[u]['client']
+    for u in ACTIONS_CACHE:
+        if ACTIONS_CACHE[u]['stdout'].channel.exit_status_ready():
+            stdout = ACTIONS_CACHE[u]['stdout']
+            stderr = ACTIONS_CACHE[u]['stderr']
+            client = ACTIONS_CACHE[u]['client']
             exit_code = int(stdout.channel.recv_exit_status())
             if exit_code > 0:
                 status = "FAILURE"
@@ -63,7 +70,7 @@ def _refresh_cache():
             client.close()
             to_remove.append(u)
     for u in to_remove:
-        del UPDATES_CACHE[u]
+        del ACTIONS_CACHE[u]
     REFRESH_LOCKED = False
     logger.debug("image update cache unlocked")
 
@@ -106,7 +113,10 @@ class SFNodepoolImageManager(base.ImageManager):
                 images_info.append(image)
         return images_info
 
-    def start_update(self, provider_name, image_name):
+    def start_upload(self, image_name, provider_name):
+        return self.start_update(image_name, provider_name)
+
+    def start_update(self, image_name, provider_name):
         """updates (rebuild) the image image_name on provider provider_name"""
         _refresh_cache()
         if (not validate_input(provider_name) or
@@ -122,13 +132,13 @@ class SFNodepoolImageManager(base.ImageManager):
                                           UPDATE_CMD % args))
         cmd = UPDATE_CMD % args
         stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
-        UPDATES_CACHE[update_id] = {'stdout': stdout,
+        ACTIONS_CACHE[update_id] = {'stdout': stdout,
                                     'stderr': stderr,
                                     'client': client}
-        UPDATES_CACHE[update_id].update(args)
+        ACTIONS_CACHE[update_id].update(args)
         return update_id
 
-    def get_update_info(self, id):
+    def get_action_info(self, id):
         """fetches relevant info on an image update possibly still
         in progress"""
         _refresh_cache()
@@ -141,13 +151,13 @@ class SFNodepoolImageManager(base.ImageManager):
                     'exit_code': x['exit_code'],
                     'output': x['output'],
                     'error': x['stderr']}
-        elif int(id) in UPDATES_CACHE:
+        elif int(id) in ACTIONS_CACHE:
             # TODO(mhu) Find a way to return the output in progress. Could we
             # copy the file-like stdout object?
             return {'id': id,
                     'status': 'IN_PROGRESS',
-                    'provider': UPDATES_CACHE['provider'],
-                    'image': UPDATES_CACHE['image'],
+                    'provider': ACTIONS_CACHE['provider'],
+                    'image': ACTIONS_CACHE['image'],
                     'exit_code': None,
                     'output': None,
                     'error': None}
@@ -155,15 +165,86 @@ class SFNodepoolImageManager(base.ImageManager):
             return {}
 
 
+class SFNodepoolDIBImageManager(SFNodepoolImageManager):
+    """Disk Image Builder related operations from Nodepool's CLI, via SSH"""
+
+    def get(self, image_name=None, **kwargs):
+        """lists one or several images depending on filtering options"""
+        images_info = []
+        client = self.plugin.get_client()
+        logger.debug("[%s] calling %s" % (self.plugin.service_name,
+                                          DIB_LIST_CMD))
+        stdin, stdout, stderr = client.exec_command(DIB_LIST_CMD)
+        return_code = int(stdout.channel.recv_exit_status())
+        client.close()
+        if return_code > 0:
+            e = stderr.read()
+            m = "[%s] image get failed with exit code %i: %s"
+            m = m % (self.plugin.service_name, return_code, e)
+            logger.error(m)
+            raise Exception(m)
+        for line in stdout.readlines():
+            values = get_values(line)
+            image = dict(zip(DIB_LIST_FIELDS, values))
+            image['age'] = get_age(image['age'])
+            if image_name:
+                if image_name == image['image']:
+                    images_info.append(image)
+            else:
+                images_info.append(image)
+        return images_info
+
+    def start_update(self, image_name):
+        """update image_name with DIB"""
+        _refresh_cache()
+        if not validate_input(image_name):
+            msg = "invalid image %r" % (image_name)
+            raise Exception(msg)
+        client = self.plugin.get_client()
+        args = {'provider': 'N/A', 'image': image_name}
+        update_id = int(crud.create(**args))
+        logger.debug("[%s] calling %s" % (self.plugin.service_name,
+                                          DIB_BUILD_CMD % args))
+        cmd = DIB_BUILD_CMD % args
+        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+        ACTIONS_CACHE[update_id] = {'stdout': stdout,
+                                    'stderr': stderr,
+                                    'client': client}
+        ACTIONS_CACHE[update_id].update(args)
+        return update_id
+
+    def start_upload(self, image_name, provider_name):
+        """uploads image_name to provider provider_name"""
+        _refresh_cache()
+        if (not validate_input(provider_name) or
+           not validate_input(image_name)):
+            msg = "invalid provider %r and/or image %r" % (provider_name,
+                                                           image_name)
+            raise Exception(msg)
+        client = self.plugin.get_client()
+        args = {'provider': provider_name,
+                'image': image_name}
+        upload_id = int(crud.create(**args))
+        logger.debug("[%s] calling %s" % (self.plugin.service_name,
+                                          IMAGE_UPLOAD_CMD % args))
+        cmd = IMAGE_UPLOAD_CMD % args
+        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+        ACTIONS_CACHE[upload_id] = {'stdout': stdout,
+                                    'stderr': stderr,
+                                    'client': client}
+        ACTIONS_CACHE[upload_id].update(args)
+        return upload_id
+
+
 # For the DBZ fans
 def final_flush():
     from sqlalchemy.exc import OperationalError
     try:
         _refresh_cache()
-        for u in UPDATES_CACHE:
-            stdout = UPDATES_CACHE[u]['stdout']
-            stderr = UPDATES_CACHE[u]['stderr']
-            client = UPDATES_CACHE[u]['client']
+        for u in ACTIONS_CACHE:
+            stdout = ACTIONS_CACHE[u]['stdout']
+            stderr = ACTIONS_CACHE[u]['stderr']
+            client = ACTIONS_CACHE[u]['client']
             status = "INTERRUPTED"
             crud.update(id=u, status=status, output=stdout.read(),
                         stderr=stderr.read())
