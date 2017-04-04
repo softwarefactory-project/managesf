@@ -37,6 +37,7 @@ from managesf.services.storyboard.user import StoryboardUserManager
 from managesf.services.jenkins.job import SFJenkinsJobManager
 from managesf.services.nodepool.node import SFNodepoolNodeManager as SFNNM
 from managesf.services.nodepool.image import SFNodepoolImageManager as SFNIM
+from managesf.services.nodepool.image import SFNodepoolDIBImageManager as SFNDM
 
 from managesf.tests import resources_test_utils as rtu
 from managesf.model.yamlbkd.resources.dummy import Dummy
@@ -1175,50 +1176,39 @@ class TestNodesController(FunctionalTest):
                                      extra_environ=environ, status="*")
                 self.assertEqual(201, resp.status_int)
 
-    def test_image_get(self):
+    def test_dib_image_get(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
             environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
-            with patch.object(SFNIM, 'get') as get:
+            with patch.object(SFNDM, 'get') as get:
                 get.return_value = [{'mock1': 'val1', },
                                     {'mock2': 'val2', }, ]
                 # no filtering arg
-                resp = self.app.get('/nodes/images///',
+                resp = self.app.get('/nodes/images//',
                                     extra_environ=environ, status="*")
                 self.assertEqual(200, resp.status_int)
-                get.assert_called_with(None, None)
+                get.assert_called_with(None)
                 j = json.loads(resp.body)
                 self.assertTrue('nodepool' in j.keys())
                 j = j['nodepool']
                 self.assertTrue(isinstance(j, list))
                 self.assertEqual(2,
                                  len(j))
-                # with provider
-                resp = self.app.get('/nodes/images/blip//',
+                # with image
+                resp = self.app.get('/nodes/images/blip/',
                                     extra_environ=environ, status="*")
-                get.assert_called_with("blip", None)
                 self.assertEqual(200, resp.status_int)
                 j = json.loads(resp.body)
-                self.assertTrue('nodepool' in j.keys())
-                j = j['nodepool']
-                self.assertTrue(isinstance(j, list))
-                self.assertEqual(2,
-                                 len(j))
-                # with both
-                resp = self.app.get('/nodes/images/blip/blop/',
-                                    extra_environ=environ, status="*")
-                get.assert_called_with("blip", "blop")
-                self.assertEqual(200, resp.status_int)
-                j = json.loads(resp.body)
+                get.assert_called_with("blip")
                 self.assertTrue('nodepool' in j.keys())
                 j = j['nodepool']
                 self.assertTrue(isinstance(j, list))
                 self.assertEqual(2,
                                  len(j))
 
-    def test_image_update(self):
+    def test_dib_image_update(self):
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
             environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
-            with patch.object(SFNIM, 'start_update') as start_update:
+            with patch.object(SFNDM, 'start_update') as start_update:
                 start_update.return_value = 54
                 resp = self.app.put('/nodes/images/update/blip/blop/',
                                     extra_environ=environ, status="*")
@@ -1236,6 +1226,76 @@ class TestNodesController(FunctionalTest):
                          'error': 'hohoho'}
                 get_info.return_value = dummy
                 resp = self.app.get('/nodes/images/update/51/',
+                                    extra_environ=environ, status="*")
+                get_info.assert_called_with(u'51')
+                self.assertEqual(200, resp.status_int, resp.body)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                for u in dummy:
+                    self.assertEqual(str(dummy[u]), str(j[u]))
+
+    def test_legacy_image_get(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNIM, 'get') as get:
+                get.return_value = [{'mock1': 'val1', },
+                                    {'mock2': 'val2', }, ]
+                # no filtering arg
+                resp = self.app.get('/nodes/legacy/images///',
+                                    extra_environ=environ, status="*")
+                self.assertEqual(200, resp.status_int)
+                get.assert_called_with(None, None)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+                # with provider
+                resp = self.app.get('/nodes/legacy/images/blip//',
+                                    extra_environ=environ, status="*")
+                get.assert_called_with("blip", None)
+                self.assertEqual(200, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+                # with both
+                resp = self.app.get('/nodes/legacy/images/blip/blop/',
+                                    extra_environ=environ, status="*")
+                get.assert_called_with("blip", "blop")
+                self.assertEqual(200, resp.status_int)
+                j = json.loads(resp.body)
+                self.assertTrue('nodepool' in j.keys())
+                j = j['nodepool']
+                self.assertTrue(isinstance(j, list))
+                self.assertEqual(2,
+                                 len(j))
+
+    def test_legacy_image_update(self):
+        with patch.object(SFGerritProjectManager, 'get_user_groups'):
+            environ = {'REMOTE_USER': 'SF_SERVICE_USER'}
+            with patch.object(SFNIM, 'start_update') as start_update:
+                start_update.return_value = 54
+                resp = self.app.put('/nodes/legacy/images/update/blip/blop/',
+                                    extra_environ=environ, status="*")
+                start_update.assert_called_with("blip", "blop")
+                self.assertEqual(201, resp.status_int, resp.body)
+                self.assertTrue(str(start_update.return_value) in resp.body,
+                                resp.body)
+            with patch.object(SFNIM, 'get_update_info') as get_info:
+                dummy = {'id': 51,
+                         'status': 'bleh',
+                         'provider': 'blip',
+                         'image': 'blop',
+                         'exit_code': 23,
+                         'output': 'huehuehue',
+                         'error': 'hohoho'}
+                get_info.return_value = dummy
+                resp = self.app.get('/nodes/legacy/images/update/51/',
                                     extra_environ=environ, status="*")
                 get_info.assert_called_with(u'51')
                 self.assertEqual(200, resp.status_int, resp.body)
