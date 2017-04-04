@@ -35,6 +35,16 @@ LIST_FIELDS = ['id', 'provider_name', 'image_name', 'hostname', 'version',
                'image_id', 'server_id', 'state', 'age']
 UPDATE_CMD = ('nodepool image-update %(provider)s %(image)s')
 
+DIB_LIST_CMD = 'nodepool dib-image-list | sed -e 1,3d -e "$ d"'
+DIB_LIST_FIELDS = ['id', 'image', 'filename', 'version', 'state', 'age']
+
+# TODO(mhu) is it safe to merge these two into one call?
+DIB_BUILD_CMD = 'nodepool image-build %(image)s'
+IMAGE_UPLOAD_CMD = ("timeout 1800 sed '/%(pattern)s/q "
+                    "<(tail -f -n0 /var/log/nodepool/%(logfile)s) && "
+                    "nodepool image-upload %(provider)s %(image)s")
+
+# BUILDER_LOGS_CMD = 'journalctl -u nodepool-builder --no-pager'
 
 UPDATES_CACHE = {}
 REFRESH_LOCKED = False
@@ -153,6 +163,75 @@ class SFNodepoolImageManager(base.ImageManager):
                     'error': None}
         else:
             return {}
+
+
+class SFNodepoolDIBImageManager(SFNodepoolImageManager):
+    """Disk Image Builder related operations from Nodepool's CLI, via SSH"""
+
+    def get(self, image_name=None, **kwargs):
+        """lists one or several images depending on filtering options"""
+        images_info = []
+        client = self.plugin.get_client()
+        logger.debug("[%s] calling %s" % (self.plugin.service_name,
+                                          DIB_LIST_CMD))
+        stdin, stdout, stderr = client.exec_command(DIB_LIST_CMD)
+        return_code = int(stdout.channel.recv_exit_status())
+        client.close()
+        if return_code > 0:
+            e = stderr.read()
+            m = "[%s] image get failed with exit code %i: %s"
+            m = m % (self.plugin.service_name, return_code, e)
+            logger.error(m)
+            raise Exception(m)
+        for line in stdout.readlines():
+            values = get_values(line)
+            image = dict(zip(DIB_LIST_FIELDS, values))
+            image['age'] = get_age(image['age'])
+            if image_name:
+                if image_name == image['image']:
+                    images_info.append(image)
+            else:
+                images_info.append(image)
+        return images_info
+
+    def start_update(self, provider_name, image_name):
+        """rebuild the image image_name, then uploads it to"""
+        """provider provider_name"""
+        _refresh_cache()
+        if (not validate_input(provider_name) or
+           not validate_input(image_name)):
+            msg = "invalid provider %r and/or image %r" % (provider_name,
+                                                           image_name)
+            raise Exception(msg)
+        client = self.plugin.get_client()
+        args = {'provider': provider_name,
+                'image': image_name}
+        update_id = int(crud.create(**args))
+        logger.debug("[%s] calling %s" % (self.plugin.service_name,
+                                          DIB_BUILD_CMD % args))
+        cmd = DIB_BUILD_CMD % args
+        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+        return_code = int(stdout.channel.recv_exit_status())
+        if return_code > 0:
+            UPDATES_CACHE[update_id] = {'stdout': stdout,
+                                        'stderr': stderr,
+                                        'client': client}
+            UPDATES_CACHE[update_id].update(args)
+            return update_id
+        # TODO
+        args['pattern'] = ''
+        args['logfile'] = ''
+        logger.debug("[%s] calling %s" % (self.plugin.service_name,
+                                          IMAGE_UPLOAD_CMD % args))
+        cmd = IMAGE_UPLOAD_CMD % args
+        stdin, stdout, stderr = client.exec_command(cmd, get_pty=True)
+        UPDATES_CACHE[update_id] = {'stdout': stdout,
+                                    'stderr': stderr,
+                                    'client': client}
+        del args['pattern']
+        del args['logfile']
+        UPDATES_CACHE[update_id].update(args)
+        return update_id
 
 
 # For the DBZ fans

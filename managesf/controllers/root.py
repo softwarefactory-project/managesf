@@ -606,7 +606,28 @@ class ResourcesController(RestController):
 class NodesController(RestController):
 
     class ImageController(RestController):
+        @expose('json')
+        def get(self, image_name=None):
+            _policy = 'managesf.node:image-get'
+            if not authorize(_policy,
+                             target={"image": image_name,
+                                     "provider": None}):
+                msg = 'Failure to comply with policy %s' % _policy
+                return abort(401,
+                             detail=msg)
+            results = {}
+            response.status = 200
+            provider = AGENTSPROVIDERS[0]
+            try:
+                r = provider.dib_image.get(image_name)
+                results[provider.service_name] = r
+            except Exception as e:
+                response.status = 500
+                d = {'error_description': unicode(e)}
+                results[provider.service_name] = d
+            return results
 
+    class LegacyImageController(RestController):
         @expose('json')
         def get(self, provider_name=None, image_name=None):
             _policy = 'managesf.node:image-get'
@@ -629,6 +650,45 @@ class NodesController(RestController):
             return results
 
     class ImageUpdateController(RestController):
+        @expose('json')
+        def put(self, provider_name, image_name, **kwargs):
+            _policy = 'managesf.node:image-start-update'
+            if not authorize(_policy,
+                             target={"image": image_name,
+                                     "provider": provider_name}):
+                msg = 'Failure to comply with policy %s' % _policy
+                return abort(401,
+                             detail=msg)
+            provider = AGENTSPROVIDERS[0]
+            try:
+                update_id = provider.dib_image.start_update(provider_name,
+                                                            image_name)
+                response.status = 201
+                d = {provider.service_name: {'update_id': update_id}}
+            except Exception as e:
+                response.status = 500
+                desc = {'error_description': unicode(e)}
+                d = {provider.service_name: desc}
+            finally:
+                return d
+
+        @expose('json')
+        def get(self, id):
+            _policy = 'managesf.node:image-update-status'
+            provider = AGENTSPROVIDERS[0]
+            info = provider.dib_image.get_update_info(id)
+            if not info:
+                return abort(404)
+            if not authorize(_policy,
+                             target={"image": info['image'],
+                                     "provider": info['provider']}):
+                msg = 'Failure to comply with policy %s' % _policy
+                return abort(401,
+                             detail=msg)
+            response.status = 200
+            return {provider.service_name: info}
+
+    class LegacyImageUpdateController(RestController):
         @expose('json')
         def put(self, provider_name, image_name, **kwargs):
             _policy = 'managesf.node:image-start-update'
@@ -787,6 +847,9 @@ class NodesController(RestController):
 
     images = ImageController()
     images.update = ImageUpdateController()
+    legacy = RestController()
+    legacy.images = LegacyImageController()
+    legacy.images.update = LegacyImageUpdateController()
     id = NodeByIdController()
 
     @expose('json')
