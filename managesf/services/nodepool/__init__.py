@@ -47,6 +47,7 @@ class SoftwareFactoryNodepool(_Nodepool):
         super(SoftwareFactoryNodepool, self).__init__(conf)
         self.node = node.SFNodepoolNodeManager(self)
         self.image = image.SFNodepoolImageManager(self)
+        self.dib_image = image.SFNodepoolDIBImageManager(self)
 
     def get_client(self, *args, **kwargs):
         k = paramiko.RSAKey.from_private_key_file(self.conf['key'])

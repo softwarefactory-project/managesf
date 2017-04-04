@@ -35,6 +35,10 @@ IMAGE_GET_STDOUT += "| 526  | rcip-dev | rdo-liberty-centos-7       | template-r
 IMAGE_GET_STDOUT += "| 639  | rcip-prod | rdo-liberty-centos-7       | template-rdo-liberty-centos-7-1465265646       | 1465265646 | b8735f89-0ef7-4454-a0ce-f3b7765d5bb0 | ca69cb63-15d7-452f-834c-e9674b6f3e87 | ready  | 197:15:38:49 |\n"  # noqa
 IMAGE_GET_STDOUT += "| 2383 | rcip-prod | sfstack-centos-7           | template-sfstack-centos-7-1482113654           | 1482113654 | ff9a8340-1503-49d4-b0b4-dfa853d9270d | 090e4e5b-a04f-4546-a9c9-f1e6f74ed141 | ready  | 02:15:46:01  |"  # noqa
 
+DIB_IMAGE_GET_STDOUT = "| 526 | rdo-liberty-centos-7 | /tmp/im1 | 24 | ready | 208:15:40:06 |\n"  # noqa
+DIB_IMAGE_GET_STDOUT += "| 3 | rdo-liberty-centos-7 | /tmp/im3 | 342 | building | 0:00:05:00 |\n"  # noqa
+DIB_IMAGE_GET_STDOUT += "| 16 | sfstack-centos-7 | /tmp/im4 | 542 | ready | 10:13:05:21 |"  # noqa
+
 
 class Fakechannel:
     def __init__(self, code, exec_time=2):
@@ -244,6 +248,39 @@ class TestSFNodepoolManager(BaseSFNodepoolService):
                                 self.nodepool.image.get)
 
     @patch('managesf.services.nodepool.paramiko')
+    def test_dib_image_get(self, paramiko):
+        stdout = DIB_IMAGE_GET_STDOUT
+        stderr = ''
+        paramiko.SSHClient().exec_command.return_value = (StringIO(''),
+                                                          Stdout(stdout),
+                                                          StringIO(stderr))
+        images = self.nodepool.dib_image.get()
+        self.assertEqual(len(DIB_IMAGE_GET_STDOUT.split('\n')), len(images),
+                         images)
+        paramiko.SSHClient().exec_command.return_value = (StringIO(''),
+                                                          Stdout(stdout),
+                                                          StringIO(stderr))
+        images = self.nodepool.dib_image.get(image_name="rdo-liberty-centos-7")
+        self.assertEqual(2, len(images), images)
+        image = images[0]
+        self.assertEqual("ready", image['state'], image)
+        self.assertEqual("526", image['id'], image)
+        self.assertEqual(18027606, image['age'], image)
+        paramiko.SSHClient().exec_command.return_value = (StringIO(''),
+                                                          Stdout(stdout),
+                                                          StringIO(stderr))
+        images = self.nodepool.dib_image.get(image_name="rdo-liberty-centos-8")
+        self.assertEqual(0, len(images), images)
+        stderr = 'Computer says no'
+        paramiko.SSHClient().exec_command.return_value = (StringIO(''),
+                                                          Stdout(stdout, 99),
+                                                          StringIO(stderr))
+        self.assertRaisesRegexp(Exception, stderr,
+                                self.nodepool.dib_image.get)
+        self.assertRaisesRegexp(Exception, "99",
+                                self.nodepool.dib_image.get)
+
+    @patch('managesf.services.nodepool.paramiko')
     def test_image_update(self, paramiko):
         self.assertRaisesRegexp(Exception, "invalid provider",
                                 self.nodepool.image.start_update,
@@ -262,19 +299,19 @@ class TestSFNodepoolManager(BaseSFNodepoolService):
                    stdout,
                    StringIO(stderr))
         paramiko.SSHClient().exec_command.return_value = process
-        u = self.nodepool.image.start_update('provider', 'image')
+        u = self.nodepool.image.start_update('image', 'provider')
         m = ('nodepool image-update provider image')
         paramiko.SSHClient().exec_command.assert_called_with(m, get_pty=True)
         self.assertTrue(isinstance(u, int), type(u))
-        self.assertTrue(u in nodepool.image.UPDATES_CACHE)
-        v = self.nodepool.image.get_update_info(u)
+        self.assertTrue(u in nodepool.image.ACTIONS_CACHE)
+        v = self.nodepool.image.get_action_info(u)
         self.assertEqual(u, v['id'])
         self.assertEqual(0, int(v['exit_code']))
         self.assertEqual('SUCCESS', v['status'])
         self.assertEqual('rebuilding image', v['output'])
         self.assertEqual(stderr, v['error'])
         # cache should have been updated
-        self.assertTrue(u not in nodepool.image.UPDATES_CACHE)
+        self.assertTrue(u not in nodepool.image.ACTIONS_CACHE)
 
         # Long operation
         stdout = Stdout(u'rebuilding image another time')
@@ -283,21 +320,21 @@ class TestSFNodepoolManager(BaseSFNodepoolService):
                    stdout,
                    StringIO(stderr))
         paramiko.SSHClient().exec_command.return_value = process
-        u = self.nodepool.image.start_update('provider', 'image')
-        v = self.nodepool.image.get_update_info(u)
+        u = self.nodepool.image.start_update('image', 'provider')
+        v = self.nodepool.image.get_action_info(u)
         self.assertEqual(u, v['id'])
         self.assertEqual('IN_PROGRESS', v['status'])
         # still cached, until completion
-        self.assertTrue(u in nodepool.image.UPDATES_CACHE)
+        self.assertTrue(u in nodepool.image.ACTIONS_CACHE)
         # finish the build
         stdout.channel.exec_time = 0
-        v = self.nodepool.image.get_update_info(u)
+        v = self.nodepool.image.get_action_info(u)
         self.assertEqual(u, v['id'])
         self.assertEqual(0, int(v['exit_code']))
         self.assertEqual('SUCCESS', v['status'])
         self.assertEqual('rebuilding image another time', v['output'])
         # cache should have been updated
-        self.assertTrue(u not in nodepool.image.UPDATES_CACHE)
+        self.assertTrue(u not in nodepool.image.ACTIONS_CACHE)
 
         # Error during image update
         stdout = Stdout(u'Uh oh!', exit_code=128)
@@ -308,7 +345,98 @@ class TestSFNodepoolManager(BaseSFNodepoolService):
                    StringIO(stderr))
         paramiko.SSHClient().exec_command.return_value = process
         u = self.nodepool.image.start_update('provider', 'image')
-        v = self.nodepool.image.get_update_info(u)
+        v = self.nodepool.image.get_action_info(u)
+        self.assertEqual(u, v['id'])
+        self.assertEqual('FAILURE', v['status'])
+        self.assertEqual(stderr, v['error'])
+        self.assertEqual(128, int(v['exit_code']))
+
+    @patch('managesf.services.nodepool.paramiko')
+    def test_dib_image_update(self, paramiko):
+        self.assertRaisesRegexp(Exception, "invalid image",
+                                self.nodepool.dib_image.start_update,
+                                image_name="-h; rm -rf /; echo ")
+
+        # Simple workflow
+        u_stdout = Stdout(u'uploading image')
+        u_stdout.channel.exec_time = 0
+        stderr = u''
+        upload_process = (StringIO(''),
+                          u_stdout,
+                          StringIO(stderr))
+        paramiko.SSHClient().exec_command.return_value = upload_process
+        u = self.nodepool.dib_image.start_update('image')
+        m = ('nodepool image-build image')
+        paramiko.SSHClient().exec_command.assert_any_call(m, get_pty=True)
+        self.assertTrue(isinstance(u, int), type(u))
+        self.assertTrue(u in nodepool.image.ACTIONS_CACHE)
+        v = self.nodepool.dib_image.get_action_info(u)
+        self.assertEqual(u, v['id'])
+        self.assertEqual(0, int(v['exit_code']))
+        self.assertEqual('SUCCESS', v['status'])
+        self.assertEqual('uploading image', v['output'])
+        self.assertEqual(stderr, v['error'])
+        # cache should have been updated
+        self.assertTrue(u not in nodepool.image.ACTIONS_CACHE)
+
+        # Error during image update
+        stdout = Stdout(u'Uh oh!', exit_code=128)
+        stdout.channel.exec_time = 0
+        stderr = u'A very helpful error message'
+        process = (StringIO(''),
+                   stdout,
+                   StringIO(stderr))
+        paramiko.SSHClient().exec_command.return_value = process
+        u = self.nodepool.dib_image.start_update('image')
+        v = self.nodepool.dib_image.get_action_info(u)
+        self.assertEqual(u, v['id'])
+        self.assertEqual('FAILURE', v['status'])
+        self.assertEqual(stderr, v['error'])
+        self.assertEqual(128, int(v['exit_code']))
+
+    @patch('managesf.services.nodepool.paramiko')
+    def test_dib_image_upload(self, paramiko):
+        self.assertRaisesRegexp(Exception, "invalid provider",
+                                self.nodepool.dib_image.start_upload,
+                                provider_name="-h; rm -rf /; echo ",
+                                image_name="PWNED")
+        self.assertRaisesRegexp(Exception, "invalid provider",
+                                self.nodepool.dib_image.start_upload,
+                                image_name="-h; rm -rf /; echo ",
+                                provider_name="PWNED")
+
+        # Simple workflow
+        u_stdout = Stdout(u'uploading image')
+        u_stdout.channel.exec_time = 0
+        stderr = u''
+        upload_process = (StringIO(''),
+                          u_stdout,
+                          StringIO(stderr))
+        paramiko.SSHClient().exec_command.return_value = upload_process
+        u = self.nodepool.dib_image.start_upload('image', 'provider')
+        m = ('nodepool image-upload provider image')
+        paramiko.SSHClient().exec_command.assert_any_call(m, get_pty=True)
+        self.assertTrue(isinstance(u, int), type(u))
+        self.assertTrue(u in nodepool.image.ACTIONS_CACHE)
+        v = self.nodepool.dib_image.get_action_info(u)
+        self.assertEqual(u, v['id'])
+        self.assertEqual(0, int(v['exit_code']))
+        self.assertEqual('SUCCESS', v['status'])
+        self.assertEqual('uploading image', v['output'])
+        self.assertEqual(stderr, v['error'])
+        # cache should have been updated
+        self.assertTrue(u not in nodepool.image.ACTIONS_CACHE)
+
+        # Error during image update
+        stdout = Stdout(u'Uh oh!', exit_code=128)
+        stdout.channel.exec_time = 0
+        stderr = u'A very helpful error message'
+        process = (StringIO(''),
+                   stdout,
+                   StringIO(stderr))
+        paramiko.SSHClient().exec_command.return_value = process
+        u = self.nodepool.dib_image.start_upload('image', 'provider')
+        v = self.nodepool.dib_image.get_action_info(u)
         self.assertEqual(u, v['id'])
         self.assertEqual('FAILURE', v['status'])
         self.assertEqual(stderr, v['error'])
