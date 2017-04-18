@@ -34,9 +34,6 @@ class LocalProcessError(Exception):
 
 def _exec(cmd, cwd=None, env=None):
     cmd = shlex.split(cmd)
-    ocwd = os.getcwd()
-    if cwd:
-        os.chdir(cwd)
     if not env:
         env = os.environ.copy()
     try:
@@ -50,7 +47,6 @@ def _exec(cmd, cwd=None, env=None):
 
     logger.info("[gerrit] cmd %s output" % cmd)
     logger.info(std_out)
-    os.chdir(ocwd)
     return std_out
 
 
