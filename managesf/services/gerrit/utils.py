@@ -111,20 +111,8 @@ class GerritRepo(object):
                'localcopy_path': self.infos['localcopy_path']
                }
         self._exec(cmd)
-
-    @staticmethod
-    def check_upstream(remote, ssh_key=None):
-        cmd = "git ls-remote %s" % remote
-        try:
-            if ssh_key:
-                env, path = set_gitssh_wrapper_from_str(ssh_key)
-                _exec(cmd, env=env)
-                os.remove(path)
-            else:
-                _exec(cmd)
-            return True, None
-        except subprocess.CalledProcessError as err:
-            return False, "%s: %s" % (err.message, err.output)
+        cmd = "git fetch -a"
+        self._exec(cmd)
 
     def add_file(self, path, content):
         logger.info("[gerrit] Add file %s to index" % path)
@@ -137,6 +125,37 @@ class GerritRepo(object):
         file(os.path.join(self.infos['localcopy_path'],
              path), 'w').write(content)
         cmd = "git add %s" % path
+        self._exec(cmd)
+
+    def list_remote_branches(self):
+        logger.info("[gerrit] List remote branches")
+        cmd = "git branch -rv --abbrev=40"
+        # Out put example
+        #   origin/HEAD   -> origin/master
+        #   origin/master 9dc37aee187412073a10c9df85b6878bc39bd1a2 Cmt msg
+        output = self._exec(cmd).splitlines()
+        refs = {}
+        for line in output:
+            line = line.strip()
+            elms = line.split()
+            refname = elms[0].split('/')[1]
+            if refname == 'HEAD':
+                refs[refname] = elms[2].split('/')[1]
+            else:
+                refs[refname] = elms[1]
+        return refs
+
+    def create_remote_branch(self, branch, sha):
+        logger.info("[gerrit] Create remote branch %s from sha %s" % (
+            branch, sha))
+        cmd = "git branch %s %s" % (branch, sha)
+        self._exec(cmd)
+        cmd = "git push origin %s" % branch
+        self._exec(cmd)
+
+    def delete_remote_branch(self, branch):
+        logger.info("[gerrit] Delete remote branch %s" % branch)
+        cmd = "git push --delete origin %s" % branch
         self._exec(cmd)
 
     def push_config(self, paths):
@@ -177,10 +196,12 @@ class GerritRepo(object):
         return os.path.join(self.infos['localcopy_path'],
                             'project.config')
 
-    def push_master(self, paths):
-        logger.info("[gerrit] Prepare push on master for repository %s" %
-                    self.prj_name)
-        cmd = "git checkout master"
+    def push_branch(self, branch, paths):
+        logger.info("[gerrit] Prepare push on %s for repository %s" % (
+                    branch, self.prj_name))
+        cmd = "git checkout %s" % branch
+        self._exec(cmd)
+        cmd = "git reset --hard origin/%s" % branch
         self._exec(cmd)
         for path, content in paths.items():
             self.add_file(path, content)
@@ -188,10 +209,10 @@ class GerritRepo(object):
             cmd = "git commit -a --author '%s' -m'ManageSF commit'" % (
                 self.email)
             self._exec(cmd)
-            cmd = "git push origin master"
+            cmd = "git push origin %s" % branch
             self._exec(cmd)
-            logger.info("[gerrit] Push on master for repository %s" %
-                        self.prj_name)
+            logger.info("[gerrit] Push on %s for repository %s" % (
+                        branch, self.prj_name))
 
     def _fetch_upstream_repo(self, remote, ssh_key=None):
         msg = "Add and fetch upstream repo %s to project's repo %s"
