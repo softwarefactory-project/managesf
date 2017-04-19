@@ -46,9 +46,11 @@ class GitRepositoryOpsTest(TestCase):
 
         with patch('pysflib.sfgerrit.GerritUtils.create_project') as cp, \
                 patch.object(GitRepositoryOps, 'install_acl') as ia, \
+                patch.object(GitRepositoryOps, 'create_branches') as cb, \
                 patch.object(GitRepositoryOps,
                              'install_git_review_file') as ig:
             ia.return_value = []
+            cb.return_value = []
             ig.return_value = []
             logs = o.create(**kwargs)
             self.assertEqual(len(cp.call_args_list), 1)
@@ -58,9 +60,11 @@ class GitRepositoryOpsTest(TestCase):
             self.assertEqual(len(logs), 0)
         with patch('pysflib.sfgerrit.GerritUtils.create_project') as cp, \
                 patch.object(GitRepositoryOps, 'install_acl') as ia, \
+                patch.object(GitRepositoryOps, 'create_branches') as cb, \
                 patch.object(GitRepositoryOps,
                              'install_git_review_file') as ig:
             ia.return_value = []
+            cb.return_value = []
             ig.return_value = []
             cp.side_effect = Exception('Random Error')
             logs = o.create(**kwargs)
@@ -85,6 +89,44 @@ class GitRepositoryOpsTest(TestCase):
                       '\nproject=space/g1\ndefaultbranch=master\n'})
             )
             self.assertEqual(len(logs), 0)
+
+    def test_create_branches(self):
+        o = GitRepositoryOps(self.conf, {})
+
+        with patch('managesf.services.gerrit.utils.GerritRepo.clone') as c, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'list_remote_branches') as lrb, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'create_remote_branch') as crb, \
+                patch('managesf.services.gerrit.utils.GerritRepo.'
+                      'delete_remote_branch') as drb:
+            kwargs = {'name': 'space/g1',
+                      'branches': {}}
+            logs = o.create_branches(**kwargs)
+            self.assertTrue(c.called)
+            self.assertTrue(lrb.called)
+            self.assertTrue(not crb.called)
+            self.assertTrue(not drb.called)
+            self.assertEqual(len(logs), 0)
+
+            kwargs = {'name': 'space/g1',
+                      'branches': {
+                          'dev': '123',
+                          'dev2': '124',
+                          'dev3': '0'}}
+            lrb.return_value = {'HEAD': 'master',
+                                'dev3': '125'}
+            logs = o.create_branches(**kwargs)
+            self.assertTrue(c.called)
+            self.assertTrue(lrb.called)
+            self.assertTrue(crb.called)
+            self.assertTrue(drb.called)
+            self.assertEqual(len(logs), 0)
+            self.assertIn(call('dev2', '124'), crb.call_args_list)
+            self.assertIn(call('dev', '123'), crb.call_args_list)
+            self.assertTrue(len(crb.call_args_list), 2)
+            self.assertIn(call('dev3'), drb.call_args_list)
+            self.assertTrue(len(drb.call_args_list), 1)
 
     def test_install_acl(self):
         new = {
@@ -175,11 +217,14 @@ class GitRepositoryOpsTest(TestCase):
             self.assertListEqual(['Random error'], logs)
 
     def test_update(self):
-        with patch.object(GitRepositoryOps, 'install_acl') as ia:
+        with patch.object(GitRepositoryOps, 'install_acl') as ia, \
+                patch.object(GitRepositoryOps, 'create_branches') as cb:
             ia.return_value = ['log']
+            cb.return_value = []
             o = GitRepositoryOps(None, None)
             logs = o.update(k='v')
             self.assertTrue(ia.called)
+            self.assertTrue(cb.called)
             self.assertIn('log', logs)
 
     def test_delete(self):

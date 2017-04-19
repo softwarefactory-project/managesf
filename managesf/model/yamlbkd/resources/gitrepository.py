@@ -137,6 +137,7 @@ class GitRepositoryOps(object):
 
         logs.extend(self.install_acl(**kwargs))
         logs.extend(self.install_git_review_file(**kwargs))
+        logs.extend(self.create_branches(**kwargs))
 
         return logs
 
@@ -160,6 +161,7 @@ class GitRepositoryOps(object):
         logs = []
 
         logs.extend(self.install_acl(**kwargs))
+        logs.extend(self.create_branches(**kwargs))
 
         return logs
 
@@ -256,6 +258,30 @@ global:Registered-Users\tRegistered Users"""
             logs.append(str(e))
         return logs
 
+    def create_branches(self, **kwargs):
+        logs = []
+        name = kwargs['name']
+        branches = kwargs.get('branches')
+
+        self._set_client()
+
+        try:
+            r = utils.GerritRepo(name, self.conf)
+            r.clone()
+            refs = r.list_remote_branches()
+            for branch, sha in branches.items():
+                if branch in refs.keys() and sha == '0':
+                    r.delete_remote_branch(branch)
+                elif branch in refs.keys():
+                    # Branch exist so simply skip it
+                    continue
+                else:
+                    r.create_remote_branch(branch, sha)
+        except Exception, e:
+            logger.exception("GerritRepo create_branches failed %s" % e)
+            logs.append(str(e))
+        return logs
+
 
 class GitRepository(BaseResource):
 
@@ -287,6 +313,17 @@ class GitRepository(BaseResource):
             "",
             True,
             "The ACLs id",
+        ),
+        'branches': (
+            dict,
+            ('[a-zA-Z0-9\-_\./]+', '[a-f0-9]+'),
+            False,
+            {},
+            True,
+            "Repository branches. Branches name is the key and "
+            "branch init SHA is the branch value. When branch already exist "
+            "then no reset to the given SHA is done except for the 0 value "
+            "that ensure the branch does not exist"
         ),
     }
     PRIORITY = 20
