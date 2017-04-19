@@ -57,7 +57,7 @@ def render_resource(cls):
             print '"'*len(key)
             print "* **Description:** %s" % details[5]
             print "* **Type:** %s" % str(details[0])
-            print "* **Authorized value:** RE(%s)" % details[1]
+            print "* **Authorized value:** RE(%s)" % str(details[1])
             print "* **Mandatory key:** %s" % details[2]
             print "* **Mutable key:** %s" % details[4]
             if not details[2]:
