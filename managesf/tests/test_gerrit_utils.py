@@ -88,3 +88,34 @@ class TestGerritRepo(TestCase):
                 'ssh-agent bash -c'))
             self.assertTrue(ex.mock_calls[1][1][0].startswith('git commit -a'))
             self.assertEqual('git review', ex.mock_calls[2][1][0])
+
+    def test_list_remote_branches(self):
+        gr = utils.GerritRepo('p1', self.conf)
+        with patch.object(gr, '_exec') as ex:
+            ex.return_value = """  origin/HEAD   -> origin/master
+  origin/master 9dc37aee187412073a10c9df85b6878bc39bd1a2 Cmt msg
+"""
+            refs = gr.list_remote_branches()
+            self.assertDictEqual(
+                refs,
+                {'HEAD': 'master',
+                 'master': '9dc37aee187412073a10c9df85b6878bc39bd1a2'})
+
+    def test_create_remote_branch(self):
+        gr = utils.GerritRepo('p1', self.conf)
+        with patch.object(gr, '_exec') as ex:
+            gr.create_remote_branch('mybranch', '123')
+            self.assertEqual(
+                'git branch mybranch 123',
+                ex.mock_calls[0][1][0])
+            self.assertEqual(
+                'git push origin mybranch',
+                ex.mock_calls[1][1][0])
+
+    def test_delete_remote_branch(self):
+        gr = utils.GerritRepo('p1', self.conf)
+        with patch.object(gr, '_exec') as ex:
+            gr.delete_remote_branch('mybranch')
+            self.assertEqual(
+                'git push --delete origin mybranch',
+                ex.mock_calls[0][1][0])
