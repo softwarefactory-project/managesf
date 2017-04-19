@@ -20,7 +20,9 @@ import tempfile
 
 from unittest import TestCase
 
-from mock import patch, call
+from mock import patch, call, Mock
+
+from contextlib import nested
 
 from managesf.tests import dummy_conf
 from managesf.model.yamlbkd.resources.gitrepository import GitRepositoryOps
@@ -44,11 +46,15 @@ class GitRepositoryOpsTest(TestCase):
                   'description': 'A description',
                   'acl': 'a1'}
 
-        with patch('pysflib.sfgerrit.GerritUtils.create_project') as cp, \
-                patch.object(GitRepositoryOps, 'install_acl') as ia, \
-                patch.object(GitRepositoryOps,
-                             'install_git_review_file') as ig:
+        patches = [
+            patch('pysflib.sfgerrit.GerritUtils.create_project'),
+            patch('managesf.services.gerrit.utils.GerritRepo.clone'),
+            patch.object(GitRepositoryOps, 'install_acl'),
+            patch.object(GitRepositoryOps, 'create_branches'),
+            patch.object(GitRepositoryOps, 'install_git_review_file')]
+        with nested(*patches) as (cp, c, ia, cb, ig):
             ia.return_value = []
+            cb.return_value = []
             ig.return_value = []
             logs = o.create(**kwargs)
             self.assertEqual(len(cp.call_args_list), 1)
@@ -56,11 +62,16 @@ class GitRepositoryOpsTest(TestCase):
                              call('space/g1', 'A description',
                                   ['Administrators']))
             self.assertEqual(len(logs), 0)
-        with patch('pysflib.sfgerrit.GerritUtils.create_project') as cp, \
-                patch.object(GitRepositoryOps, 'install_acl') as ia, \
-                patch.object(GitRepositoryOps,
-                             'install_git_review_file') as ig:
+
+        patches = [
+            patch('pysflib.sfgerrit.GerritUtils.create_project'),
+            patch('managesf.services.gerrit.utils.GerritRepo.clone'),
+            patch.object(GitRepositoryOps, 'install_acl'),
+            patch.object(GitRepositoryOps, 'create_branches'),
+            patch.object(GitRepositoryOps, 'install_git_review_file')]
+        with nested(*patches) as (cp, c, ia, cb, ig):
             ia.return_value = []
+            cb.return_value = []
             ig.return_value = []
             cp.side_effect = Exception('Random Error')
             logs = o.create(**kwargs)
@@ -71,20 +82,134 @@ class GitRepositoryOpsTest(TestCase):
     def test_install_git_review_file(self):
         o = GitRepositoryOps(self.conf, {})
 
-        kwargs = {'name': 'space/g1'}
+        MGR = Mock()
 
-        with patch('managesf.services.gerrit.utils.GerritRepo.clone') as c, \
-                patch('managesf.services.gerrit.utils.GerritRepo.'
-                      'push_master') as pm:
-            logs = o.install_git_review_file(**kwargs)
-            self.assertTrue(c.called)
-            self.assertTrue(pm.called)
-            self.assertEqual(
-                pm.call_args,
-                call({'.gitreview': '[gerrit]\nhost=tests.dom\nport=2929'
-                      '\nproject=space/g1\ndefaultbranch=master\n'})
-            )
-            self.assertEqual(len(logs), 0)
+        logs = o.install_git_review_file(MGR, 'space/g1', 'br1')
+        self.assertTrue(MGR.push_branch.called)
+        self.assertEqual(
+            MGR.push_branch.call_args,
+            call('br1',
+                 {'.gitreview': '[gerrit]\nhost=tests.dom\nport=2929'
+                  '\nproject=space/g1\ndefaultbranch=br1\n'})
+        )
+        self.assertEqual(len(logs), 0)
+
+    def test_create_branches(self):
+        o = GitRepositoryOps(self.conf, {})
+        o._set_client()
+
+        MGR = Mock()
+        MGR.list_remote_branches.return_value = {
+            'HEAD': 'master',
+            'master': '100',
+            'dev3': '125'}
+
+        kwargs = {'name': 'space/g1',
+                  'default-branch': 'master',
+                  'branches': {}}
+        logs = o.create_branches(MGR, **kwargs)
+        self.assertTrue(MGR.list_remote_branches.called)
+        self.assertTrue(not MGR.create_remote_branch.called)
+        self.assertTrue(not MGR.delete_remote_branch.called)
+        self.assertEqual(len(logs), 0)
+
+        MGR.reset_mock()
+
+        MGR.list_remote_branches.return_value = {
+            'HEAD': 'master',
+            'master': '100',
+            'dev3': '125'}
+
+        MGR.list_remote_branches.return_value = {
+            'HEAD': 'master',
+            'master': '100',
+            'dev3': '125'}
+        kwargs = {'name': 'space/g1',
+                  'default-branch': 'master',
+                  'branches': {
+                      'dev': '123',
+                      'dev2': '124',
+                      'dev3': '0'}}
+        patches = [
+            patch.object(GitRepositoryOps, 'install_git_review_file')]
+
+        with nested(*patches) as (igrf, ):
+            logs = o.create_branches(MGR, **kwargs)
+        self.assertTrue(MGR.list_remote_branches.called)
+        self.assertTrue(MGR.create_remote_branch.called)
+        self.assertTrue(igrf.called)
+        self.assertTrue(MGR.delete_remote_branch.called)
+        self.assertEqual(len(logs), 0)
+        self.assertIn(call('dev2', '124'),
+                      MGR.create_remote_branch.call_args_list)
+        self.assertIn(call('dev', '123'),
+                      MGR.create_remote_branch.call_args_list)
+        self.assertIn(call(MGR, 'space/g1', 'dev2'), igrf.call_args_list)
+        self.assertIn(call(MGR, 'space/g1', 'dev'), igrf.call_args_list)
+        self.assertTrue(len(igrf.call_args_list), 2)
+        self.assertTrue(len(MGR.create_remote_branch.call_args_list), 2)
+        self.assertIn(call('dev3'), MGR.delete_remote_branch.call_args_list)
+        self.assertTrue(len(MGR.delete_remote_branch.call_args_list), 1)
+
+        MGR.reset_mock()
+
+        MGR.list_remote_branch.return_value = {
+            'HEAD': 'master',
+            'master': '100',
+            'dev3': '125'}
+        kwargs = {'name': 'space/g1',
+                  'default-branch': 'dev',
+                  'branches': {
+                      'dev': '123'}}
+        patches = [
+            patch.object(GitRepositoryOps, 'set_default_branch'),
+            patch.object(GitRepositoryOps, 'install_git_review_file')]
+
+        with nested(*patches) as (sdb, igrf):
+            logs = o.create_branches(MGR, **kwargs)
+
+        self.assertTrue(MGR.list_remote_branches.called)
+        self.assertTrue(MGR.create_remote_branch.called)
+        self.assertTrue(sdb.called)
+        self.assertTrue(igrf.called)
+        self.assertTrue(not MGR.delete_remote_branch.called)
+        self.assertEqual(len(logs), 0)
+        self.assertIn(call('dev', '123'),
+                      MGR.create_remote_branch.call_args_list)
+        self.assertTrue(len(MGR.create_remote_branch.call_args_list), 1)
+        self.assertIn(call(MGR, 'space/g1', 'dev'), igrf.call_args_list)
+        self.assertTrue(len(igrf.call_args_list), 1)
+        self.assertIn(call('space/g1', 'dev'), sdb.call_args_list)
+        self.assertTrue(len(sdb.call_args_list), 1)
+
+        MGR.reset_mock()
+
+        MGR.list_remote_branch.return_value = {
+            'HEAD': 'master',
+            'master': '100'}
+        kwargs = {'name': 'space/g1',
+                  'default-branch': 'rpm-master',
+                  'branches': {}}
+        patches = [
+            patch.object(GitRepositoryOps, 'set_default_branch'),
+            patch.object(GitRepositoryOps, 'install_git_review_file')]
+
+        with nested(*patches) as (sdb, igrf):
+            logs = o.create_branches(MGR, **kwargs)
+
+        self.assertTrue(MGR.list_remote_branches.called)
+        self.assertTrue(MGR.create_remote_branch.called)
+        self.assertTrue(sdb.called)
+        self.assertTrue(igrf.called)
+        self.assertTrue(not MGR.delete_remote_branch.called)
+        self.assertEqual(len(logs), 0)
+        self.assertIn(call('rpm-master', 'HEAD'),
+                      MGR.create_remote_branch.call_args_list)
+        self.assertTrue(len(MGR.create_remote_branch.call_args_list), 1)
+        self.assertIn(call(MGR, 'space/g1', 'rpm-master'), igrf.call_args_list)
+        self.assertTrue(len(igrf.call_args_list), 1)
+        self.assertIn(call('space/g1', 'rpm-master'), sdb.call_args_list)
+        self.assertTrue(len(sdb.call_args_list), 1)
 
     def test_install_acl(self):
         new = {
@@ -105,6 +230,7 @@ class GitRepositoryOpsTest(TestCase):
         }
 
         o = GitRepositoryOps(self.conf, new)
+        o._set_client()
 
         kwargs = {'name': 'space/g1',
                   'description': 'A description',
@@ -114,27 +240,28 @@ class GitRepositoryOpsTest(TestCase):
               'Anonymous Users': '777',
               'Non-Interactive Users': '888'}
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
-                patch('managesf.services.gerrit.utils.GerritRepo.'
-                      'clone') as c, \
-                patch('managesf.services.gerrit.utils.GerritRepo.'
-                      'push_config') as pc:
+        MGR = Mock()
+
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi:
             ggi.side_effect = lambda x: db[x]
-            logs = o.install_acl(**kwargs)
-            self.assertIn(call('Administrators'), ggi.call_args_list)
-            self.assertIn(call('Anonymous Users'), ggi.call_args_list)
-            self.assertIn(call('Non-Interactive Users'), ggi.call_args_list)
-            self.assertEqual(len(ggi.call_args_list), 3)
-            self.assertTrue(c.called)
-            self.assertGreater(
-                int(str(pc.call_args).find("666\\tAdministrators")), 0)
-            self.assertGreater(
-                int(str(pc.call_args).find("777\\tAnonymous Users")), 0)
-            self.assertGreater(
-                int(str(pc.call_args).find("888\\tNon-Interactive Users")), 0)
-            self.assertGreater(
-                int(str(pc.call_args).find("description = A description")), 0)
-            self.assertEqual(len(logs), 0)
+            logs = o.install_acl(MGR, **kwargs)
+        self.assertIn(call('Administrators'), ggi.call_args_list)
+        self.assertIn(call('Anonymous Users'), ggi.call_args_list)
+        self.assertIn(call('Non-Interactive Users'), ggi.call_args_list)
+        self.assertEqual(len(ggi.call_args_list), 3)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "666\\tAdministrators")), 0)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "777\\tAnonymous Users")), 0)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "888\\tNon-Interactive Users")), 0)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "description = A description")), 0)
+        self.assertEqual(len(logs), 0)
 
         kwargs = {'name': 'space/g1',
                   'description': 'A description',
@@ -145,41 +272,46 @@ class GitRepositoryOpsTest(TestCase):
               'Non-Interactive Users': '888',
               'sf/g1': 999}
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
-                patch('managesf.services.gerrit.utils.GerritRepo.'
-                      'clone') as c, \
-                patch('managesf.services.gerrit.utils.GerritRepo.'
-                      'push_config') as pc:
-            ggi.side_effect = lambda x: db[x]
-            logs = o.install_acl(**kwargs)
-            self.assertGreater(
-                int(str(pc.call_args).find("666\\tAdministrators")), 0)
-            self.assertGreater(
-                int(str(pc.call_args).find("777\\tAnonymous Users")), 0)
-            self.assertGreater(
-                int(str(pc.call_args).find("888\\tNon-Interactive Users")), 0)
-            self.assertGreater(
-                int(str(pc.call_args).find("999\\tsf/g1")), 0)
-            self.assertGreater(
-                int(str(pc.call_args).find("description = A description")), 0)
-            self.assertEqual(len(logs), 0)
+        MGR.reset_mock()
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
-                patch('managesf.services.gerrit.utils.GerritRepo.'
-                      'clone') as c, \
-                patch('managesf.services.gerrit.utils.GerritRepo.'
-                      'push_config') as pc:
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi:
             ggi.side_effect = lambda x: db[x]
-            pc.side_effect = Exception('Random error')
-            logs = o.install_acl(**kwargs)
-            self.assertListEqual(['Random error'], logs)
+            logs = o.install_acl(MGR, **kwargs)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "666\\tAdministrators")), 0)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "777\\tAnonymous Users")), 0)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "888\\tNon-Interactive Users")), 0)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "999\\tsf/g1")), 0)
+        self.assertGreater(
+            int(str(MGR.push_config.call_args).find(
+                "description = A description")), 0)
+        self.assertEqual(len(logs), 0)
+
+        MGR.reset_mock()
+
+        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi:
+            ggi.side_effect = lambda x: db[x]
+            MGR.push_config.side_effect = Exception('Random error')
+            logs = o.install_acl(MGR, **kwargs)
+        self.assertListEqual(['Random error'], logs)
 
     def test_update(self):
-        with patch.object(GitRepositoryOps, 'install_acl') as ia:
+        with patch.object(GitRepositoryOps, 'install_acl') as ia, \
+                patch('managesf.services.gerrit.utils.GerritRepo.clone'), \
+                patch.object(GitRepositoryOps, 'create_branches') as cb:
             ia.return_value = ['log']
-            o = GitRepositoryOps(None, None)
-            logs = o.update(k='v')
+            cb.return_value = []
+            o = GitRepositoryOps(self.conf, None)
+            logs = o.update(name='space/p1', k='v')
             self.assertTrue(ia.called)
+            self.assertTrue(cb.called)
             self.assertIn('log', logs)
 
     def test_delete(self):
