@@ -100,9 +100,32 @@ class ResourcesTest(TestCase):
             MODEL_TYPE = 'test'
             MODEL = {
                 'name': (str, ".*", False, "string", True, "Name"),
+                'key': (dict, ('.*', '.*'), False, "data", True, "desc"),
+            }
+            PRIMARY_KEY = 'name'
+            PRIORITY = 10
+        self.assertRaises(ModelInvalidException,
+                          R1, 'id', {'key': {}})
+
+        class R1(BaseResource):
+            MODEL_TYPE = 'test'
+            MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
+                'key': (dict, '.*', False, {"key": "value"}, True, "desc"),
+            }
+            PRIMARY_KEY = 'name'
+            PRIORITY = 10
+        self.assertRaises(ModelInvalidException,
+                          R1, 'id', {'key': {}})
+
+        class R1(BaseResource):
+            MODEL_TYPE = 'test'
+            MODEL = {
+                'name': (str, ".*", False, "string", True, "Name"),
                 'key': (int, None, True, None, True, "desc"),
                 'key2': (str, ".+", False, "default", True, "desc"),
                 'key3': (list, "[0-9]+", False, [], True, "desc"),
+                'key4': (dict, ('[a-z]', '\d+'), False, {}, True, "desc"),
             }
             PRIMARY_KEY = None
             PRIORITY = 10
@@ -128,6 +151,17 @@ class ResourcesTest(TestCase):
         res.validate()
         res = R1('id', {'key': 1,
                         'key3': ['12', 'abc']})
+        self.assertRaises(ResourceInvalidException,
+                          res.validate)
+        res = R1('id', {'key': 1,
+                        'key4': {}})
+        res.validate()
+        res = R1('id', {'key': 1,
+                        'key4': {'master': '1234',
+                                 'dev': '1234'}})
+        res = R1('id', {'key': 1,
+                        'key4': {'master': '1234',
+                                 'dev': 'abc'}})
         self.assertRaises(ResourceInvalidException,
                           res.validate)
 

@@ -81,15 +81,17 @@ class SFResourceBackendEngine(object):
             r_key_changes[rid] = {'data': new_data, 'changed': set()}
             for ctype, _changes in changes.items():
                 if ctype in ('values_changed', 'iterable_item_removed',
-                             'iterable_item_added'):
+                             'iterable_item_added', 'type_changes',
+                             'dictionary_item_added',
+                             'dictionary_item_removed'):
                     for c in _changes:
                         key = re.search(
                             "root\['(" + KEY_RE_CONSTRAINT + ")'\].*$", c)
                         key = key.groups()[0]
                         r_key_changes[rid]['changed'].add(key)
                 else:
-                    logger.info('Unexpected change type '
-                                'detected for rid: %s' % rid)
+                    logger.info('Unexpected change type (%s) '
+                                'detected for rid: %s' % (ctype, rid))
         return r_key_changes
 
     def _get_data_diff(self, prev, new):
