@@ -13,7 +13,7 @@
 # under the License.
 
 from unittest import TestCase
-from mock import patch
+from mock import patch, call
 
 import os
 
@@ -65,13 +65,22 @@ class TestGerritRepo(TestCase):
                 self.assertEqual(2, len(af.mock_calls))
                 self.assertEqual(6, len(ex.mock_calls))
 
-    def test_push_master(self):
+    def test_push_branch(self):
         gr = utils.GerritRepo('p1', self.conf)
         with patch.object(gr, '_exec') as ex:
             with patch.object(gr, 'add_file') as af:
-                gr.push_master({'f1': 'contentf1', 'f2': 'contentf2'})
-                self.assertEqual(2, len(af.mock_calls))
-                self.assertEqual(5, len(ex.mock_calls))
+                ex.return_value = True
+                gr.push_branch('master', {'f1': 'contentf1',
+                                          'f2': 'contentf2'})
+        self.assertListEqual(
+            [call('git checkout master'),
+             call('git reset --hard origin/master'),
+             call('git status -s'),
+             call("git commit -a --author 'user1 "
+                  "<user1@tests.dom>' -m'ManageSF commit'"),
+             call('git push origin master')],
+            ex.call_args_list)
+        self.assertTrue(len(af.call_args_list), 2)
 
     def test_push_master_from_git_remote(self):
         gr = utils.GerritRepo('p1', self.conf)
@@ -88,3 +97,36 @@ class TestGerritRepo(TestCase):
                 'ssh-agent bash -c'))
             self.assertTrue(ex.mock_calls[1][1][0].startswith('git commit -a'))
             self.assertEqual('git review', ex.mock_calls[2][1][0])
+
+    def test_list_remote_branches(self):
+        gr = utils.GerritRepo('p1', self.conf)
+        with patch.object(gr, '_exec') as ex:
+            ex.return_value = """  origin/HEAD   -> origin/master
+  origin/master 9dc37aee187412073a10c9df85b6878bc39bd1a2 Cmt msg
+  origin/meta/config 3d5c40c888109a69c1211281a67c6dbaadf7ae56 Provides ACLs
+"""
+            refs = gr.list_remote_branches()
+            self.assertDictEqual(
+                refs,
+                {'HEAD': 'master',
+                 'master': '9dc37aee187412073a10c9df85b6878bc39bd1a2',
+                 'meta/config': '3d5c40c888109a69c1211281a67c6dbaadf7ae56'})
+
+    def test_create_remote_branch(self):
+        gr = utils.GerritRepo('p1', self.conf)
+        with patch.object(gr, '_exec') as ex:
+            gr.create_remote_branch('mybranch', '123')
+            self.assertEqual(
+                'git branch mybranch 123',
+                ex.mock_calls[0][1][0])
+            self.assertEqual(
+                'git push origin mybranch',
+                ex.mock_calls[1][1][0])
+
+    def test_delete_remote_branch(self):
+        gr = utils.GerritRepo('p1', self.conf)
+        with patch.object(gr, '_exec') as ex:
+            gr.delete_remote_branch('mybranch')
+            self.assertEqual(
+                'git push --delete origin mybranch',
+                ex.mock_calls[0][1][0])

@@ -82,7 +82,7 @@ class BaseResource(object):
     def _model_definition_validate(self):
         """ This validate the inherited model. This is
         to validate resource model defined by inherited
-        classes. We make sure the model is follow by the
+        classes. We make sure the model is followed by the
         developper.
         """
         try:
@@ -133,9 +133,18 @@ class BaseResource(object):
                     if constraints[0] is str:
                         assert re.match(constraints[1],
                                         constraints[3])
+                    # Validate default value match the regexp
+                    # if dict type
+                    if constraints[0] is dict:
+                        assert isinstance(constraints[1], tuple)
+                        key_re = re.compile(constraints[1][0])
+                        val_re = re.compile(constraints[1][1])
+                        for k, v in constraints[3].items():
+                            assert key_re.match(k)
+                            assert val_re.match(v)
                     # Validate list default values match the regexp
                     # if list type
-                    if isinstance(constraints[0], list):
+                    if constraints[0] is list:
                         assert all([re.match(constraints[1], c) for
                                     c in constraints[3]]) is True
         except:
@@ -206,6 +215,30 @@ class BaseResource(object):
                     raise ResourceInvalidException(
                         "Resource [type: %s, ID: %s] has an invalid "
                         "key (%s) data content (expected match : %s)" % (
+                            self.__class__.MODEL_TYPE,
+                            self.id,
+                            key,
+                            self.__class__.MODEL[key][1]))
+            # For dict type validate the content as according the regex
+            if self.__class__.MODEL[key][0] is dict:
+                try:
+                    for k, v in value.items():
+                        assert isinstance(k, str)
+                        assert isinstance(v, str)
+                except:
+                    raise ResourceInvalidException(
+                        "Resource [type: %s, ID: %s] has an invalid "
+                        "key (%s) dict keys and values must by str" % (
+                            self.__class__.MODEL_TYPE,
+                            self.id,
+                            key))
+                key_re = re.compile(self.__class__.MODEL[key][1][0])
+                val_re = re.compile(self.__class__.MODEL[key][1][1])
+                if not all([all([key_re.match(k), val_re.match(v)]) for
+                            k, v in value.items()]):
+                    raise ResourceInvalidException(
+                        "Resource [type: %s, ID: %s] has an invalid "
+                        "key (%s) dict key, value (expected match : %s)" % (
                             self.__class__.MODEL_TYPE,
                             self.id,
                             key,

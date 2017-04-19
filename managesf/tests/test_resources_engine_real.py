@@ -861,6 +861,50 @@ wrong ! This string won't be accepted by Gerrit !
                           'an unknown resource [type: acls, ID: a1]', logs)
             self.assertEqual(len(logs), 1)
 
+        master = {
+            'resources': {
+                'acls': {
+                    'a1': {
+                        'file': 'fake',
+                        }
+                    },
+                'repos': {},
+                }
+            }
+        new = {
+            'resources': {
+                'repos': {
+                    'sf/r1': {
+                        'description': 'This is a GIT repo',
+                        'acl': 'a1',
+                        'branches': {
+                            'br1': 'aa65de9c3eb5496e3119a73f732ebb142753ed54'
+                            }
+                        }
+                    },
+                'acls': {
+                    'a1': {
+                        'file': 'fake',
+                        }
+                    }
+                }
+            }
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as l, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv:
+            l.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertIn('Resource [type: repos, ID: sf/r1] is going to '
+                          'be created.',
+                          logs)
+            self.assertEqual(len(logs), 1)
+
     def test_project_validation(self):
         master = {
             'resources': {
