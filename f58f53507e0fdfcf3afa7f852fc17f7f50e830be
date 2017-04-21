@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_9b13e35c",
+        "filename": "managesf/model/yamlbkd/resources/gitrepository.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-04-21T08:18:11Z",
+      "side": 1,
+      "message": "Would this make re-run after the failure harder? For example if for some reason it failed installing the acl, re-running would try again to install the acl. But now it seems like it will fail early with \"repo create fail, already exists\" no ?",
+      "revId": "f58f53507e0fdfcf3afa7f852fc17f7f50e830be",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
