@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_fbcb0f1d",
+        "filename": "managesf/model/yamlbkd/resources/gitrepository.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-04-24T00:55:47Z",
+      "side": 1,
+      "message": "Why is there two regexp then? Also, should it also contains \"/\" for example: \"stable/ocata\" ?",
+      "revId": "1e7c4a0c33f36b88e4e1d8341a95b28591024ea5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
