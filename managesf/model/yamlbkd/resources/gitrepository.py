@@ -299,11 +299,15 @@ global:Registered-Users\tRegistered Users"""
         to_delete = [branch for branch, sha in branches.items() if
                      branch in refs.keys() and sha == '0']
 
+        print refs.keys()
+        print to_create.keys()
+        print "dbranch: %s" % dbranch
         if (refs['HEAD'] != dbranch and
                 dbranch not in refs.keys() and
-                dbranch not in to_create.keys()):
+                dbranch not in to_create.keys() and
+                dbranch != ""):
             # Then a default-branch is requested but not defined in
-            # branches list. It may be coherent with situation a first
+            # branches list. It may be coherent with the situation of first
             # creating a repo with a specific default-branch
             to_create[dbranch] = 'HEAD'
 
@@ -320,7 +324,7 @@ global:Registered-Users\tRegistered Users"""
                     branch, sha, e))
 
         # Set default branch
-        if refs['HEAD'] != dbranch:
+        if refs['HEAD'] != dbranch and dbranch != "":
             try:
                 ret = self.set_default_branch(name, dbranch)
                 if ret is False:
@@ -377,9 +381,9 @@ class GitRepository(BaseResource):
         ),
         'default-branch': (
             str,
-            '[a-zA-Z0-9\-_\./]+',
+            '[a-zA-Z0-9\-_\./]*',
             False,
-            "master",
+            "",
             True,
             "The repository default branch. If the branch does not exist yet "
             "or have not been defined in the 'branches' attribute then "
@@ -392,9 +396,12 @@ class GitRepository(BaseResource):
             {},
             True,
             "Repository branches. Branches name is the key and "
-            "branch init SHA/or existing branch name is the branch value. "
-            "When branch already exist then no reset to the given SHA is done "
-            "except for the '0' value that ensure the branch does not exist",
+            "branch is the branch value (a SHA/or an existing branch "
+            "name/or HEAD). When branch already exist then no reset to "
+            "the given value is done except for the '0' value that "
+            "ensure the branch does not exist by removing the ref. "
+            "If you intend to explicitly declare already existing branches "
+            "then please use HEAD as value.",
         ),
     }
     PRIORITY = 20

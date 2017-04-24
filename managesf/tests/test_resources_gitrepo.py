@@ -105,7 +105,7 @@ class GitRepositoryOpsTest(TestCase):
             'dev3': '125'}
 
         kwargs = {'name': 'space/g1',
-                  'default-branch': 'master',
+                  'default-branch': '',
                   'branches': {}}
         logs = o.create_branches(MGR, **kwargs)
         self.assertTrue(MGR.list_remote_branches.called)
@@ -116,28 +116,25 @@ class GitRepositoryOpsTest(TestCase):
         MGR.reset_mock()
 
         MGR.list_remote_branches.return_value = {
-            'HEAD': 'master',
-            'master': '100',
-            'dev3': '125'}
-
-        MGR.list_remote_branches.return_value = {
-            'HEAD': 'master',
+            'HEAD': 'rpm-master',
             'master': '100',
             'dev3': '125'}
         kwargs = {'name': 'space/g1',
-                  'default-branch': 'master',
+                  'default-branch': '',
                   'branches': {
                       'dev': '123',
                       'dev2': '124',
                       'dev3': '0'}}
         patches = [
+            patch.object(GitRepositoryOps, 'set_default_branch'),
             patch.object(GitRepositoryOps, 'install_git_review_file')]
 
-        with nested(*patches) as (igrf, ):
+        with nested(*patches) as (sdb, igrf):
             logs = o.create_branches(MGR, **kwargs)
         self.assertTrue(MGR.list_remote_branches.called)
         self.assertTrue(MGR.create_remote_branch.called)
         self.assertTrue(igrf.called)
+        self.assertTrue(not sdb.called)
         self.assertTrue(MGR.delete_remote_branch.called)
         self.assertEqual(len(logs), 0)
         self.assertIn(call('dev2', '124'),
@@ -153,7 +150,7 @@ class GitRepositoryOpsTest(TestCase):
 
         MGR.reset_mock()
 
-        MGR.list_remote_branch.return_value = {
+        MGR.list_remote_branches.return_value = {
             'HEAD': 'master',
             'master': '100',
             'dev3': '125'}
@@ -184,7 +181,7 @@ class GitRepositoryOpsTest(TestCase):
 
         MGR.reset_mock()
 
-        MGR.list_remote_branch.return_value = {
+        MGR.list_remote_branches.return_value = {
             'HEAD': 'master',
             'master': '100'}
         kwargs = {'name': 'space/g1',
