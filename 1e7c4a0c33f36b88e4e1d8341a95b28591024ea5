@@ -16,6 +16,24 @@
       "revId": "1e7c4a0c33f36b88e4e1d8341a95b28591024ea5",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_db3a8be7",
+        "filename": "managesf/model/yamlbkd/resources/gitrepository.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-04-24T09:37:45Z",
+      "side": 1,
+      "message": "Good catch it can cause trouble when branch name is composed of multiple elements. Next ps fix that. Also regexps now authorize the \u0027/\u0027.",
+      "parentUuid": "da9b358b_fbcb0f1d",
+      "revId": "1e7c4a0c33f36b88e4e1d8341a95b28591024ea5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
