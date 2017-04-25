@@ -101,13 +101,19 @@ class StoryboardOps(object):
         included_ids = [
             p.id for p in
             self.client.project_groups.get(id=pg.id).projects.get_all()]
-        wanted_included = []
         for sr_name in sources_repositories:
             sr = self.new['resources']['repos'][sr_name]
-            self.update_project(name=sr_name,
-                                description=sr['description'])
-            project = [p for p in self.client.projects.get_all(name=sr_name)
-                       if p.name == sr_name]
+            try:
+                self.update_project(name=sr_name,
+                                    description=sr['description'])
+            except Exception, e:
+                # If a storyboard project update/create fails
+                # just report in service logs and pass to the next one
+                logger.exception("update_project failed %s" % e)
+        projects = self.client.projects.get_all()
+        wanted_included = []
+        for sr_name in sources_repositories:
+            project = [p for p in projects if p.name == sr_name]
             if project:
                 wanted_included.append(project[0].id)
         to_add = set(wanted_included) - set(included_ids)
