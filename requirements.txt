@@ -1,4 +1,4 @@
--e git+https://github.com/redhat-cip/pysflib.git#egg=pysflib
+-e git+https://github.com/softwarefactory-project/pysflib.git#egg=pysflib
 -e git+https://github.com/openstack-infra/python-storyboardclient.git#egg=python-storyboardclient
 pbr>=1.6
 pecan==1.0.3

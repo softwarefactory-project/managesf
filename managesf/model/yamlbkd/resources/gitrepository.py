@@ -299,9 +299,6 @@ global:Registered-Users\tRegistered Users"""
         to_delete = [branch for branch, sha in branches.items() if
                      branch in refs.keys() and sha == '0']
 
-        print refs.keys()
-        print to_create.keys()
-        print "dbranch: %s" % dbranch
         if (refs['HEAD'] != dbranch and
                 dbranch not in refs.keys() and
                 dbranch not in to_create.keys() and
