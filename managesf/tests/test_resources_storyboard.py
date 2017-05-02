@@ -47,10 +47,10 @@ class StoryboardOpsTest(TestCase):
         self.assertTrue(len(logs) == 0)
         project = {
             'name': 'project2',
-            'source-repositories': ['repo', '-hjook']
+            'source-repositories': ['re', '-hjook']
         }
         logs = s.extra_validations(**project)
-        self.assertTrue('Minimal len is 5' in logs[0])
+        self.assertTrue('Minimal len is 3' in logs[0])
         self.assertTrue('should match the RE' in logs[1])
 
     def test_update_project(self):
