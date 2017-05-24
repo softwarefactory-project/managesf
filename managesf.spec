@@ -1,8 +1,8 @@
 %global         sum A python API used to centralize management of services deployed under Software Factory
 
 Name:           managesf
-Version:        0.11.0
-Release:        2%{?dist}
+Version:        0.12.0
+Release:        1%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -62,7 +62,7 @@ Requires:       python2-deepdiff
 Requires:       GitPython
 Requires:       python-requests
 Requires:       python-jenkins
-Requires:       uwsgi-plugin-python
+Requires:       python-gunicorn
 
 %description
 python API used to centralize management of services deployed under Software Factory
@@ -133,6 +133,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Wed May 24 2017 Fabien Boucher <fboucher@redhat.com> - 0.12.0-1
+- Switch to gunicorn
+
 * Mon Mar 20 2017 Tristan Cacqueray <tdecacqu@redhat.com> - 0.11.0-2
 - Add html documentation
 
