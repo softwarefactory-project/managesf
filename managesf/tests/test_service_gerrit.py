@@ -90,14 +90,19 @@ class TestSFGerritUserManager(BaseSFGerritService):
                           'mail@address.com', 'username')
         with patch.object(self.gerrit.user, 'get') as get, \
                 patch.object(self.gerrit.user, 'session') as session, \
-                patch('managesf.services.gerrit.user.G.Gerrit._ssh') as ssh:
+                patch('managesf.services.gerrit.utils._exec') as ssh:
             get.return_value = self.user_data['_account_id']
             sql = """DELETE FROM account_group_members WHERE account_id=5;
 DELETE FROM accounts WHERE account_id=5;
 DELETE FROM account_external_ids WHERE account_id=5;"""
             self.gerrit.user.delete(email='jojo@starplatinum.dom')
             session.execute.assert_called_with(sql)
-            calls = [call('gerrit flush-caches --cache %s' % c)
+            base = "ssh -i %s -p 29418 %s@%s " \
+                "gerrit flush-caches --cache %%s" % (
+                    self.conf.gerrit['sshkey_priv_path'],
+                    self.conf.admin['name'],
+                    self.conf.gerrit['host'])
+            calls = [call(base % c)
                      for c in ('accounts', 'accounts_byemail',
                                'accounts_byname', 'groups_members')]
             ssh.assert_has_calls(calls)
@@ -105,7 +110,7 @@ DELETE FROM account_external_ids WHERE account_id=5;"""
             ssh.reset_mock()
             self.gerrit.user.delete(username='jojo@starplatinum.dom')
             session.execute.assert_called_with(sql)
-            calls = [call('gerrit flush-caches --cache %s' % c)
+            calls = [call(base % c)
                      for c in ('accounts', 'accounts_byemail',
                                'accounts_byname', 'groups_members')]
             ssh.assert_has_calls(calls)

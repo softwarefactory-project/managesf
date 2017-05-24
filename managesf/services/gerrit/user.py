@@ -17,11 +17,11 @@
 
 import logging
 
-from gerritlib import gerrit as G
 import sqlalchemy
 
 from managesf.services import base
 from managesf.services import exceptions as exc
+from managesf.services.gerrit import utils
 
 
 logger = logging.getLogger(__name__)
@@ -160,12 +160,14 @@ class SFGerritUserManager(base.UserManager):
             logger.debug(msg % (self.plugin.service_name,
                                 email or username, unicode(e)))
         # flush gerrit caches
-        ge = G.Gerrit(self.plugin.conf['host'],
-                      self.plugin._full_conf.admin['name'],
-                      keyfile=self.plugin.conf['sshkey_priv_path'])
         for cache in ('accounts', 'accounts_byemail', 'accounts_byname',
                       'groups_members'):
-            ge._ssh('gerrit flush-caches --cache %s' % cache)
+            utils._exec(
+                "ssh -i %s -p 29418 %s@%s gerrit flush-caches --cache %s" % (
+                    self.plugin.conf['sshkey_priv_path'],
+                    self.plugin._full_conf.admin['name'],
+                    self.plugin.conf['host'],
+                    cache))
         logger.debug(u'[%s] %s (id %s) deleted' % (self.plugin.service_name,
                                                    email or username,
                                                    account_id))
