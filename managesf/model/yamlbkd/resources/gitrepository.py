@@ -15,6 +15,7 @@
 
 import re
 import json
+import urllib
 import hashlib
 import logging
 
@@ -272,7 +273,7 @@ global:Registered-Users\tRegistered Users"""
         return logs
 
     def set_default_branch(self, name, branch):
-        endpoint = "projects/%s/HEAD" % name
+        endpoint = "projects/%s/HEAD" % urllib.quote_plus(name)
         headers = {'Content-Type': 'application/json'}
         data = json.dumps({"ref": "refs/heads/%s" % branch})
         try:
