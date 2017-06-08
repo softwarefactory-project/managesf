@@ -30,6 +30,8 @@ from managesf.services import exceptions
 from managesf import policy
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
+from managesf import api
+
 
 logger = logging.getLogger(__name__)
 
@@ -1059,7 +1061,30 @@ AGENTSPROVIDERS = [s for s in SF_SERVICES
                    if isinstance(s, base.BaseAgentProviderServicePlugin)]
 
 
+# API v2
+
+class V2Controller(object):
+    api = api
+    # Mimic api v1 and replace endpoints incrementally
+    backup = BackupController()
+    user = LocalUserController()
+    bind = LocalUserBindController()
+    htpasswd = HtpasswdController()
+    about = introspection.IntrospectionController()
+    services_users = ServicesUsersController()
+    hooks = HooksController()
+    resources = ResourcesController()
+    jobs = JobsController()
+    if len(AGENTSPROVIDERS) > 0:
+        nodes = NodesController()
+
+
+class APIController(object):
+    v2 = V2Controller()
+
+
 class RootController(object):
+    api = APIController()
     backup = BackupController()
     user = LocalUserController()
     bind = LocalUserBindController()

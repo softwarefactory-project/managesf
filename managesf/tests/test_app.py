@@ -80,6 +80,15 @@ class FunctionalTest(TestCase):
                 os.unlink(path)
 
 
+class TestManageSFAPIv2(FunctionalTest):
+    def test_get_api_endpoint(self):
+        response = self.app.get('/api/v2/about/').json
+        self.assertEqual('managesf',
+                         response['service']['name'])
+        self.assertEqual(set(self.config['services']),
+                         set(response['service']['services']))
+
+
 class TestManageSFIntrospectionController(FunctionalTest):
 
     def test_instrospection(self):
