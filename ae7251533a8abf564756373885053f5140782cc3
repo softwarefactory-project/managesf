@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_de3a60cd",
+        "filename": "managesf/services/zuul/__init__.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-12T01:03:44Z",
+      "side": 1,
+      "message": "The mail can be dropped :-)",
+      "revId": "ae7251533a8abf564756373885053f5140782cc3",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_fe2404b0",
+        "filename": "managesf/services/zuul/__init__.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-12T01:03:44Z",
+      "side": 1,
+      "message": "How about storing the db_uri directly in the config, this enables more flexibility such as using sqlite instead of mysql ?",
+      "revId": "ae7251533a8abf564756373885053f5140782cc3",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_5e2650bb",
+        "filename": "managesf/services/zuul/job.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-12T01:03:44Z",
+      "side": 1,
+      "message": "No need to re-define the table definition, they can be instanciated from zuul code directly, see:\n\nhttps://review.openstack.org/gitweb?p\u003dopenstack-infra/zuul.git;a\u003dblob;f\u003dzuul_dashboard/controllers.py;h\u003dab361a7afed614d27ee642f464ffd8c005f1cb6e;hb\u003da4a56e697d23f824cd8a632166e06cb91c81b8ad#l30",
+      "revId": "ae7251533a8abf564756373885053f5140782cc3",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
