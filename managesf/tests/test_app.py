@@ -64,7 +64,8 @@ class FunctionalTest(TestCase):
                        'policy': c.policy,
                        'resources': c.resources,
                        'jenkins': c.jenkins,
-                       'nodepool': c.nodepool, }
+                       'nodepool': c.nodepool,
+                       'api': c.api, }
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}
@@ -82,7 +83,7 @@ class FunctionalTest(TestCase):
 
 class TestManageSFAPIv2(FunctionalTest):
     def test_get_api_endpoint(self):
-        response = self.app.get('/api/v2/about/').json
+        response = self.app.get('/v2/about/').json
         self.assertEqual('managesf',
                          response['service']['name'])
         self.assertEqual(set(self.config['services']),
