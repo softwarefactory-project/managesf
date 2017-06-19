@@ -30,7 +30,8 @@ from managesf.services import exceptions
 from managesf import policy
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
-from managesf import api
+from managesf import DEFAULT_SERVICES
+from managesf.controllers.api.v2 import builds as v2_builds
 
 
 logger = logging.getLogger(__name__)
@@ -45,8 +46,6 @@ CLIENTERRORMSG = "Unable to process your request, failed with "\
 
 # instanciate service plugins
 SF_SERVICES = []
-DEFAULT_SERVICES = ['SFGerrit', 'SFStoryboard', 'SFJenkins',
-                    'SFNodepool']
 SERVICES = {}
 
 
@@ -101,6 +100,8 @@ def report_unhandled_error(exp):
     logger.exception(LOGERRORMSG % str(exp))
     response.status = 500
     return CLIENTERRORMSG % str(exp)
+
+# TODO move to utils and use resources rather than gerrit for groups
 
 
 def authorize(rule_name, target):
@@ -1061,10 +1062,10 @@ AGENTSPROVIDERS = [s for s in SF_SERVICES
                    if isinstance(s, base.BaseAgentProviderServicePlugin)]
 
 
-# API v2
+# API v2 - will be in its own file hierarchy once dependencies are sorted out
+
 
 class V2Controller(object):
-    api = api
     # Mimic api v1 and replace endpoints incrementally
     backup = BackupController()
     user = LocalUserController()
@@ -1074,25 +1075,33 @@ class V2Controller(object):
     services_users = ServicesUsersController()
     hooks = HooksController()
     resources = ResourcesController()
-    jobs = JobsController()
     if len(AGENTSPROVIDERS) > 0:
         nodes = NodesController()
-
-
-class APIController(object):
-    v2 = V2Controller()
+    # --
+    builds = v2_builds.BuildController()
+    buildsets = v2_builds.BuildSetController()
 
 
 class RootController(object):
-    api = APIController()
-    backup = BackupController()
-    user = LocalUserController()
-    bind = LocalUserBindController()
-    htpasswd = HtpasswdController()
-    about = introspection.IntrospectionController()
-    services_users = ServicesUsersController()
-    hooks = HooksController()
-    resources = ResourcesController()
-    jobs = JobsController()
-    if len(AGENTSPROVIDERS) > 0:
-        nodes = NodesController()
+    def __init__(self, *args, **kwargs):
+        try:
+            # just try to get the api config
+            _ = conf.api.v2  # noQA
+            self.v2 = V2Controller()
+        except AttributeError:
+            # TODO have a generic blank REST controller that returns
+            # 'Not Implemented' error code
+            logger.info('API v2 is not configured, skipping endpoint.')
+            self.v2 = RestController()
+
+        self.backup = BackupController()
+        self.user = LocalUserController()
+        self.bind = LocalUserBindController()
+        self.htpasswd = HtpasswdController()
+        self.about = introspection.IntrospectionController()
+        self.services_users = ServicesUsersController()
+        self.hooks = HooksController()
+        self.resources = ResourcesController()
+        self.jobs = JobsController()
+        if len(AGENTSPROVIDERS) > 0:
+            self.nodes = NodesController()
