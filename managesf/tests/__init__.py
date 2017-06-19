@@ -38,6 +38,10 @@ class dummy_conf():
         'db_user': 'gerrit_db_user',
         'db_password': 'gerrit_db_password',
     }
+    zuul = {
+        'status_url': 'http://sftests.com:8082/status.json',
+        'dburi': 'aaaa',
+    }
     storyboard = {
         'base_url': 'http://sftests.com/r/',
         'host': 'storyboard',
@@ -112,4 +116,9 @@ class dummy_conf():
     DummyService = {
         'dummy_opt1': 'value1',
         'dummy_opt2': 'value2'
+    }
+    api = {
+        'v2': {
+            'builds': ['SFZuul', ],
+        },
     }
