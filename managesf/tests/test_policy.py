@@ -43,7 +43,8 @@ class TestPolicyEngine(TestCase):
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'mysql': c.mysql,
-                       'policy': c.policy, }
+                       'policy': c.policy,
+                       'api': c.api, }
         self.app = TestApp(load_app(self.config))
 
     def tearDown(self):
