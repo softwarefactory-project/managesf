@@ -64,7 +64,8 @@ class FunctionalTest(TestCase):
                        'policy': c.policy,
                        'resources': c.resources,
                        'jenkins': c.jenkins,
-                       'nodepool': c.nodepool, }
+                       'nodepool': c.nodepool,
+                       'api': c.api, }
         # deactivate loggin that polute test output
         # even nologcapture option of nose effetcs
         # 'logging': c.logging}

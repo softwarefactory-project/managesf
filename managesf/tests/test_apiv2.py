@@ -133,7 +133,7 @@ class TestAPIv2Paginate(TestCase):
                                               limit=10))
 
 
-class DummyData(base.V2Data):
+class DummyData(base.Data):
     def __init__(self, arg1, arg2, arg3):
         self.arg1 = arg1
         self.arg2 = arg2
@@ -146,21 +146,21 @@ class DummyData(base.V2Data):
 
 
 class TestAPIv2DataSerialization(TestCase):
-    def test_V2DataObject_JSON_serialization(self):
-        """Test that V2Data-type objects get JSON serialized correctly"""
+    def test_DataObject_JSON_serialization(self):
+        """Test that Data-type objects get JSON serialized correctly"""
         d = DummyData('a', 'b', 'c')
-        json_d = json.dumps(d, cls=base.V2DataJSONEncoder)
+        json_d = json.dumps(d, cls=base.DataJSONEncoder)
         dict_d = json.loads(json_d)
         self.assertDictEqual({'arg1': 'a',
                               'a list of stuff': ['b', 'c'],
                               'a dict of stuff': {'a': 'a'}},
                              dict_d)
 
-    def test_V2DataObject_JSON_serialization_nested(self):
-        """Test that V2Data-type nested objects get serialized correctly"""
+    def test_DataObject_JSON_serialization_nested(self):
+        """Test that Data-type nested objects get serialized correctly"""
         d = DummyData('a', 'b', 'c')
         e = DummyData(d, 'f', 'g')
-        json_e = json.dumps(e, cls=base.V2DataJSONEncoder)
+        json_e = json.dumps(e, cls=base.DataJSONEncoder)
         dict_e = json.loads(json_e)
         self.assertDictEqual({'arg1': d.to_dict(),
                               'a list of stuff': ['f', 'g'],
