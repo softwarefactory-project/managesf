@@ -24,6 +24,7 @@ class dummy_conf():
                 'SFStoryboard',
                 'SFJenkins',
                 'SFNodepool',
+                'SFZuul',
                 ]
     gerrit = {
         'user': 'gerrit',
@@ -37,6 +38,10 @@ class dummy_conf():
         'db_name': 'gerrit_db',
         'db_user': 'gerrit_db_user',
         'db_password': 'gerrit_db_password',
+    }
+    zuul = {
+        'status_url': 'http://sftests.com:8082/status.json',
+        'dburi': 'aaaa',
     }
     storyboard = {
         'base_url': 'http://sftests.com/r/',
