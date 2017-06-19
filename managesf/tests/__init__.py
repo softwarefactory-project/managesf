@@ -15,6 +15,8 @@
 import os
 import tempfile
 
+from pecan.configuration import conf_from_dict
+
 
 class dummy_conf():
     auth = {
@@ -37,6 +39,10 @@ class dummy_conf():
         'db_name': 'gerrit_db',
         'db_user': 'gerrit_db_user',
         'db_password': 'gerrit_db_password',
+    }
+    zuul = {
+        'status_url': 'http://sftests.com:8082/status.json',
+        'dburi': 'aaaa',
     }
     storyboard = {
         'base_url': 'http://sftests.com/r/',
@@ -113,3 +119,8 @@ class dummy_conf():
         'dummy_opt1': 'value1',
         'dummy_opt2': 'value2'
     }
+    api = conf_from_dict({
+        'v2': {
+            'builds': ['DummyService', ],
+        },
+    })
