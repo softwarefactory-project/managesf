@@ -17,10 +17,36 @@
 import abc
 import six
 import json
+import logging
 
+import sqlalchemy as sa
 
 # TODO move exceptions somewhere more generic
 from managesf.services import exceptions as exc
+
+
+logger = logging.getLogger(__name__)
+
+
+isotime = '%Y-%m-%dT%H:%M:%S'
+
+
+class Data(object):
+    """Generic class for returned objects that must be JSON-serializable"""
+
+    def to_dict(self):
+        raise NotImplementedError
+
+    def __json__(self):
+        # pecan shortcut
+        return self.to_dict()
+
+
+class DataJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Data):
+            return obj.to_dict()
+        return json.JSONEncoder.default(self, obj)
 
 
 def paginate(func):
@@ -35,8 +61,9 @@ def paginate(func):
             # use first option as default
             kwargs['order_by'] = args[0].ordering_options[0]
         elif kwargs['order_by'] not in args[0].ordering_options:
-            msg = 'invalid ordering option, valid ones are: %s'
-            raise ValueError(msg % ', '.join(args[0].ordering_options))
+            msg = 'invalid ordering option %s, valid ones are: %s'
+            raise ValueError(msg % (kwargs['order_by'],
+                                    ', '.join(args[0].ordering_options)))
         try:
             skipped = int(kwargs['skip'])
         except ValueError:
@@ -49,13 +76,17 @@ def paginate(func):
             raise ValueError('Invalid starting index')
         if limit < 0:
             raise ValueError('Invalid limit')
-        results = func(*args, **kwargs)
+        r = func(*args, **kwargs)
         try:
-            results, total = results
+            results, total = r
+            # if results is a list with 2 elements, this will fail ...
+            if not isinstance(results, list):
+                raise ValueError
         except ValueError:
-            total = len(results)
+            results = r
+            total = len(r)
         if not total:
-            total = len(results)
+            total = len(r)
         # results is expected to be ordered in one way or an other
         if len(results) > limit:
             results = results[skipped: skipped + limit]
@@ -120,19 +151,24 @@ class BaseService(object):
             raise exc.ServiceNotAvailableError(msg)
 
 
-class V2Data(object):
-    """Generic class for returned objects that must be JSON-serializable"""
+# Generic service utilities
 
-    def to_dict(self):
+
+class SQLConnection(object):
+    """Generic SQL connector for DB-based services."""
+    def __init__(self, connection_name, connection_config):
+        try:
+            self.dburi = connection_config.get('dburi')
+            self.connection_name = connection_name
+            self.engine = sa.create_engine(self.dburi)
+            self.get_tables()
+        except sa.exc.NoSuchModuleError:
+            logger.error(
+                "The required module for the dburi dialect isn't available. "
+                "SQL connection %s will be unavailable." % connection_name)
+        except sa.exc.OperationalError:
+            msg = "SQL connection %s: Unable to connect to the database."
+            logger.error(msg % connection_name)
+
+    def get_tables(self):
         raise NotImplementedError
-
-    def __json__(self):
-        # pecan shortcut
-        return self.to_dict()
-
-
-class V2DataJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, V2Data):
-            return obj.to_dict()
-        return json.JSONEncoder.default(self, obj)
