@@ -109,3 +109,7 @@ class dummy_conf():
         'filename': tempfile.mkstemp()[1]
     }
     policy = {}
+    DummyService = {
+        'dummy_opt1': 'value1',
+        'dummy_opt2': 'value2'
+    }
