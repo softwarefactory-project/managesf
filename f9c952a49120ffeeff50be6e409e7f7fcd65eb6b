@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_bf6d77ce",
+        "filename": "managesf/api/__init__.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-20T04:38:21Z",
+      "side": 1,
+      "message": "This should be \"2017 Red Hat\", though empty file can be empty too.",
+      "revId": "f9c952a49120ffeeff50be6e409e7f7fcd65eb6b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_9f72b3ac",
+        "filename": "managesf/api/v2/__init__.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-20T04:38:21Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "f9c952a49120ffeeff50be6e409e7f7fcd65eb6b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_7f680fbb",
+        "filename": "managesf/api/v2/base.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-20T04:38:21Z",
+      "side": 1,
+      "message": "Red Hat",
+      "revId": "f9c952a49120ffeeff50be6e409e7f7fcd65eb6b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_5f654bdf",
+        "filename": "managesf/api/v2/base.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-20T04:38:21Z",
+      "side": 1,
+      "message": "Would it be possible to avoid calling func() twice, e,g, only do the try: except VAlueError on a generic result variable?",
+      "revId": "f9c952a49120ffeeff50be6e409e7f7fcd65eb6b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
