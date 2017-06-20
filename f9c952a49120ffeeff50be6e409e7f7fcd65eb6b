@@ -67,6 +67,24 @@
       "revId": "f9c952a49120ffeeff50be6e409e7f7fcd65eb6b",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_7f95af3e",
+        "filename": "managesf/api/v2/base.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-06-20T08:25:26Z",
+      "side": 1,
+      "message": "good catch, i\u0027ll fix it in the following patch in the chain to avoid dealing with annoying rebases",
+      "parentUuid": "9aa53dc9_5f654bdf",
+      "revId": "f9c952a49120ffeeff50be6e409e7f7fcd65eb6b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
