@@ -135,3 +135,24 @@ class TestManageSFV2BuildController(V2FunctionalTest):
             self.assertEqual(response.status_int, 500)
             self.assertEqual('nope',
                              response.json.get('error_description'))
+
+
+class TestManageSFV2JobController(V2FunctionalTest):
+
+    @patch('managesf.controllers.api.v2.jobs.manager')
+    def test_get_job(self, jm):
+        with patch('managesf.controllers.api.v2.base.authorize'):
+            environ = {'REMOTE_USER': 'user'}
+            retval = {'skipped': 0,
+                      'total': 10,
+                      'limit': 1,
+                      'results': ['yo yo']}
+            jm.jobs.get.return_value = retval
+            response = self.app.get('/v2/jobs/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 200, response.text)
+            self.assertEqual('yo yo', response.json['results'][0])
+            retval['total'] = 0
+            response = self.app.get('/v2/jobs/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 404, response.text)
