@@ -18,32 +18,16 @@ import logging
 import traceback
 from datetime import datetime
 
-from pecan import conf
 from pecan import expose
 from pecan import request, response, abort
 from pecan.rest import RestController
 
 from managesf.controllers.api.v2 import base
 from managesf.api.v2.base import isotime
+from managesf.api.v2.managers import build_manager as manager
 
 
 logger = logging.getLogger(__name__)
-
-
-manager = None
-try:
-    builds_service = conf.api.v2.builds[0]
-    manager = base.load_manager('managesf.v2.builds',
-                                builds_service)
-except AttributeError as e:
-    msg = 'Undefined API endpoint, skipping.'
-    logger.error(msg)
-except IndexError:
-    msg = 'No build service defined, skipping.'
-    logger.error(msg)
-except:
-    msg = 'Cannot load build service "%s"' % conf.api['v2']['builds'][0]
-    logger.error(msg)
 
 
 bclog = logger.getChild('BuildController')
