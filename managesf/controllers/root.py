@@ -32,6 +32,7 @@ from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
 from managesf import DEFAULT_SERVICES
 from managesf.controllers.api.v2 import builds as v2_builds
+from managesf.controllers.api.v2 import jobs as v2_jobs
 
 
 logger = logging.getLogger(__name__)
@@ -1080,6 +1081,7 @@ class V2Controller(object):
     # --
     builds = v2_builds.BuildController()
     buildsets = v2_builds.BuildSetController()
+    jobs = v2_jobs.JobController()
 
 
 class RootController(object):
