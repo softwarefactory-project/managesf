@@ -20,6 +20,9 @@ import json
 import logging
 
 import sqlalchemy as sa
+from stevedore import driver
+
+from pecan import conf
 
 # TODO move exceptions somewhere more generic
 from managesf.services import exceptions as exc
@@ -29,6 +32,26 @@ logger = logging.getLogger(__name__)
 
 
 isotime = '%Y-%m-%dT%H:%M:%S'
+
+
+def load_manager(namespace, service):
+    logger.info('loading %s:%s manager' % (namespace, service))
+    # hard-coded Dummy service for testing. What could go wrong?
+    if service == 'DummyService':
+        return None
+    try:
+        manager = driver.DriverManager(namespace=namespace,
+                                       name=service,
+                                       invoke_on_load=True,
+                                       invoke_args=(conf,)).driver
+        logger.info('%s:%s manager loaded successfully' % (namespace,
+                                                           service))
+        return manager
+    except Exception as e:
+        msg = 'Could not load manager %s:%s: %s' % (namespace,
+                                                    service, e)
+        logger.error(msg)
+        return None
 
 
 class Data(object):
