@@ -17,9 +17,7 @@ from unittest import TestCase
 
 from mock import patch, Mock
 
-# from managesf.api.v2 import builds
-from managesf.api.v2.builds.services import sfzuul
-# from managesf.tests import dummy_conf
+from managesf.api.v2.builds.services import sfzuul  # noQA
 
 
 SAMPLE_STATUS_JSON = {
