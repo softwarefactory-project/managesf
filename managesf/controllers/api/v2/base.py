@@ -27,6 +27,7 @@ from managesf import policy
 logger = logging.getLogger(__name__)
 
 
+# TODO move to managesf.api once users API is started
 def get_user_groups(user_id):
     # TODO convert user_ids into emails
     user_email = user_id
