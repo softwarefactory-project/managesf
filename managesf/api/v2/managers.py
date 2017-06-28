@@ -41,3 +41,22 @@ except IndexError:
 except:
     msg = 'Cannot load build service "%s"' % conf.api['v2']['builds'][0]
     logger.error(msg)
+
+
+job_manager = None
+logger.info('Loading jobs manager...')
+try:
+    jobs_service = conf.api.v2.jobs[0]
+    job_manager = base.load_manager('managesf.v2.jobs',
+                                    jobs_service)
+except AttributeError as e:
+    msg = 'Undefined "jobs" API endpoint, skipping.'
+    logger.error(msg)
+    raise
+except IndexError:
+    msg = 'No job service defined, skipping.'
+    logger.error(msg)
+    raise Exception(conf)
+except:
+    msg = 'Cannot load job service "%s"' % conf.api['v2']['jobs'][0]
+    logger.error(msg)
