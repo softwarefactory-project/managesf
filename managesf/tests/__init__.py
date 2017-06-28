@@ -122,5 +122,6 @@ class dummy_conf():
     api = conf_from_dict({
         'v2': {
             'builds': ['DummyService', ],
+            'jobs': ['DummyService', ],
         },
     })
