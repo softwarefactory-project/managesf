@@ -13,7 +13,6 @@
 # under the License.
 
 import os
-import shutil
 
 from unittest import TestCase
 from webtest import TestApp
@@ -25,7 +24,6 @@ from managesf.tests import dummy_conf
 
 class V2FunctionalTest(TestCase):
     def setUp(self):
-        self.to_delete = []
         c = dummy_conf()
         self.config = {'services': c.services,
                        'gerrit': c.gerrit,
@@ -45,30 +43,22 @@ class V2FunctionalTest(TestCase):
         # App must be loaded before we can import v2 managers
         self.app = TestApp(load_app(self.config))
 
-        from managesf.controllers.api.v2 import builds as v2_builds
-        self.api_managers = {'builds': v2_builds.manager,
-                             }
-
     def tearDown(self):
         # Remove the sqlite db
         os.unlink(self.config['sqlalchemy']['url'][len('sqlite:///'):])
-        for path in self.to_delete:
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            else:
-                os.unlink(path)
 
 
 class TestManageSFV2BuildController(V2FunctionalTest):
 
-    def test_get_build(self):
+    @patch('managesf.controllers.api.v2.builds.manager')
+    def test_get_build(self, bm):
         with patch('managesf.controllers.api.v2.base.authorize'):
             environ = {'REMOTE_USER': 'user'}
             retval = {'skipped': 0,
                       'total': 20,
                       'limit': 1,
                       'results': ['yo yo']}
-            self.api_managers['builds'].builds.get.return_value = retval
+            bm.builds.get.return_value = retval
             response = self.app.get('/v2/builds/',
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 200)
@@ -84,14 +74,15 @@ class TestManageSFV2BuildController(V2FunctionalTest):
             self.assertEqual(response.status_int, 200)
             self.assertEqual('yo yo', response.json['results'][0])
 
-    def test_get_build_errors(self):
+    @patch('managesf.controllers.api.v2.builds.manager')
+    def test_get_build_errors(self, bm):
         with patch('managesf.controllers.api.v2.base.authorize'):
             environ = {'REMOTE_USER': 'user'}
             retval = {'skipped': 0,
                       'total': 20,
                       'limit': 1,
                       'results': ['yo yo']}
-            self.api_managers['builds'].builds.get.return_value = retval
+            bm.builds.get.return_value = retval
             response = self.app.get('/v2/builds/?started_before=wrong',
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 400)
@@ -104,39 +95,41 @@ class TestManageSFV2BuildController(V2FunctionalTest):
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 404)
             e = Exception('nope')
-            self.api_managers['builds'].builds.get.side_effect = e
+            bm.builds.get.side_effect = e
             response = self.app.get('/v2/builds/',
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 500)
             self.assertEqual('nope',
                              response.json.get('error_description'))
 
-    def test_get_buildset(self):
+    @patch('managesf.controllers.api.v2.builds.manager')
+    def test_get_buildset(self, bm):
         with patch('managesf.controllers.api.v2.base.authorize'):
             environ = {'REMOTE_USER': 'user'}
             retval = {'skipped': 0,
                       'total': 20,
                       'limit': 1,
                       'results': ['yo yo']}
-            self.api_managers['builds'].buildsets.get.return_value = retval
+            bm.buildsets.get.return_value = retval
             response = self.app.get('/v2/buildsets/',
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 200)
             self.assertEqual('yo yo', response.json['results'][0])
 
-    def test_get_buildset_errors(self):
+    @patch('managesf.controllers.api.v2.builds.manager')
+    def test_get_buildset_errors(self, bm):
         with patch('managesf.controllers.api.v2.base.authorize'):
             environ = {'REMOTE_USER': 'user'}
             retval = {'skipped': 0,
                       'total': 0,
                       'limit': 1,
                       'results': []}
-            self.api_managers['builds'].buildsets.get.return_value = retval
+            bm.buildsets.get.return_value = retval
             response = self.app.get('/v2/buildsets/',
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 404)
             e = Exception('nope')
-            self.api_managers['builds'].buildsets.get.side_effect = e
+            bm.buildsets.get.side_effect = e
             response = self.app.get('/v2/buildsets/',
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 500)
