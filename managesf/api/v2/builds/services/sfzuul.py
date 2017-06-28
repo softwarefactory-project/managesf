@@ -156,7 +156,7 @@ class ZuulBuildsManager(builds.BuildServiceManager):
     def __init__(self, conf):
         super(builds.BuildServiceManager, self).__init__(conf)
         dburi = self.conf.get('dburi')
-        self.connection = ZuulSQLConnection('managesf',
+        self.connection = ZuulSQLConnection('managesf-zuul-builds',
                                             {'dburi': dburi})
         self.status_url = self.conf.get('status_url')
         self.builds = ZuulBuildManager(self)
