@@ -14,7 +14,6 @@
 # under the License.
 
 
-import logging
 import traceback
 from datetime import datetime
 
@@ -24,9 +23,6 @@ from pecan import request, response, abort
 from managesf.controllers.api.v2 import base
 from managesf.api.v2.base import isotime
 from managesf.api.v2.managers import build_manager as manager
-
-
-logger = logging.getLogger(__name__)
 
 
 class BuildController(base.APIv2RestController):
