@@ -1,0 +1,123 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_c824feb0",
+        "filename": "managesf/api/v2/builds/__init__.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-28T10:41:19Z",
+      "side": 1,
+      "message": "How about using \u0027%Y-%m-%dT%H:%M:%S\u0027, it\u0027s easier to process in javascript.",
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_0852e613",
+        "filename": "managesf/api/v2/builds/services/sfzuul.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-28T10:41:19Z",
+      "side": 1,
+      "message": "Shouldn\u0027t **b work instead of that error-prone decoding?",
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_284daa72",
+        "filename": "managesf/api/v2/builds/services/sfzuul.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-28T10:41:19Z",
+      "side": 1,
+      "message": "Shouldn\u0027t buildset from the status_url get a differenciator, such as \u0027status\u0027: \u0027running\u0027 ?",
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_48310eec",
+        "filename": "managesf/api/v2/builds/services/sfzuul.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-28T10:41:19Z",
+      "side": 1,
+      "message": "Shouldn\u0027t **bs work instead of that error-prone decoding?",
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_a83adacb",
+        "filename": "managesf/controllers/api/__init__.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-28T10:41:19Z",
+      "side": 1,
+      "message": "I don\u0027t think we should copyright empty files...",
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_883716e3",
+        "filename": "managesf/controllers/api/v2/__init__.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-28T10:41:19Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_6834d2dd",
+        "filename": "requirements.txt",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-28T10:41:19Z",
+      "side": 1,
+      "message": "Hum, the change that makes setup_table available is not merged in the master branch, only for the zuul3 branch, it\u0027s: https://review.openstack.org/#/c/465973/ .  Though it\u0027s part of the sf package.\n\nWould it be possible to try/expect ImportError, the zuul import, and not have zuul in the requirements.txt ?",
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
