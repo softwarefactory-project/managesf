@@ -20,9 +20,6 @@ import os.path
 from pecan import conf
 from pecan import request
 
-from stevedore import driver
-import mock
-
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 from managesf import policy
 
@@ -40,26 +37,6 @@ def get_user_groups(user_id):
                                      'master')
     groups = resources['resources']['groups']
     return [g for g in groups if user_email in groups[g]['members']]
-
-
-def load_manager(namespace, service):
-    logger.info('loading %s:%s manager' % (namespace, service))
-    # hard-coded Dummy service for testing. What could go wrong?
-    if service == 'DummyService':
-        return mock.MagicMock()
-    try:
-        manager = driver.DriverManager(namespace=namespace,
-                                       name=service,
-                                       invoke_on_load=True,
-                                       invoke_args=(conf,)).driver
-        logger.info('%s:%s manager loaded successfully' % (namespace,
-                                                           service))
-        return manager
-    except Exception as e:
-        msg = 'Could not load manager %s:%s: %s' % (namespace,
-                                                    service, e)
-        logger.error(msg)
-        return None
 
 
 def authorize(rule_name, target):
