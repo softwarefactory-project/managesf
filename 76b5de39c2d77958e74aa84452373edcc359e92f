@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "9aa53dc9_48a7ce4f",
+        "filename": "managesf/api/v2/base.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-06-29T08:47:33Z",
+      "side": 1,
+      "message": "Nit: we V2 prefix. We are already in v2/base.py.",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 8
+      },
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_28636a1c",
+        "filename": "managesf/api/v2/base.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-06-29T08:47:33Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 41,
+        "startChar": 6,
+        "endLine": 41,
+        "endChar": 8
+      },
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa53dc9_c824feb0",
         "filename": "managesf/api/v2/builds/__init__.py",
         "patchSetId": 8
@@ -13,6 +59,29 @@
       "writtenOn": "2017-06-28T10:41:19Z",
       "side": 1,
       "message": "How about using \u0027%Y-%m-%dT%H:%M:%S\u0027, it\u0027s easier to process in javascript.",
+      "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_8874b6cf",
+        "filename": "managesf/api/v2/builds/services/sfzuul.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-06-29T08:47:33Z",
+      "side": 1,
+      "message": "Is it really needed to have this strong dependency to Zuul.\nWhy not using the SQLAlchemy directly ?\nAnd it the DB or tables does not exists yet then return the proper error.",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 57
+      },
       "revId": "76b5de39c2d77958e74aa84452373edcc359e92f",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
