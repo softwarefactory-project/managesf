@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_8ba03092",
+        "filename": "requirements.txt",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-06-29T14:52:26Z",
+      "side": 1,
+      "message": "So this is no longer needed ?",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "9854343693dc2cba487ec2ab88eeeeadd25b31f8",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
