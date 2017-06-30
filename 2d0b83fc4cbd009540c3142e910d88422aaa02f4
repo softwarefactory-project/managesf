@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_0b1d4073",
+        "filename": "managesf/controllers/root.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 1082,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-06-30T06:31:24Z",
+      "side": 0,
+      "message": "Would it be possible to move the APIController in the RootController?\n\nI would prefer to query: /v2/jobs (instead of /api/v2/jobs). I mean managesf is an api, why add a \"/api\" route?",
+      "revId": "2d0b83fc4cbd009540c3142e910d88422aaa02f4",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
