@@ -16,6 +16,24 @@
       "revId": "2d0b83fc4cbd009540c3142e910d88422aaa02f4",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_3eb6003e",
+        "filename": "managesf/controllers/root.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 1082,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-06-30T08:58:52Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "9aa53dc9_0b1d4073",
+      "revId": "2d0b83fc4cbd009540c3142e910d88422aaa02f4",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
