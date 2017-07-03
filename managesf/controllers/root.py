@@ -457,7 +457,7 @@ class HtpasswdController(RestController):
         except IOError:
             abort(406)
         response.status = 201
-        return password
+        return {"password": password}
 
     @expose('json')
     def get(self):
