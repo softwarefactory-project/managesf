@@ -1,0 +1,191 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_21b6e5dc",
+        "filename": "managesf/controllers/api/__init__.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "No need to put copyright on empty files.",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_01bbe1c5",
+        "filename": "managesf/controllers/api/v2/__init__.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_c1b4d9d2",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "Add log \u003d logger.getLogger(\"BuildController\")",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_81c7f144",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "Add self.log.exception",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_e1afdd7b",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "Please add self.log.exception()",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_a1caf54d",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_61c4ed3f",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_41c1e92d",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "add log \u003d logging.getLogger(\"BuildSetController\")",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_21ddc514",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_01e2c1d5",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_e1e6bde7",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-03T01:19:32Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "cba3af5f1fe185d5480d191b5a0ffea8a8085db7",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
