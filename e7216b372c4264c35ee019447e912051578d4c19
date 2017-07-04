@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_5c2c2cab",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 12
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-04T02:52:25Z",
+      "side": 1,
+      "message": "Those logger doesn\u0027t seems to match the logging configuration. It seems like it would be better to use \"managesf.BuildController\". Why not making those as class member, so that we can easily use \"self.log\" where appropriate?",
+      "revId": "e7216b372c4264c35ee019447e912051578d4c19",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_3c184884",
+        "filename": "managesf/controllers/api/v2/builds.py",
+        "patchSetId": 12
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-04T02:52:25Z",
+      "side": 1,
+      "message": "There is something not working, the change in sf-ci is still failing with:\n\nERROR - Retry10: Couldn\u0027t get https://sftests.com/manage/v2/builds/?job\u003dconfig-update\u0026ref\u003dec0ed98e1e3fb3d067091b32dcf5e4efaba7a9bd\n[...]\nJSONDecodeError: Expecting value: line 1 column 1 (char 0)\n\n\nAnd in httpd log: \"GET /manage/v2/builds/?job\u003dconfig-update\u0026ref\u003dec0ed98e1e3fb3d067091b32dcf5e4efaba7a9bd HTTP/1.1\" 500 134 \"-\" \"python-requests/2.11.1\"",
+      "revId": "e7216b372c4264c35ee019447e912051578d4c19",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
