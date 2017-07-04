@@ -70,8 +70,12 @@ class SoftwareFactoryGerrit(Gerrit):
                                       'password')
                 msg = '[%s] using direct basic auth to connect to gerrit'
                 logger.debug(msg % self.service_name)
-                g = GerritUtils(self.conf['url'] + 'api',
-                                auth=basic)
+                if self.conf['url'].endswith("/r/"):
+                    url = self.conf['url']
+                else:
+                    # 2.5.0 url format, using gateway_url
+                    url = self.conf['url'] + 'api'
+                g = GerritUtils(url, auth=basic)
                 return g
             except Exception as e:
                 # if we can't get the admin credentials from the config,
