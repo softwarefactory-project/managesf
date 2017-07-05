@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_5273f54d",
+        "filename": "managesf/api/v2/builds/services/sfzuul.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-05T12:34:22Z",
+      "side": 1,
+      "message": "Shouldn\u0027t the api return in progress by default?\n\nAnd this doesn\u0027t manage boolean value.",
+      "revId": "dd3cf546e1001f58b248eab7808940d2348cc813",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
