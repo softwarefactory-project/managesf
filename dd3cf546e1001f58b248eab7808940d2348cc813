@@ -16,6 +16,24 @@
       "revId": "dd3cf546e1001f58b248eab7808940d2348cc813",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_72c4b93f",
+        "filename": "managesf/api/v2/builds/services/sfzuul.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-07-05T13:37:31Z",
+      "side": 1,
+      "message": "the in_progress option is handled at the REST controller level before being passed here: https://softwarefactory-project.io/r/#/c/8589/16/managesf/controllers/api/v2/builds.py so it will always be either True or False at this point in the code",
+      "parentUuid": "9aa53dc9_5273f54d",
+      "revId": "dd3cf546e1001f58b248eab7808940d2348cc813",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
