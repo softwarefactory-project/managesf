@@ -87,6 +87,12 @@ def paginate(func):
             msg = 'invalid ordering option %s, valid ones are: %s'
             raise ValueError(msg % (kwargs['order_by'],
                                     ', '.join(args[0].ordering_options)))
+        if 'desc' not in kwargs:
+            kwargs['desc'] = False
+        elif kwargs['desc'].lower() == 'true':
+            kwargs['desc'] = True
+        else:
+            kwargs['desc'] = False
         try:
             skipped = int(kwargs['skip'])
         except ValueError:

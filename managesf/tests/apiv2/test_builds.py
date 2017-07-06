@@ -427,7 +427,7 @@ class TestHelperFunctions(TestCase):
             self.assertEqual(5, len(bs1.builds))
 
 
-class TestZuulBuildManager(TestCase):
+class TestZuulBuildManagerFromStatusURL(TestCase):
     @classmethod
     def setupClass(cls):
         cls.manager = Mock()
