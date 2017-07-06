@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_0de2f0d5",
+        "filename": "managesf/api/v2/managers.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-06T13:17:49Z",
+      "side": 1,
+      "message": "I you skip then the raise is not needed right ?",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 9
+      },
+      "revId": "3193fd2c07000991f50cf03ee064ee968ac9a864",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_ede6ace7",
+        "filename": "managesf/api/v2/managers.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-06T13:17:49Z",
+      "side": 1,
+      "message": "Ditto",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 25
+      },
+      "revId": "3193fd2c07000991f50cf03ee064ee968ac9a864",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_cdebe8af",
+        "filename": "managesf/api/v2/managers.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-06T13:17:49Z",
+      "side": 1,
+      "message": "I would have expected a raise to be here.",
+      "revId": "3193fd2c07000991f50cf03ee064ee968ac9a864",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
