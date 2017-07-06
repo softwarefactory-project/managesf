@@ -79,7 +79,7 @@ class ZuulJobManager(jobs.JobManager):
         bt = c.zuul_build_table
         if 'order_by' in kwargs:
             order = {'last_run': bt.c.start_time,
-                     'name': bt.c.job_name,
+                     'job_name': bt.c.job_name,
                      'repository': bst.c.project,
                      'exec_count': 'count_1'}
         if kwargs.get('desc'):
@@ -130,7 +130,7 @@ class ZuulJobManager(jobs.JobManager):
         results = []
         if 'per_repo' not in kwargs:
             kwargs['per_repo'] = False
-        if kwargs['order_by'] == 'repository' and kwargs['per_repo']:
+        if kwargs['order_by'] == 'repository' and not kwargs['per_repo']:
             raise Exception("Jobs must be distinguished per repo in order "
                             "to be ordered per repository")
         pipelines = self.pipelines

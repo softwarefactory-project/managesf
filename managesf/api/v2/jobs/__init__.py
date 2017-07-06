@@ -24,7 +24,7 @@ class JobManager(base.BaseCRUDManager):
 
     def __init__(self):
         super(JobManager, self).__init__()
-        self.ordering_options = ['last_run', 'name',
+        self.ordering_options = ['last_run', 'job_name',
                                  'repository', 'exec_count']
 
     def create(self, **kwargs):
@@ -45,8 +45,7 @@ class JobManager(base.BaseCRUDManager):
         per_repo: (boolean) if set to True, distinguish jobs per repo, default
           is False
         Possible filtering arguments:
-        last_run: the start of the last execution of the job
-        name: the name of the job
+        job_name: the name of the job
         repository: the git repository on which the job is built
         pipeline: the pipeline to which the job is built
         """

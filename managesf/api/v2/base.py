@@ -89,10 +89,11 @@ def paginate(func):
                                     ', '.join(args[0].ordering_options)))
         if 'desc' not in kwargs:
             kwargs['desc'] = False
-        elif kwargs['desc'].lower() == 'true':
-            kwargs['desc'] = True
-        else:
-            kwargs['desc'] = False
+        if isinstance(kwargs['desc'], basestring):
+            if kwargs['desc'].lower() == 'true':
+                kwargs['desc'] = True
+            else:
+                kwargs['desc'] = False
         try:
             skipped = int(kwargs['skip'])
         except ValueError:
