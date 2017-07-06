@@ -24,7 +24,8 @@ class JobManager(base.BaseCRUDManager):
 
     def __init__(self):
         super(JobManager, self).__init__()
-        self.ordering_options = ['last_run', 'name', 'repository']
+        self.ordering_options = ['last_run', 'name',
+                                 'repository', 'exec_count']
 
     def create(self, **kwargs):
         """Not relevant here"""

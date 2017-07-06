@@ -177,57 +177,63 @@ class ZuulBuildManager(builds.BuildManager):
         if kwargs.get('in_progress'):
             results += self._get_from_status_url(**kwargs)
         if kwargs['order_by'] in ['start_time', 'end_time']:
-            # This will depend on sorting order when it's implemented
+            # starting or ending in the future
             fake_time = datetime.now() + timedelta(days=36500)
             return sorted(results,
                           key=lambda x: get_time(x, fake_time,
-                                                 kwargs['order_by']))
-        return sorted(results, key=attrgetter(kwargs['order_by']))
+                                                 kwargs['order_by']),
+                          reverse=kwargs['desc'])
+        return sorted(results, key=attrgetter(kwargs['order_by']),
+                      reverse=kwargs['desc'])
 
-    def _get_from_db(self, **kwargs):
+    def _build_query(self, **kwargs):
         c = self.manager.connection
         bt = c.zuul_build_table
         bst = c.zuul_buildset_table
+        query = bt.join(bst).select()
+        if 'id' in kwargs:
+            query = query.where(bt.c.id == kwargs['id'])
+        if 'buildset_id' in kwargs:
+            query = query.where(bt.c.buildset_id == kwargs['buildset_id'])
+        if 'job_name' in kwargs:
+            query = query.where(bt.c.job_name == kwargs['job_name'])
+        if 'result' in kwargs:
+            query = query.where(bt.c.result == kwargs['result'])
+        if 'started_before' in kwargs:
+            cmp = kwargs['started_before'].strftime('%Y-%m-%d %H:%M:%S')
+            query = query.where(bt.c.start_time < cmp)
+        if 'started_after' in kwargs:
+            cmp = kwargs['started_after'].strftime('%Y-%m-%d %H:%M:%S')
+            query = query.where(bt.c.start_time >= cmp)
+        if 'result' in kwargs:
+            query = query.where(bt.c.result == kwargs['result'])
+        if 'voting' in kwargs:
+            query = query.where(bt.c.voting == kwargs['voting'])
+        if 'node' in kwargs:
+            query = query.where(
+                bt.c.node_name.like('%' + kwargs['node'] + '%'))
+        if 'ref' in kwargs:
+            query = query.where(bst.c.ref == kwargs['ref'])
+        if 'repository' in kwargs:
+            query = query.where(bst.c.project == kwargs['repository'])
+        if 'change' in kwargs:
+            query = query.where(bst.c.change == kwargs['change'])
+        if 'patchset' in kwargs:
+            query = query.where(bst.c.patchset == kwargs['patchset'])
+        if 'score' in kwargs:
+            query = query.where(bst.c.score == kwargs['score'])
+        if 'pipeline' in kwargs:
+            query = query.where(bst.c.pipeline == kwargs['pipeline'])
+        self._logger.debug(str(query.compile(
+            compile_kwargs={"literal_binds": True})))
+        return query
+
+    def _get_from_db(self, **kwargs):
+        query = self._build_query(**kwargs)
         results = []
+        c = self.manager.connection
         with c.engine.begin() as conn:
-            query = bt.join(bst).select()
-            if 'id' in kwargs:
-                query = query.where(bt.c.id == kwargs['id'])
-            if 'buildset_id' in kwargs:
-                query = query.where(bt.c.buildset_id == kwargs['buildset_id'])
-            if 'job_name' in kwargs:
-                query = query.where(bt.c.job_name == kwargs['job_name'])
-            if 'result' in kwargs:
-                query = query.where(bt.c.result == kwargs['result'])
-            if 'started_before' in kwargs:
-                cmp = kwargs['started_before'].strftime('%Y-%m-%d %H:%M:%S')
-                query = query.where(bt.c.start_time < cmp)
-            if 'started_after' in kwargs:
-                cmp = kwargs['started_after'].strftime('%Y-%m-%d %H:%M:%S')
-                query = query.where(bt.c.start_time >= cmp)
-            if 'result' in kwargs:
-                query = query.where(bt.c.result == kwargs['result'])
-            if 'voting' in kwargs:
-                query = query.where(bt.c.voting == kwargs['voting'])
-            if 'node' in kwargs:
-                query = query.where(
-                    bt.c.node_name.like('%' + kwargs['node'] + '%'))
-            if 'ref' in kwargs:
-                query = query.where(bst.c.ref == kwargs['ref'])
-            if 'repository' in kwargs:
-                query = query.where(bst.c.project == kwargs['repository'])
-            if 'change' in kwargs:
-                query = query.where(bst.c.change == kwargs['change'])
-            if 'patchset' in kwargs:
-                query = query.where(bst.c.patchset == kwargs['patchset'])
-            if 'score' in kwargs:
-                query = query.where(bst.c.score == kwargs['score'])
-            if 'pipeline' in kwargs:
-                query = query.where(bst.c.pipeline == kwargs['pipeline'])
-            self._logger.debug(str(query.compile(
-                compile_kwargs={"literal_binds": True})))
-            # TODO what's the exception for no results again?
-            for b in conn.execute(query).fetchall():
+            for b in conn.execute(query):
                 build = builds.Build(build_id=b[0], pipeline=b[12],
                                      repository=b[13], change=b[14],
                                      patchset=b[15], ref=b[16], uuid=b[2],
@@ -267,7 +273,6 @@ class ZuulBuildManager(builds.BuildManager):
         for k in ['pipeline', 'repository', 'change', 'patchset',
                   'ref', 'uuid', 'job_name', 'result', 'voting']:
             if k in kwargs:
-                print k
                 prd.append(_f(k))
         results = []
         for bs in status_buildsets:
@@ -290,34 +295,39 @@ class ZuulBuildSetManager(builds.BuildSetManager):
         results += self._get_from_db(**kwargs)
         if kwargs.get('in_progress'):
             results += self._get_from_status_url(**kwargs)
-        return sorted(results, key=attrgetter(kwargs['order_by']))
+        return sorted(results, key=attrgetter(kwargs['order_by']),
+                      reverse=kwargs['desc'])
+
+    def _build_query(self, **kwargs):
+        c = self.manager.connection
+        bst = c.zuul_buildset_table
+        query = bst.select()
+        if 'id' in kwargs:
+            query = query.where(bst.c.id == kwargs['id'])
+        if 'ref' in kwargs:
+            query = query.where(bst.c.ref == kwargs['ref'])
+        if 'repository' in kwargs:
+            query = query.where(bst.c.project == kwargs['repository'])
+        if 'change' in kwargs:
+            query = query.where(bst.c.change == kwargs['change'])
+        if 'patchset' in kwargs:
+            query = query.where(bst.c.patchset == kwargs['patchset'])
+        if 'score' in kwargs:
+            query = query.where(bst.c.score == kwargs['score'])
+        if 'pipeline' in kwargs:
+            query = query.where(bst.c.pipeline == kwargs['pipeline'])
+        if 'zuul_ref' in kwargs:
+            query = query.where(bst.c.zuul_ref == kwargs['zuul_ref'])
+        self._logger.debug(str(query.compile(
+            compile_kwargs={"literal_binds": True})))
+        return query
 
     def _get_from_db(self, **kwargs):
         c = self.manager.connection
-        bst = c.zuul_buildset_table
         results = []
+        query = self._build_query(**kwargs)
         with c.engine.begin() as conn:
-            query = bst.select()
-            if 'id' in kwargs:
-                query = query.where(bst.c.id == kwargs['id'])
-            if 'ref' in kwargs:
-                query = query.where(bst.c.ref == kwargs['ref'])
-            if 'repository' in kwargs:
-                query = query.where(bst.c.project == kwargs['repository'])
-            if 'change' in kwargs:
-                query = query.where(bst.c.change == kwargs['change'])
-            if 'patchset' in kwargs:
-                query = query.where(bst.c.patchset == kwargs['patchset'])
-            if 'score' in kwargs:
-                query = query.where(bst.c.score == kwargs['score'])
-            if 'pipeline' in kwargs:
-                query = query.where(bst.c.pipeline == kwargs['pipeline'])
-            if 'zuul_ref' in kwargs:
-                query = query.where(bst.c.zuul_ref == kwargs['zuul_ref'])
-            self._logger.debug(str(query.compile(
-                compile_kwargs={"literal_binds": True})))
-            # TODO what's the exception for no results again?
-            for bs in conn.execute(query).fetchall():
+            for bs in conn.execute(query):
                 _builds = self.manager.builds.get(id=bs[0])['results']
                 buildset = builds.BuildSet(buildset_id=bs[0], zuul_ref=bs[1],
                                            pipeline=bs[2], repository=bs[3],
@@ -344,7 +354,6 @@ class ZuulBuildSetManager(builds.BuildSetManager):
         for k in ['ref', 'repository', 'change', 'patchset',
                   'pipeline', 'zuul_ref']:
             if k in kwargs:
-                print k
                 prd.append(_f(k))
         results = []
         for bs in status_buildsets:

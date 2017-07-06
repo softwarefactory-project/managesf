@@ -57,15 +57,27 @@ class TestAPIv2CRUDManager(TestCase):
         cls.crud = DummyCRUD()
 
     def test_CRUD_get_default_params(self):
-        """Test that skip, limit and order_by params defaults are set"""
-        self.assertDictEqual({'skip': 0, 'limit': 25, 'order_by': 'a'},
+        """Test that skip, limit, desc and order_by params defaults are set"""
+        self.assertDictEqual({'skip': 0, 'limit': 25, 'order_by': 'a',
+                              'desc': False},
                              self.crud.get()['results'][0])
-        self.assertDictEqual({'skip': 15, 'limit': 25, 'order_by': 'a'},
+        self.assertDictEqual({'skip': 15, 'limit': 25, 'order_by': 'a',
+                              'desc': False},
                              self.crud.get(skip=15)['results'][0])
-        self.assertDictEqual({'skip': 0, 'limit': 50, 'order_by': 'a'},
+        self.assertDictEqual({'skip': 0, 'limit': 50, 'order_by': 'a',
+                              'desc': False},
                              self.crud.get(limit=50)['results'][0])
-        self.assertDictEqual({'skip': 0, 'limit': 25, 'order_by': 'b'},
+        self.assertDictEqual({'skip': 0, 'limit': 25, 'order_by': 'b',
+                              'desc': False},
                              self.crud.get(order_by='b')['results'][0])
+        self.assertDictEqual({'skip': 0, 'limit': 25, 'order_by': 'b',
+                              'desc': True},
+                             self.crud.get(order_by='b',
+                                           desc='true')['results'][0])
+        self.assertDictEqual({'skip': 0, 'limit': 25, 'order_by': 'b',
+                              'desc': False},
+                             self.crud.get(order_by='b',
+                                           desc='WRONG')['results'][0])
 
     def test_CRUD_get_bad_order_by(self):
         """Test that a bad 'order_by' value is caught"""
