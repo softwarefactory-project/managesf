@@ -46,7 +46,7 @@ class BuildSetManager(base.BaseCRUDManager):
         change: the gerrit change, if relevant
         patchset: the patchset version of the change, if relevant
         zuul_ref: an internal zuul reference
-        buildset_id: the buildset id (ie its number in chronological order)
+        id: the buildset id (ie its number in chronological order)
         pipeline: the pipeline in which the buildset was triggered
         score: the score of the buildset
         in_progress: (boolean, defaults to True) if set to True, results may
@@ -104,15 +104,14 @@ class BuildManager(base.BaseCRUDManager):
         repository: the git repository from which the ref is taken
         change: the gerrit change, if relevant
         patchset: the patchset version of the change, if relevant
-        zuul_ref: an internal zuul reference
-        uuid: the internal zuul uuid for the build
+        uuid: the internal service uuid for the build
         buildset_id: the build set builds belong to
         pipeline: the pipeline in which the build belongs to
         started_before: build was started before this timestamp
         started_after: build was started after this timestamp
         result: the result of the build
         voting: whether the build is voting or non-voting
-        node: find builds on nodes matching '%node%'
+        node_name: find builds on nodes matching '%node%'
         in_progress: (boolean, defaults to True) if set to True, results may
                      include buildsets that have yet to start or are in
                      progress"""

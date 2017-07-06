@@ -193,6 +193,8 @@ class ZuulBuildManager(builds.BuildManager):
         query = bt.join(bst).select()
         if 'id' in kwargs:
             query = query.where(bt.c.id == kwargs['id'])
+        if 'uuid' in kwargs:
+            query = query.where(bt.c.uuid == kwargs['uuid'])
         if 'buildset_id' in kwargs:
             query = query.where(bt.c.buildset_id == kwargs['buildset_id'])
         if 'job_name' in kwargs:
@@ -209,7 +211,7 @@ class ZuulBuildManager(builds.BuildManager):
             query = query.where(bt.c.result == kwargs['result'])
         if 'voting' in kwargs:
             query = query.where(bt.c.voting == kwargs['voting'])
-        if 'node' in kwargs:
+        if 'node_name' in kwargs:
             query = query.where(
                 bt.c.node_name.like('%' + kwargs['node'] + '%'))
         if 'ref' in kwargs:
@@ -270,8 +272,8 @@ class ZuulBuildManager(builds.BuildManager):
         def _f(k):
             return lambda x: getattr(x, k) == kwargs[k]
 
-        for k in ['pipeline', 'repository', 'change', 'patchset',
-                  'ref', 'uuid', 'job_name', 'result', 'voting']:
+        for k in ['job_name', 'ref', 'repository', 'change', 'patchset',
+                  'uuid', 'pipeline', 'result', 'voting', ]:
             if k in kwargs:
                 prd.append(_f(k))
         results = []
