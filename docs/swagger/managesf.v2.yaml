@@ -1,0 +1,2906 @@
+swagger: '2.0'
+info:
+  description: ManageSF API acting as a gateway API for Software Factory services
+  version: "2.0"
+  title: ManageSF API
+  # put the contact info for your development or API team
+  contact:
+    email: softwarefactory-dev@redhat.com
+
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+# all paths will be relative to the basePath specified
+basePath: /v2
+
+# tags are used for organizing operations
+tags:
+- name: Jobs
+  description: |
+    Jobs related operations. Jobs define a set of commands to be executed
+    on the contents of a repository, on a specific commit, or independently.
+- name: Builds
+  description: |
+    Builds related operations. Builds are the execution of a given job and its
+    results.
+- name: Buildsets
+  description: |
+    Buildsets related operations. Buildsets are a set of builds triggered
+    periodically, or in response to a specific event within the CI workflow.
+- name: Nodes
+  description: |
+    Nodes related operations. Nodes are environments (virtual machines, containers...)
+    on which jobs are built.
+- name: Images
+  description: |
+    Images related operations. Images are used to set nodes up.
+- name: Discovery
+  description: |
+    API discovery related operations. This endpoint allows clients to know more
+    about the possible operations offered by the API.
+- name: Users
+  description: |
+    Users related operations.
+- name: Hooks
+  description: |
+    Service hooks related operations. Hooks are called when gerrit events are
+    triggered.
+- name: Resources
+  description: |
+    Resources related operations. Resources are managed in the *config* repository
+    and define projects, repositories, user groups and project ACLs.
+- name: Reviews
+  description: |
+    Reviews related operations. Reviews are patches submitted for inclusion into
+    a repository.
+- name: Stories
+  description: |
+    Stories related operations. Stories describe a generic feature or objective
+    to implement in a project, and are stored on an issue tracker service.
+- name: Tasks
+  description: |
+    Tasks related operations. Tasks are atomic steps to fulfill in order to
+    complete a story. They usually require submitting code to a repository.
+- name: Projects
+  description: |
+    Projects related operations. Projects are a collection of repositories used
+    to produce software.
+schemes:
+- https
+paths:
+# Sample, copy-paste to create a new endpoint
+#  /dummy:
+#    get:
+#      tags:
+#        - dummy
+#      summary: searches dummy
+#      operationId: getDummies
+#      description: |
+#        Lists dummy matching parameters in the query
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: query
+#        name: order_by
+#        description: order results by this value
+#        type: string
+#        enum:
+#        - dummy1
+#      - in: query
+#        name: desc
+#        description: order results in descending order
+#        type: boolean
+# ------ Add specific args here ------
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            $ref: '#/definitions/DummyGet'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+# jobs
+  /jobs:
+    get:
+      tags:
+        - Jobs
+      summary: get jobs
+      operationId: getJobs
+      description: |
+        Return jobs matching the given filtering options.
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: skip
+        description: number of records to skip for pagination
+        type: integer
+        format: int32
+        minimum: 0
+      - in: query
+        name: limit
+        description: maximum number of records to return
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+      - in: query
+        name: order_by
+        description: order results by this value
+        type: string
+        enum:
+        - last_run
+        - name
+        - repository
+        - exec_count
+      - in: query
+        name: desc
+        description: order results in descending order
+        type: boolean
+      - in: query
+        name: per_repo
+        description: if set to true, distinguish jobs per repositories, also giving them an id of <repository>/<job_name> in results
+        type: boolean
+      - in: query
+        name: repository
+        description: find jobs built on this repository
+        type: string
+      - in: query
+        name: name
+        description: find jobs with this name
+        type: string
+      - in: query
+        name: pipeline
+        description: find jobs built for this specific pipeline
+        type: string
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            $ref: '#/definitions/JobGet'
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        404:
+          description: No result found
+# buildsets
+  /buildsets:
+    get:
+      tags:
+        - Buildsets
+      summary: get buildsets
+      operationId: getBuildsets
+      description: |
+        returns buildsets matching the given filtering options.
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: skip
+        description: number of records to skip for pagination
+        type: integer
+        format: int32
+        minimum: 0
+      - in: query
+        name: limit
+        description: maximum number of records to return
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+      - in: query
+        name: order_by
+        description: order results by this value
+        type: string
+        enum:
+        - id
+        - pipeline
+        - repository
+        - change
+        - score
+      - in: query
+        name: desc
+        description: order results in descending order
+        type: boolean
+      - in: query
+        name: ref
+        description: the git reference of the commit on which the buildset is based
+        type: string
+      - in: query
+        name: repository
+        description: find buildsets related to this repository
+        type: string
+      - in: query
+        name: change
+        description: the gerrit change, if relevant
+        type: integer
+      - in: query
+        name: patchset
+        description: the patchset version of the gerrit change, if relevant
+        type: integer
+      - in: query
+        name: zuul_ref
+        description: the internal zuul reference
+        type: string
+      - in: query
+        name: id
+        description: the buildset's id
+        type: integer
+      - in: query
+        name: pipeline
+        description: find buildsets belonging to this specific pipeline
+        type: string
+      - in: query
+        name: score
+        description: find buildsets with this score
+        type: string
+      - in: query
+        name: in_progress
+        description: if set to True, results may include buildsets that have yet to start or are in progress
+        type: boolean
+        default: true
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            $ref: '#/definitions/BuildsetGet'
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        404:
+          description: No result found
+# builds
+  /builds:
+    get:
+      tags:
+        - Builds
+      summary: get builds
+      operationId: getBuilds
+      description: |
+        return builds matching the given filtering options.
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: skip
+        description: number of records to skip for pagination
+        type: integer
+        format: int32
+        minimum: 0
+      - in: query
+        name: limit
+        description: maximum number of records to return
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+      - in: query
+        name: order_by
+        description: order results by this value
+        type: string
+        enum:
+        - id
+        - buildset_id
+        - pipeline
+        - repository
+        - change
+        - result
+        - job_name
+        - start_time
+        - end_time
+      - in: query
+        name: desc
+        description: order results in descending order
+        type: boolean
+      - in: query
+        name: id
+        description: the build's id
+        type: integer
+      - in: query
+        name: job_name
+        description: the name of the job being built
+        type: string
+      - in: query
+        name: ref
+        description: the git reference of the commit on which the build is based
+        type: string
+      - in: query
+        name: repository
+        description: find builds related to this repository
+        type: string
+      - in: query
+        name: change
+        description: the gerrit change, if relevant
+        type: integer
+      - in: query
+        name: patchset
+        description: the patchset version of the gerrit change, if relevant
+        type: integer
+      - in: query
+        name: zuul_ref
+        description: the internal zuul reference
+        type: string
+      - in: query
+        name: uuid
+        description: the build's unique id within the build service
+        type: string
+      - in: query
+        name: buildset_id
+        description: the id of the buildset this build belongs to
+        type: integer
+      - in: query
+        name: pipeline
+        description: find builds run in this specific pipeline
+        type: string
+      - in: query
+        name: started_before
+        description: find builds started before this iso 8601 time
+        type: string
+        format: date-time
+      - in: query
+        name: started_after
+        description: find builds started after this iso 8601 time
+        type: string
+        format: date-time
+      - in: query
+        name: result
+        description: find builds with this result
+        type: string
+      - in: query
+        name: voting
+        description: find builds by their voting status
+        type: boolean
+      - in: query
+        name: node
+        description: find builds run on a specific node
+        type: string
+      - in: query
+        name: in_progress
+        description: if set to True, results may include builds that have yet to start or are in progress
+        type: boolean
+        default: true
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            $ref: '#/definitions/BuildGet'
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        404:
+          description: No result found
+#    post:
+#      tags:
+#        - Jobs
+#      summary: start a new job
+#      operationId: runJob
+#      description: |
+#         starts a new build for job {name}
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: name
+#        type: string
+#        description: the name of the job
+#        required: true
+#      - in: body
+#        name: parameters
+#        description: the optional parameters to run the job
+#        required: false
+#        schema:
+#          type: array
+#          items:
+#            $ref: '#/definitions/JobParameter'
+#      responses:
+#        201:
+#          description: job is scheduled
+#          schema:
+#            $ref: '#/definitions/JobItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#  /jobs/{name}/{id}:
+#    get:
+#      tags:
+#        - Jobs
+#      summary: get a single job
+#      operationId: getJob
+#      description: |
+#        List one job identified by its name and build id
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: name
+#        type: string
+#        description: the name of the job
+#        required: true
+#      - in: path
+#        name: id
+#        type: integer
+#        description: the Zuul build id
+#        required: true
+#      responses:
+#        200:
+#          description: job and build id found
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/JobItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    delete:
+#      tags:
+#        - Jobs
+#      summary: stop a running job
+#      operationId: stopJob
+#      description: |
+#        Stop a job identified by its name and build id
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: name
+#        type: string
+#        description: the name of the job
+#        required: true
+#      - in: path
+#        name: id
+#        type: integer
+#        description: the Zuul build id
+#        required: true
+#      responses:
+#        204:
+#          description: job is being aborted
+#          schema:
+#            $ref: '#/definitions/JobItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+
+# ------ NOT IMPLEMENTED YET ------
+
+## nodes
+#  /nodes:
+#    get:
+#      tags:
+#        - Nodes
+#      summary: list nodes
+#      operationId: listNodes
+#      description: |
+#        Lists nodes currently managed by Nodepool
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: query
+#        name: label
+#        description: filter by label
+#        type: string
+#        required: false
+#      - in: query
+#        name: provider
+#        description: filter by provider
+#        type: string
+#        required: false
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/NodeItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /nodes/{id}:
+#    get:
+#      tags:
+#        - Nodes
+#      summary: get a single node
+#      operationId: getNode
+#      description: |
+#        Get one node from its id
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: integer
+#        description: the node id
+#        required: true
+#      responses:
+#        200:
+#          description: Node id found
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/NodeItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    put:
+#      tags:
+#        - Nodes
+#      summary: put a node on hold
+#      operationId: putNode
+#      description: |
+#        Put a node on hold, preventing it from being destroyed after a job's completion
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: integer
+#        description: the node id
+#        required: true
+#      responses:
+#        200:
+#          description: Node on hold
+#          schema:
+#            $ref: '#/definitions/NodeItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    delete:
+#      tags:
+#        - Nodes
+#      summary: delete a node
+#      operationId: deleteNode
+#      description: |
+#        Delete a node by id
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: integer
+#        description: the build id
+#        required: true
+#      responses:
+#        204:
+#          description: Node is being deleted
+#          schema:
+#            $ref: '#/definitions/NodeItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /nodes/{id}/authorize_key:
+#    post:
+#      tags:
+#        - Nodes
+#      summary: inject an SSH key on a node
+#      operationId: addAuthorizedKeyNode
+#      description: |
+#        Add an SSH private key under the default user (usually jenkins) on node identified by id
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: integer
+#        description: the build id
+#        required: true
+#      - in: body
+#        name: privateSSHkey
+#        schema:
+#          type: object
+#          properties:
+#            key:
+#              type: string
+#              example: "ssh-rsa ..."
+#      responses:
+#        201:
+#          description: SSH key added
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+## images
+#  /dib-images:
+#    get:
+#      tags:
+#        - Images
+#      summary: list images built with DIB
+#      operationId: listDIBImages
+#      description: list images as returned by "nodepool dib-image-list"
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/DIBImageItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /dib-images/{dib-image}:
+#    get:
+#      tags:
+#        - Images
+#      summary: get one image
+#      operationId: getDIBImage
+#      description: get one specific image returned by "nodepool dib-image-list"
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: dib-image
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/DIBImageItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    post:
+#      tags:
+#        - Images
+#      summary: rebuild image with DIB
+#      operationId: rebuildDIBImage
+#      description: rebuild the image with DIB with "nodepool image-build"
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: dib-image
+#        type: string
+#        required: true
+#      responses:
+#        204:
+#          description: update in progress
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: image and/or provider not found
+#  /dib-images/{dib-image}/logs:
+#    get:
+#      tags:
+#        - Images
+#      summary: get one DIB image's build logs
+#      operationId: getDIBImageLogs
+#      description: This is a simple redirection to the build logs of a DIB-built image
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: dib-image
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            $ref: '#/definitions/DIBImageItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /cloud-images:
+#    get:
+#      tags:
+#        - Images
+#      summary: list images available on all providers
+#      operationId: listImages
+#      description: list images as returned by "nodepool image-list"
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/ImageItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /cloud-images/{cloud-image}:
+#    get:
+#      tags:
+#        - Images
+#      summary: get one image
+#      operationId: getImage
+#      description: get one specific image returned by "nodepool image-list"
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: cloud-image
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/ImageItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /cloud-images/{cloud_image}/{provider}:
+#    post:
+#      tags:
+#        - Images
+#      summary: update image on provider
+#      operationId: updateImage
+#      description: update cloud image on provider
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: cloud_image
+#        type: string
+#        required: true
+#      - in: path
+#        name: provider
+#        type: string
+#        required: true
+#      responses:
+#        204:
+#          description: update in progress
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: image and/or provider not found
+#  /cloud-images/{cloud_image}/{provider}/logs:
+#    get:
+#      tags:
+#        - Images
+#      summary: get image upload logs
+#      operationId: getImageUpdateLogs
+#      description: get console logs of the last "nodepool image-upload {provider} {cloud_image}" command trigger by a call to POST /images/{cloud_image}/{provider}
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: cloud_image
+#        type: string
+#        required: true
+#      - in: path
+#        name: provider
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: image upload status
+#          schema:
+#            type: object
+#            properties:
+#              status:
+#                type: string
+#                example: "IN PROGRESS"
+#              exit_code:
+#                type: integer
+#                example: 0
+#              output:
+#                type: string
+#                example: "Upload finished successfully"
+#              error:
+#                type: string
+#                example: "stderr output"
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: image and/or provider not found
+## discovery
+#  /discovery:
+#    get:
+#      tags:
+#        - Discovery
+#      summary: discover API version and available endpoints
+#      operationId: discover
+#      description: |
+#        Endpoint that can be queried to figure out which API version is exposed (will be at root path then)
+#      produces:
+#      - application/json
+#      responses:
+#        200:
+#          description: API descriptor
+#          schema:
+#            type: object
+#            properties:
+#              API:
+#                type: object
+#                properties:
+#                  version:
+#                    type: string
+#                    example: "2.0"
+#                  base_uri:
+#                    type: string
+#                    example: "https://fqdn/manage/v2.0"
+#                  endpoints:
+#                    type: array
+#                    items:
+#                      type: string
+#                    example: ["nodes", "jobs", "users"]
+#                  components:
+#                    type: array
+#                    items:
+#                      type: string
+#                    description: "components running on SF"
+#                    example: ['storyboard', 'gerrit']
+## users
+#  /users:
+#    get:
+#      tags:
+#        - Users
+#      summary: searches users
+#      operationId: searchUsers
+#      description: |
+#        Lists users matching parameters in the query
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: query
+#        name: username
+#        description: find user by username
+#        type: string
+#        required: false
+#      - in: query
+#        name: full_name
+#        description: find user by full name
+#        type: string
+#        required: false
+#      - in: query
+#        name: email
+#        type: string
+#        description: find user by email
+#        required: false
+#      - in: query
+#        name: cauth_id
+#        type: integer
+#        format: int32
+#        description: find user by cauth id
+#        required: false
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    post:
+#      tags:
+#        - Users
+#      summary: create a user
+#      operationId: createUser
+#      description: |
+#        create a single user
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: body
+#        name: userData
+#        description: user data. At least one e-mail (primary) is required
+#        required: true
+#        schema:
+#          type: object
+#          properties:
+#            cauth_id:
+#              type: integer
+#              example: 24
+#              description: the cauth id
+#            idp_sync:
+#              type: boolean
+#              description: whether user's primary e-mail is synchronized with IDP data or not
+#            username:
+#              type: string
+#              example: bender
+#            full_name:
+#              type: string
+#              example: Bender B. Rodriguez
+#            ssh_keys:
+#              type: array
+#              items:
+#                $ref: '#/definitions/UserSSHKeyItem'
+#            emails:
+#              type: array
+#              items:
+#                $ref: '#/definitions/UserEmailItem'
+#          required:
+#            - cauth_id
+#            - username
+#            - emails
+#      responses:
+#        201:
+#          description: User created
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        409:
+#          description: Already exists
+#  /users/{id}:
+#    get:
+#      tags:
+#        - Users
+#      summary: get a single user
+#      operationId: getUser
+#      description: |
+#        get a single user
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    put:
+#      tags:
+#        - Users
+#      summary: update a user
+#      operationId: updateUser
+#      description: |
+#        update a single user's data. Updatable fields are username, cauth id, idp_sync or full name. See SSH keys or email specific operations to update these fields.
+#        Some services might forbid fields to be updated, the operation will then fail.
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: body
+#        name: userData
+#        description: fields to change
+#        required: true
+#        schema:
+#          type: object
+#          properties:
+#            cauth_id:
+#              type: integer
+#              example: 24
+#              description: the cauth id
+#            idp_sync:
+#              type: boolean
+#              description: whether user's primary e-mail is synchronized with IDP data or not
+#            username:
+#              type: string
+#              example: bender
+#            full_name:
+#              type: string
+#              example: Bender B. Rodriguez
+#      responses:
+#        200:
+#          description: User updated
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    delete:
+#      tags:
+#        - Users
+#      summary: delete a user
+#      operationId: deleteUser
+#      description: |
+#        delete a user.
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      responses:
+#        204:
+#          description: deleted
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /users/{id}/ssh_keys:
+#    get:
+#      tags:
+#        - Users
+#      summary: get a user's public keys
+#      operationId: getUserSSHKeys
+#      description: |
+#        get a user's public keys
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserSSHKeyItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    post:
+#      tags:
+#        - Users
+#      summary: add a user's ssh key
+#      operationId: createUserSSHKey
+#      description: |
+#        add a new SSH key for the user
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: body
+#        name: SSHkey
+#        schema:
+#          type: object
+#          properties:
+#            key:
+#              type: string
+#              example: "ssh-rsa ..."
+#      responses:
+#        201:
+#          description: key added
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserSSHKeyItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /users/{id}/ssh_keys/{key_id}:
+#    get:
+#      tags:
+#        - Users
+#      summary: get a user's single public key
+#      operationId: getUserSSHKey
+#      description: |
+#        get a user's public key
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: path
+#        name: key_id
+#        type: string
+#        description: find key by id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserSSHKeyItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    delete:
+#      tags:
+#        - Users
+#      summary: delete a user's key
+#      operationId: deleteUserSSHKey
+#      description: |
+#        delete a user's key
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: path
+#        name: key_id
+#        type: string
+#        description: find key by id
+#        required: true
+#      responses:
+#        204:
+#          description: deleted
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /users/{id}/emails:
+#    get:
+#      tags:
+#        - Users
+#      summary: get a user's emails
+#      operationId: getUserEmails
+#      description: |
+#        get a user's emails
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserEmailItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    post:
+#      tags:
+#        - Users
+#      summary: add a user's email
+#      operationId: createUserEmail
+#      description: |
+#        add a new email for the user. Upon completion an activation code will be sent to this email address, unless performed by a privileged user like admin.
+#
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: body
+#        name: email
+#        schema:
+#          type: object
+#          properties:
+#            email:
+#              type: string
+#              example: "bender@planetexpress.com"
+#      responses:
+#        201:
+#          description: email added. Returns current, activated emails for user. If this was the first email added for the user, it is set to primary by default.
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserEmailItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        409:
+#          description: Email already assigned
+#  /users/{id}/emails/{email_id}:
+#    get:
+#      tags:
+#        - Users
+#      summary: get a user's single email
+#      operationId: getUserEmail
+#      description: |
+#        get a user's single email
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: path
+#        name: email_id
+#        type: string
+#        description: find email by id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserEmailItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    put:
+#      tags:
+#        - Users
+#      summary: Set email as primary
+#      operationId: setUserPrimaryEmail
+#      description: |
+#        set email as primary. Do nothing if already primary
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: path
+#        name: email_id
+#        type: string
+#        description: find email by id
+#        required: true
+#      responses:
+#        201:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserEmailItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: email not found
+#    delete:
+#      tags:
+#        - Users
+#      summary: delete a user's email
+#      operationId: deleteUserEmail
+#      description: |
+#        delete a user's email
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: path
+#        name: email_id
+#        type: string
+#        description: find email by id
+#        required: true
+#      responses:
+#        204:
+#          description: deleted
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /users/{id}/emails/{email_id}/{activation_code}:
+#    get:
+#      tags:
+#        - Users
+#      summary: activate a user's email
+#      operationId: activateUserEmail
+#      description: |
+#        activate a user's email. The activation code is sent to the user's email address.
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      - in: path
+#        name: email_id
+#        type: string
+#        description: find email by id
+#        required: true
+#      - in: path
+#        name: activation_code
+#        type: string
+#        description: emails activation code
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/UserEmailItem'
+#        400:
+#          description: invalid activation code or user/email/code mismatch
+#        401:
+#          description: forbidden action
+#        404:
+#          description: not found
+#        409:
+#          description: already activated
+#  /users/{id}/stories:
+#    get:
+#      tags:
+#        - Users
+#      summary: get stories created by given user
+#      operationId: listUserStories
+#      description: |
+#        get the stories reported by a given user. This is a shortcut to GET /stories/?reporter_id={id}
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: not found
+#  /users/{id}/tasks:
+#    get:
+#      tags:
+#        - Users
+#      summary: get tasks assigned to given user
+#      operationId: listUserTasks
+#      description: |
+#        get the tasks assigned to a given user. This is a shortcut to GET /tasks/?assignee_id={id}
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: not found
+#  /users/{id}/reviews:
+#    get:
+#      tags:
+#        - Users
+#      summary: get reviews owned by given user
+#      operationId: listUserReviews
+#      description: |
+#        get the reviews owned by a given user. This is a shortcut to GET /reviews/?owner_id={id}
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: string
+#        description: find user by id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: not found
+## Hooks
+#  /hooks/{hook}:
+#    post:
+#      tags:
+#        - Hooks
+#      summary: trigger a hook on all services
+#      operationId: hook
+#      description: |
+#        trigger a specific gerrit hook on the embedded issue tracker, if this hook is defined. The JSON payload depends on the hook, see for example https://review.typo3.org/Documentation/config-hooks.html
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: hook
+#        type: string
+#        required: true
+#        description: the hook to trigger
+#      responses:
+#        204:
+#          description: success
+#        400:
+#          description: error running the hook
+#        401:
+#          description: forbidden action
+## Resources
+#  /resources/:
+#    get:
+#      tags:
+#        - Resources
+#      summary: get resources
+#      operationId: getResources
+#      description: |
+#        get the resources tree in JSON format
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: get_missing_resources
+#        type: boolean
+#        description: Fetch missing resources as well if set to 'true'
+#      responses:
+#        200:
+#          description: the resources tree as defined in the config repository
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    put:
+#      tags:
+#        - Resources
+#      summary: Apply changes to resources definition
+#      operationId: applyResources
+#      description: |
+#        Apply changes to resources definition
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: body
+#        name: change_info
+#        required: false
+#        schema:
+#          type: object
+#          description: info on the commit to apply
+#          properties:
+#              COMMIT:
+#                type: string
+#              prev:
+#                type: string
+#              new:
+#                type: string
+#      responses:
+#        201:
+#          description: resources definition applied
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        409:
+#          description: unable to apply resources definition
+#    post:
+#      tags:
+#        - Resources
+#      summary: validate resources
+#      operationId: validateResources
+#      description: |
+#        validate resources
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#      - in: body
+#        name: zuul_info
+#        schema:
+#          type: object
+#          properties:
+#            zuul_ref:
+#              type: string
+#            zuul_url:
+#              type: string
+#        required: true
+#      responses:
+#        200:
+#          description: resources definition validated
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        409:
+#          description: invalid resources definition
+## Reviews
+#  /reviews:
+#    get:
+#      tags:
+#        - Reviews
+#      summary: list reviews according to filters
+#      operationId: getReviews
+#      description: |
+#        get the resources
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: query
+#        name: repository
+#        description: filter by repository
+#        type: string
+#        required: false
+#      - in: query
+#        name: project
+#        description: filter by project
+#        type: string
+#        required: false
+#      - in: query
+#        name: owner_id
+#        description: filter by review owner
+#        type: string
+#        required: false
+#      - in: query
+#        name: status
+#        description: filter by status
+#        type: string
+#        required: false
+#      - in: query
+#        name: label
+#        description: filter by label
+#        type: string
+#        required: false
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/ReviewItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#    post:
+#      tags:
+#        - Reviews
+#      summary: create a blank review
+#      operationId: createReview
+#      description: |
+#        Allows user to create a blank review through the REST API. The review is expected to be completed later on through normal means or a web editor. The user will be set as the review owner.
+#      produces:
+#      - application/json
+#      consumes:
+#      - application/json
+#      parameters:
+#        - in: body
+#          name: changeInput
+#          schema:
+#            type: object
+#            properties:
+#              repository:
+#                type: string
+#                description: the repo on which to create the review
+#              subject:
+#                type: string
+#              branch:
+#                type: string
+#              topic:
+#                type: string
+#            required:
+#            - repository
+#            - subject
+#      responses:
+#        201:
+#          description: Created
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/ReviewItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        409:
+#          description: failed to create review
+#  /reviews/{id}:
+#    get:
+#      tags:
+#        - Reviews
+#      summary: list reviews according to filters
+#      operationId: getReviewById
+#      description: |
+#        get the review
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        description: the review's id
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#                default: 1
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#                default: 0
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/ReviewItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+## Stories
+#  /stories:
+#    get:
+#      tags:
+#        - Stories
+#      summary: searches stories
+#      operationId: searchStories
+#      description: |
+#        Lists stories matching parameters in the query
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: query
+#        name: status
+#        description: find stories with the given status
+#        type: string
+#      - in: query
+#        name: title
+#        description: find stories with the given title
+#        type: string
+#      - in: query
+#        name: reporter_id
+#        description: find stories created by the given user
+#        type: string
+#      - in: query
+#        name: tags
+#        description: find stories with the given tags, for example "tag1,tag2,tag3"
+#        type: string
+#      - in: query
+#        name: project
+#        description: find stories within the given project ("Project Group" in Storyboard)
+#        type: string
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/StoryItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /stories/{id}:
+#    get:
+#      tags:
+#        - Stories
+#      summary: get story by id
+#      operationId: getStory
+#      description: |
+#        get a single story by its id
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: integer
+#        description: the story's id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/StoryItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+## Tasks
+#  /tasks:
+#    get:
+#      tags:
+#        - Tasks
+#      summary: searches tasks
+#      operationId: searchTasks
+#      description: |
+#        Lists tasks matching parameters in the query
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: query
+#        name: status
+#        description: find tasks with the given status
+#        type: string
+#      - in: query
+#        name: title
+#        description: find tasks with the given title
+#        type: string
+#      - in: query
+#        name: assignee_id
+#        description: find tasks with the given assignee
+#        type: string
+#      - in: query
+#        name: reporter_id
+#        description: find tasks created by the given user
+#        type: string
+#      - in: query
+#        name: tags
+#        description: find tasks with the given tags, for example "tag1,tag2,tag3"
+#        type: string
+#      - in: query
+#        name: project
+#        description: find tasks within the given project ("Project Group" in Storyboard)
+#        type: string
+#      - in: query
+#        name: repository
+#        description: find tasks within the given repository ("Project" in Storyboard)
+#        type: string
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/TaskItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /tasks/{id}:
+#    get:
+#      tags:
+#        - Tasks
+#      summary: get task by id
+#      operationId: getTask
+#      description: |
+#        get a single task by its id
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: id
+#        type: integer
+#        description: the task's id
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/TaskItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+## projects
+#  /projects:
+#    get:
+#      tags:
+#        - Projects
+#      summary: searches projects
+#      operationId: searchProjects
+#      description: |
+#        Lists projects matching parameters in the query
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: query
+#        name: skip
+#        description: number of records to skip for pagination
+#        type: integer
+#        format: int32
+#        minimum: 0
+#      - in: query
+#        name: limit
+#        description: maximum number of records to return
+#        type: integer
+#        format: int32
+#        minimum: 0
+#        maximum: 50
+#      - in: query
+#        name: repository
+#        description: find project by repository
+#        type: string
+#        required: false
+#      - in: query
+#        name: acl
+#        description: find project by ACL applied to it
+#        type: string
+#        required: false
+#      - in: query
+#        name: user_id
+#        type: integer
+#        format: int32
+#        description: find project by user present in one of the ACLs groups
+#        required: false
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/ProjectItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /projects/{name}:
+#    get:
+#      tags:
+#        - Projects
+#      summary: get a project
+#      operationId: getProject
+#      description: |
+#        get a single project
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: name
+#        description: the project's name
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/ProjectItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /projects/{name}/stories:
+#    get:
+#      tags:
+#        - Projects
+#      summary: get stories associated to a project
+#      operationId: getProjectStories
+#      description: |
+#        get stories associated to a project. This is a shortcut to GET /stories/?project={name}
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: name
+#        description: the project's name
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/StoryItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /projects/{name}/reviews:
+#    get:
+#      tags:
+#        - Projects
+#      summary: get reviews associated to a project
+#      operationId: getProjectReviews
+#      description: |
+#        get reviews associated to a project. This is a shortcut to GET /reviews/?project={name}
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: name
+#        description: the project's name
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/ReviewItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+#  /projects/{name}/jobs:
+#    get:
+#      tags:
+#        - Projects
+#      summary: get jobs associated to a project
+#      operationId: getProjectJobs
+#      description: |
+#        get jobs associated to a project. This is a shortcut to GET /jobs/?project={name}
+#      produces:
+#      - application/json
+#      parameters:
+#      - in: path
+#        name: name
+#        description: the project's name
+#        type: string
+#        required: true
+#      responses:
+#        200:
+#          description: search results matching criteria
+#          schema:
+#            type: object
+#            properties:
+#              total:
+#                type: integer
+#                description: how many results in total for the query
+#              skipped:
+#                type: integer
+#                description: how many results skipped
+#              results:
+#                type: array
+#                items:
+#                  $ref: '#/definitions/JobItem'
+#        400:
+#          description: bad input parameter
+#        401:
+#          description: forbidden action
+#        404:
+#          description: No result found
+definitions:
+  # Generic paginated results
+  PaginatedResults:
+      properties:
+        total:
+          type: integer
+          description: how many results in total for the query
+        skipped:
+          type: integer
+          description: how many results skipped
+        limit:
+          type: integer
+          description: maximum amount of results returned
+  # jobs
+  JobGet:
+    allOf:
+    - $ref: '#/definitions/PaginatedResults'
+    - properties:
+        results:
+          type: array
+          items:
+            $ref: '#/definitions/JobItem'
+  JobItem:
+    properties:
+      name:
+        type: string
+        example: config-update
+      id:
+        type: string
+        example: config/config-update
+        description: a unique identifier made from <repository>/<job_name>
+      exec_count:
+        type: integer
+        description: how many times the job has been built on the platform
+        example: 17
+      last_successes:
+        type: array
+        description: last successful builds for this job, per pipeline, in descending order
+        items:
+          $ref: '#/definitions/BuildItem'
+      last_failures:
+        type: array
+        description: last failed builds for this job, per pipeline, in descending order
+        items:
+          $ref: '#/definitions/BuildItem'
+    required:
+    - name
+  # builds
+  BuildGet:
+    allOf:
+    - $ref: '#/definitions/PaginatedResults'
+    - properties:
+        results:
+          type: array
+          items:
+            $ref: '#/definitions/BuildItem'
+  BuildItem:
+    properties:
+      id:
+        type: integer
+        description: the build id
+        example: 1
+      buildset_id:
+        type: integer
+        description: the id of the buildset this build belongs to
+        example: 1
+      pipeline:
+        type: string
+        description: the pipeline on which the build was triggered
+        example: gate
+      repository:
+        type: string
+        description: the repository on which the job was built
+        example: config
+      change:
+        type: integer
+        description: the change for which the build was triggered
+        example: 342
+      patchset:
+        type: integer
+        description: the patchset of the change
+        example: 3
+      ref:
+        type: string
+        description: the git reference used on the repository
+        example: refs/changes/42/342/3
+      uuid:
+        type: string
+        description: the internal build within the build service
+        example: 38bb24cdd2b14911aa195057a3f9b66e
+      job_name:
+        type: string
+        description: the name of the job being built
+        example: config-check
+      result:
+        type: string
+        description: the result of the build
+        example: FAILURE
+      start_time:
+        type: string
+        format: date-time
+        description: the starting time of the build in ISO 8601 format
+        example: 2017-07-06T09:43:52Z
+      end_time:
+        type: string
+        format: date-time
+        description: the ending time of the build in ISO 8601 format
+        example: 2017-07-06T10:43:52Z
+      voting:
+        type: boolean
+        description: whether the build result impacts the buildset's global result or not
+        example: true
+      log_url:
+        type: string
+        description: the URL of the build's logs
+        example: https://sftests.com/logs/42/432/3/gate/config-check/38bb24c
+      node_name:
+        type: string
+        description: the name of the node on which the build ran
+        example: dib-centos-7
+    required:
+    - job_name
+    - pipeline
+  # buildsets
+  BuildsetGet:
+    allOf:
+    - $ref: '#/definitions/PaginatedResults'
+    - properties:
+        results:
+          type: array
+          items:
+            $ref: '#/definitions/BuildsetItem'
+  BuildsetItem:
+    properties:
+      id:
+        type: integer
+        description: the buildset id
+        example: 1
+      zuul_ref:
+        type: string
+        description: the internal zuul reference
+        example: Z1bb41d45e593442e9227e158f1a07d12
+      pipeline:
+        type: string
+        description: the pipeline on which the build was triggered
+        example: gate
+      repository:
+        type: string
+        description: the repository on which the job was built
+        example: config
+      change:
+        type: integer
+        description: the change for which the build was triggered
+        example: 342
+      patchset:
+        type: integer
+        description: the patchset of the change
+        example: 3
+      ref:
+        type: string
+        description: the git reference used on the repository
+        example: refs/changes/42/342/3
+      score:
+        type: integer
+        description: the global score of the buildset
+        example: 2
+      message:
+        type: string
+        description: the result of the buildset
+        example: Build succeeded.
+      builds:
+        type: array
+        description: the builds that make up this buildset
+        items:
+          $ref: '#/definitions/BuildItem'
+  # nodes
+  NodeItem:
+    properties:
+      node_name:
+        type: string
+        example: bare-centos-7-rcip-dev-134475
+      target:
+        type: string
+        example: default
+      state:
+        type: string
+        example: used
+      node_id:
+        type: integer
+        format: int32
+        example: 134475
+      age:
+        type: integer
+        format: int32
+        example: 456
+      ip:
+        type: string
+        example: 10.0.0.23
+      hostname:
+        type: string
+        example: bare-centos-7-rcip-dev-134475
+      server_id:
+        type: string
+        example: abcd-1234-fdcb
+      label:
+        type: string
+        example: bare-centos-7
+      manager:
+        type: string
+        example: None
+      provider_name:
+        type: string
+        example: rcip-dev
+      AZ:
+        type: string
+        example: None
+  # images
+  DIBImageItem:
+    properties:
+      state:
+        type: string
+        example: delete
+      age:
+        type: integer
+        format: int32
+        example: 456
+      id:
+        type: integer
+        format: int32
+        example: 2329
+      version:
+        type: integer
+        example: 1481595257
+      image:
+        type: string
+        example: bare-centos-7
+      filename:
+        type: string
+        example: XXX
+  ImageItem:
+    properties:
+      state:
+        type: string
+        example: delete
+      age:
+        type: integer
+        format: int32
+        example: 456
+      id:
+        type: integer
+        format: int32
+        example: 2329
+      server_id:
+        type: string
+        example: b16d77d5-43a6-4151-8a54-465eff272fde
+      image_id:
+        type: string
+        example: 465eff272fde-43a6-4151-8a54-b16d77d5
+      version:
+        type: integer
+        example: 1481595257
+      image_name:
+        type: string
+        example: bare-centos-7
+      provider_name:
+        type: string
+        example: default
+      hostname:
+        type: string
+        example: template-bare-centos-7-1481595257
+  # Users
+  UserItem:
+    properties:
+      id:
+        type: integer
+        example: 1885
+        description: the local id
+      cauth_id:
+        type: integer
+        example: 24
+        description: the cauth id
+      idp_sync:
+        type: boolean
+        description: whether user's primary e-mail is synchronized with IDP data or not
+      username:
+        type: string
+        example: bender
+      full_name:
+        type: string
+        example: Bender B. Rodriguez
+      ssh_keys:
+        type: array
+        items:
+          $ref: '#/definitions/UserSSHKeyItem'
+      emails:
+        type: array
+        items:
+          $ref: '#/definitions/UserEmailItem'
+  UserSSHKeyItem:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+        description: the key's internal id
+        example: 13
+      key:
+        type: string
+        description: contents of the key
+        example: "ssh-rsa ..."
+  UserEmailItem:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+        description: the email's internal id
+        example: 134
+      email:
+        type: string
+        description: the email
+        example: "bender@planetexpress.com"
+      primary:
+        type: boolean
+        description: whether email is primary or not
+        example: True
+# Resources
+# Projects
+  ProjectItem:
+    type: object
+    properties:
+      name:
+        type: string
+        description: the name of the project
+        example: 'software-factory'
+      repositories:
+        type: array
+        description: a list of repositories under this project
+        items:
+          type: string
+# Reviews
+  ReviewItem:
+    type: object
+    properties:
+      id:
+        type: string
+      patchset_id:
+        type: string
+      repository:
+        type: string
+      project:
+        type: string
+      change_id:
+        type: string
+      status:
+        type: string
+      owner_id:
+        type: string
+      revisions:
+        type: array
+        items:
+          $ref: '#/definitions/RevisionItem'
+  RevisionItem:
+    type: object
+    properties:
+      id:
+        type: integer
+        minimum: 1
+      CI_jobs:
+        type: array
+        items:
+          $ref: '#/definitions/JobItem'
+# Stories
+  StoryItem:
+    type: object
+    properties:
+      id:
+        type: string
+      reporter_id:
+        type: string
+        description: the user who created the story
+      description:
+        type: string
+      status:
+        type: string
+      tags:
+        type: array
+        items:
+          type: string
+      title:
+        type: string
+      tasks:
+        type: array
+        items:
+          $ref: '#/definitions/TaskItem'
+# Tasks
+  TaskItem:
+    type: object
+    properties:
+      id:
+        type: string
+      reporter_id:
+        type: string
+        description: the user who created the task
+      assignee_id:
+        type: string
+        description: the user assigned to the task
+      description:
+        type: string
+      status:
+        type: string
+      reviews:
+        description: reviews associated to this task
+        type: array
+        items:
+          $ref: '#/definitions/ReviewItem'
+      title:
+        type: string
+      repository:
+        type: string
+        description: the repository ("project" in storyboard) associated to the task
+host: managesf.sftests.com

@@ -1,6 +1,6 @@
 .. toctree::
 
-Service Plugins 
+Service Plugins
 ===============
 
 The managesf server uses a plugin architecture to manage services. It means that
@@ -50,49 +50,9 @@ is managed by cauth.
 Writing a service plugin
 ------------------------
 
-If you are writing your own plugin library, you need to declare your plugin in
+If you are writing your own plugin library, you need to declare your plugins in
 the entry points section of your library's setup.py, under the namespace
-"managesf.service".
+"managesf.v2.<ENDPOINT>" where <ENDPOINT> is the API endpoint you want to implement.
 
-The new plugin needs to inherit from one of the ServicePlugin classes defined in
-managesf.services.base. Each class defines some specific managers to deal with
-common actions in a "CRUD" way:
-
-BaseServicePlugin
-.................
-
-  - project: project management
-  - user: user management like creating or removing the user from the service's
-    user backend
-  - membership: management of the relationships between roles and users within a
-    project
-  - role: role management
-  - backup: backup and restore operations
-
-BaseIssueTrackerServicePlugin
-.............................
-
-Same as BaseServicePlugin, but defines also the method *get_open_issues*
-
-BaseRepositoryServicePlugin
-...........................
-
-Same as BaseServicePlugin, plus
-
-  - replication: replication operations management
-  - repository: repository management
-
-BaseCodeReviewServicePlugin
-...........................
-
-Same as BaseRepositoryServicePlugin, plus
-
-  - review: reviews-related operations
-
-
-The following calls should at least be implemented:
-
-  - serviceplugin.backup.backup : called to backup data from the service
-  - serviceplugin.backup.restore : called to restore data
-  - service.membership.create/delete : called to add/remove a user's role in a project
-  - service.project.create/delete : called to create/delete a project on Software Factory
+The expected interface varies from endpoint to endpoint and can usually be found
+in managesf/api/v2/<ENDPOINT>.

@@ -1,5 +1,8 @@
-Welcome to the managesf/sfmanager documentation!
-================================================
+Welcome to the manageSF documentation!
+======================================
+
+ManageSF is a RESTful web service acting as a federating gateway to the components
+of a Software Factory deployment.
 
 .. toctree::
    :maxdepth: 2
@@ -8,3 +11,4 @@ Welcome to the managesf/sfmanager documentation!
    restapi
    plugins
    resources
+   contribute
