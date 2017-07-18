@@ -20,17 +20,21 @@ from pecan import expose
 from pecan import request, response, abort
 
 from managesf.controllers.api.v2 import base
-from managesf.api.v2.managers import job_manager as manager
+from managesf.api.v2.managers import resource_manager as manager
 
 
-class JobController(base.APIv2RestController):
+class ResourcesRootController(base.APIv2RestController):
 
     @expose('json')
     def get(self, **kwargs):
         # TODO change this when group lookup is fixed
-        _policy = 'any'
+        _policy = 'managesf.resources:get'
         if not kwargs:
             kwargs = request.json if request.content_length else {}
+        if kwargs.get('get_missing_resources', '').lower() == 'true':
+            kwargs['get_missing_resources'] = True
+        else:
+            kwargs['get_missing_resources'] = False
         target = dict((k, v) for k, v in kwargs.items()
                       if k not in ['order_by', 'skip', 'limit'])
         if not base.authorize(_policy,
@@ -39,12 +43,12 @@ class JobController(base.APIv2RestController):
                          detail='Failure to comply with policy %s' % _policy)
         response.status = 400
         try:
-            results = manager.jobs.get(**kwargs)
+            results = manager.resources.get(**kwargs)
             response.status = 200
-            # no results -> 404
-            if results['total'] == 0:
-                response.status = 404
             return results
+        except NotImplementedError as e:
+            response.status = 404
+            return {'error_description': str(e)}
         except Exception as e:
             response.status = 500
             self._logger.exception(e)
@@ -53,7 +57,7 @@ class JobController(base.APIv2RestController):
 
     @expose('json')
     def post(self, **kwargs):
-        _policy = 'any'
+        _policy = 'managesf.resources:validate'
         if not kwargs:
             kwargs = request.json if request.content_length else {}
         if not base.authorize(_policy,
@@ -61,9 +65,18 @@ class JobController(base.APIv2RestController):
             return abort(401,
                          detail='Failure to comply with policy %s' % _policy)
         try:
-            results = manager.jobs.create(**kwargs)
-            response.status = 201
-            return results
+            status, logs = manager.resources.validate(**kwargs)
+            if not status:
+                response.status = 409
+            else:
+                response.status = 200
+            return logs
+        except ValueError as e:
+            response.status = 400
+            return {'error_description': str(e)}
+        except NotImplementedError as e:
+            response.status = 404
+            return {'error_description': str(e)}
         except Exception as e:
             response.status = 500
             self._logger.exception(e)
@@ -79,9 +92,15 @@ class JobController(base.APIv2RestController):
             return abort(401,
                          detail='Failure to comply with policy %s' % _policy)
         try:
-            results = manager.jobs.delete(**kwargs)
+            results = manager.resources.delete(**kwargs)
             response.status = 200
             return results
+        except ValueError as e:
+            response.status = 400
+            return {'error_description': str(e)}
+        except NotImplementedError as e:
+            response.status = 404
+            return {'error_description': str(e)}
         except Exception as e:
             response.status = 500
             self._logger.exception(e)

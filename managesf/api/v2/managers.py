@@ -60,3 +60,22 @@ except IndexError:
 except:
     msg = 'Cannot load job service "%s"' % conf.api['v2']['jobs'][0]
     logger.error(msg)
+
+
+resource_manager = None
+logger.info('Loading resources manager...')
+try:
+    resources_service = conf.api.v2.resources[0]
+    resource_manager = base.load_manager('managesf.v2.resources',
+                                         resources_service)
+except AttributeError as e:
+    msg = 'Undefined "resources" API endpoint, skipping.'
+    logger.error(msg)
+    raise
+except IndexError:
+    msg = 'No resources service defined, skipping.'
+    logger.error(msg)
+    raise Exception(conf)
+except:
+    msg = 'Cannot load resource service "%s"' % conf.api['v2']['resources'][0]
+    logger.error(msg)
