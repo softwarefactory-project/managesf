@@ -184,12 +184,3 @@ class BuildSetController(base.APIv2RestController):
             response.status = 500
             self._logger.exception(e)
             return {'error_description': str(e)}
-
-
-if manager:
-    builds = BuildController()
-    buildsets = BuildSetController()
-else:
-    # TODO have a generic controller for unimplemented endpoints
-    builds = base.APIv2RestController()
-    buildsets = base.APIv2RestController()
