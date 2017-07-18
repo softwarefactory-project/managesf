@@ -71,7 +71,7 @@ class dummy_conf():
         'backup_dir': '/tmp',
     }
     resources = {
-        'workdir': '/tmp/workspace',
+        'workdir': tempfile.mkdtemp(),
         'subdir': 'resources',
         'master_repo': 'http://sftests.com/r/config',
     }
@@ -123,5 +123,6 @@ class dummy_conf():
         'v2': {
             'builds': ['DummyService', ],
             'jobs': ['DummyService', ],
+            'resources': ['DummyService', ],
         },
     })
