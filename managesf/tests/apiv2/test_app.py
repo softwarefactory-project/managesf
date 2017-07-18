@@ -156,3 +156,118 @@ class TestManageSFV2JobController(V2FunctionalTest):
             response = self.app.get('/v2/jobs/',
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 404, response.text)
+
+
+class TestManageSFV2ResourcesController(V2FunctionalTest):
+
+    @patch('managesf.controllers.api.v2.resources.manager')
+    def test_get_resources(self, rm):
+        with patch('managesf.controllers.api.v2.base.authorize'):
+            environ = {'REMOTE_USER': 'user'}
+            # not the real format of the answer here but who cares, it's a test
+            retval = {'skipped': 0,
+                      'total': 10,
+                      'limit': 1,
+                      'results': ['yo yo']}
+            rm.resources.get.return_value = retval
+            response = self.app.get('/v2/resources/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 200, response.text)
+            self.assertEqual('yo yo', response.json['results'][0])
+            # check specific args
+            response = self.app.get('/v2/resources/'
+                                    '?get_missing_resources=true',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 200, response.text)
+            _, kwargs = rm.resources.get.call_args
+            self.assertEqual(True,
+                             kwargs.get('get_missing_resources'),
+                             kwargs)
+
+    @patch('managesf.controllers.api.v2.resources.manager')
+    def test_validate_resources(self, rm):
+        with patch('managesf.controllers.api.v2.base.authorize'):
+            environ = {'REMOTE_USER': 'user'}
+            # not the real format of the answer here but who cares, it's a test
+            retval = True, 'yo yo'
+            rm.resources.create.return_value = retval
+            response = self.app.post('/v2/resources/',
+                                     extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 200, response.text)
+            self.assertEqual('yo yo', response.json)
+            retval = False, 'yo yo'
+            rm.resources.update.return_value = retval
+            response = self.app.put('/v2/resources/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 409, response.text)
+            self.assertEqual('yo yo', response.json)
+            rm.resources.update.side_effect = ValueError('blop')
+            response = self.app.put('/v2/resources/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 400, response.text)
+            self.assertEqual('blop', response.json.get('error_description'))
+
+    @patch('managesf.controllers.api.v2.resources.manager')
+    def test_apply_resources(self, rm):
+        with patch('managesf.controllers.api.v2.base.authorize'):
+            environ = {'REMOTE_USER': 'user'}
+            # not the real format of the answer here but who cares, it's a test
+            retval = True, 'yo yo'
+            rm.resources.update.return_value = retval
+            response = self.app.put('/v2/resources/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201, response.text)
+            self.assertEqual('yo yo', response.json)
+            retval = False, 'yo yo'
+            rm.resources.update.return_value = retval
+            response = self.app.put('/v2/resources/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 409, response.text)
+            self.assertEqual('yo yo', response.json)
+            rm.resources.update.side_effect = ValueError('blop')
+            response = self.app.put('/v2/resources/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 400, response.text)
+            self.assertEqual('blop', response.json.get('error_description'))
+
+
+class TestManageSFV2ACLController(V2FunctionalTest):
+
+    @patch('managesf.controllers.api.v2.resources.manager')
+    def test_get_acl(self, rm):
+        with patch('managesf.controllers.api.v2.base.authorize'):
+            environ = {'REMOTE_USER': 'user'}
+            retval = {'skipped': 0,
+                      'total': 10,
+                      'limit': 1,
+                      'results': ['yo yo']}
+            rm.acls.get.return_value = retval
+            response = self.app.get('/v2/acl/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 200, response.text)
+            self.assertEqual('yo yo', response.json['results'][0])
+            retval['total'] = 0
+            response = self.app.get('/v2/acl/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 404, response.text)
+
+
+class TestManageSFV2ProjectsController(V2FunctionalTest):
+
+    @patch('managesf.controllers.api.v2.resources.manager')
+    def test_get_acl(self, rm):
+        with patch('managesf.controllers.api.v2.base.authorize'):
+            environ = {'REMOTE_USER': 'user'}
+            retval = {'skipped': 0,
+                      'total': 10,
+                      'limit': 1,
+                      'results': ['yo yo']}
+            rm.projects.get.return_value = retval
+            response = self.app.get('/v2/projects/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 200, response.text)
+            self.assertEqual('yo yo', response.json['results'][0])
+            retval['total'] = 0
+            response = self.app.get('/v2/projects/',
+                                    extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 404, response.text)
