@@ -60,3 +60,13 @@ except IndexError:
 except:
     msg = 'Cannot load job service "%s"' % conf.api['v2']['jobs'][0]
     logger.error(msg)
+
+
+resource_manager = None
+logger.info('Loading resources manager...')
+try:
+    resource_manager = base.load_manager('managesf.v2.resources',
+                                         'manageSF')
+except Exception as e:
+    msg = 'Cannot load resource service: %s' % e
+    logger.error(msg)
