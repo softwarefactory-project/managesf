@@ -123,5 +123,6 @@ class dummy_conf():
         'v2': {
             'builds': ['DummyService', ],
             'jobs': ['DummyService', ],
+            'resources': ['DummyService', ],
         },
     })
