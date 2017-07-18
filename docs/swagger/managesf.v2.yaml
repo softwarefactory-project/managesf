@@ -66,6 +66,17 @@ tags:
   description: |
     Projects related operations. Projects are a collection of repositories used
     to produce software.
+- name: Repositories
+  description: |
+    Repositories related operations. Repositories are file trees versioned with
+    Git.
+- name: ACLs
+  description: |
+    ACL related operations. ACLs are access control definitions that set who
+    can submit, push, or approve patches on a given repository.
+- name: Groups
+  description: |
+    Groups related operations. Groups of users are used in ACL definitions.
 schemes:
 - https
 paths:
@@ -1792,96 +1803,96 @@ paths:
 #          description: error running the hook
 #        401:
 #          description: forbidden action
-## Resources
-#  /resources/:
-#    get:
-#      tags:
-#        - Resources
-#      summary: get resources
-#      operationId: getResources
-#      description: |
-#        get the resources tree in JSON format
-#      produces:
-#      - application/json
-#      parameters:
-#      - in: query
-#        name: get_missing_resources
-#        type: boolean
-#        description: Fetch missing resources as well if set to 'true'
-#      responses:
-#        200:
-#          description: the resources tree as defined in the config repository
-#        400:
-#          description: bad input parameter
-#        401:
-#          description: forbidden action
-#        404:
-#          description: No result found
-#    put:
-#      tags:
-#        - Resources
-#      summary: Apply changes to resources definition
-#      operationId: applyResources
-#      description: |
-#        Apply changes to resources definition
-#      produces:
-#      - application/json
-#      consumes:
-#      - application/json
-#      parameters:
-#      - in: body
-#        name: change_info
-#        required: false
-#        schema:
-#          type: object
-#          description: info on the commit to apply
-#          properties:
-#              COMMIT:
-#                type: string
-#              prev:
-#                type: string
-#              new:
-#                type: string
-#      responses:
-#        201:
-#          description: resources definition applied
-#        400:
-#          description: bad input parameter
-#        401:
-#          description: forbidden action
-#        409:
-#          description: unable to apply resources definition
-#    post:
-#      tags:
-#        - Resources
-#      summary: validate resources
-#      operationId: validateResources
-#      description: |
-#        validate resources
-#      produces:
-#      - application/json
-#      consumes:
-#      - application/json
-#      parameters:
-#      - in: body
-#        name: zuul_info
-#        schema:
-#          type: object
-#          properties:
-#            zuul_ref:
-#              type: string
-#            zuul_url:
-#              type: string
-#        required: true
-#      responses:
-#        200:
-#          description: resources definition validated
-#        400:
-#          description: bad input parameter
-#        401:
-#          description: forbidden action
-#        409:
-#          description: invalid resources definition
+# Resources
+  /resources/:
+    get:
+      tags:
+        - Resources
+      summary: get resources
+      operationId: getResources
+      description: |
+        get the resources tree in JSON format
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: get_missing_resources
+        type: boolean
+        description: Fetch missing resources as well if set to 'true'
+      responses:
+        200:
+          description: the resources tree as defined in the config repository
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        404:
+          description: No result found
+    put:
+      tags:
+        - Resources
+      summary: Apply changes to resources definition
+      operationId: applyResources
+      description: |
+        Apply changes to resources definition
+      produces:
+      - application/json
+      consumes:
+      - application/json
+      parameters:
+      - in: body
+        name: change_info
+        required: false
+        schema:
+          type: object
+          description: info on the commit to apply
+          properties:
+              COMMIT:
+                type: string
+              prev:
+                type: string
+              new:
+                type: string
+      responses:
+        201:
+          description: resources definition applied
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        409:
+          description: unable to apply resources definition
+    post:
+      tags:
+        - Resources
+      summary: validate resources
+      operationId: validateResources
+      description: |
+        validate resources
+      produces:
+      - application/json
+      consumes:
+      - application/json
+      parameters:
+      - in: body
+        name: zuul_info
+        schema:
+          type: object
+          properties:
+            zuul_ref:
+              type: string
+            zuul_url:
+              type: string
+        required: true
+      responses:
+        200:
+          description: resources definition validated
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        409:
+          description: invalid resources definition
 ## Reviews
 #  /reviews:
 #    get:
@@ -2267,69 +2278,98 @@ paths:
 #          description: forbidden action
 #        404:
 #          description: No result found
-## projects
-#  /projects:
-#    get:
-#      tags:
-#        - Projects
-#      summary: searches projects
-#      operationId: searchProjects
-#      description: |
-#        Lists projects matching parameters in the query
-#      produces:
-#      - application/json
-#      parameters:
-#      - in: query
-#        name: skip
-#        description: number of records to skip for pagination
-#        type: integer
-#        format: int32
-#        minimum: 0
-#      - in: query
-#        name: limit
-#        description: maximum number of records to return
-#        type: integer
-#        format: int32
-#        minimum: 0
-#        maximum: 50
-#      - in: query
-#        name: repository
-#        description: find project by repository
-#        type: string
-#        required: false
-#      - in: query
-#        name: acl
-#        description: find project by ACL applied to it
-#        type: string
-#        required: false
-#      - in: query
-#        name: user_id
-#        type: integer
-#        format: int32
-#        description: find project by user present in one of the ACLs groups
-#        required: false
-#      responses:
-#        200:
-#          description: search results matching criteria
-#          schema:
-#            type: object
-#            properties:
-#              total:
-#                type: integer
-#                description: how many results in total for the query
-#              skipped:
-#                type: integer
-#                description: how many results skipped
-#              results:
-#                type: array
-#                items:
-#                  $ref: '#/definitions/ProjectItem'
-#        400:
-#          description: bad input parameter
-#        401:
-#          description: forbidden action
-#        404:
-#          description: No result found
+# projects
+  /projects:
+    get:
+      tags:
+        - Projects
+      summary: searches projects
+      operationId: getProjects
+      description: |
+        Lists projects matching parameters in the query
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: skip
+        description: number of records to skip for pagination
+        type: integer
+        format: int32
+        minimum: 0
+      - in: query
+        name: limit
+        description: maximum number of records to return
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+      - in: query
+        name: order_by
+        description: order results by this value
+        type: string
+        enum:
+        - id
+        - name
+      - in: query
+        name: desc
+        description: order results in descending order
+        type: boolean
+      - in: query
+        name: id
+        description: find project by id
+        type: string
+        required: false
+      - in: query
+        name: name
+        description: find project by name
+        type: string
+        required: false
+      - in: query
+        name: website
+        description: find project by home website
+        type: string
+        required: false
+      - in: query
+        name: documentation
+        description: find project by documentation website
+        type: string
+        required: false
+      - in: query
+        name: issue_tracker
+        description: find project by issue tracker
+        type: string
+        required: false
+      - in: query
+        name: mailing_list
+        description: find project by one of its mailing lists
+        type: string
+        required: false
+      - in: query
+        name: contact
+        description: find project by one of its contact addresses
+        type: string
+        required: false
+      - in: query
+        name: repository
+        description: find project by repository
+        type: string
+        required: false
+      - in: query
+        name: member_email
+        type: string
+        description: find project by user present in one of the ACLs groups
+        required: false
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            $ref: '#/definitions/ProjectGet'
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        404:
+          description: No result found
 #  /projects/{name}:
 #    get:
 #      tags:
@@ -2482,6 +2522,225 @@ paths:
 #          description: forbidden action
 #        404:
 #          description: No result found
+# repositories
+  /repositories:
+    get:
+      tags:
+        - Repositories
+      summary: searches repositories
+      operationId: getRepositories
+      description: |
+        Lists repositories matching parameters in the query
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: skip
+        description: number of records to skip for pagination
+        type: integer
+        format: int32
+        minimum: 0
+      - in: query
+        name: limit
+        description: maximum number of records to return
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+      - in: query
+        name: order_by
+        description: order results by this value
+        type: string
+        enum:
+        - id
+        - name
+      - in: query
+        name: desc
+        description: order results in descending order
+        type: boolean
+      - in: query
+        name: id
+        description: find repository by id
+        type: string
+        required: false
+      - in: query
+        name: name
+        description: find repository by name
+        type: string
+        required: false
+      - in: query
+        name: project
+        description: find repositories belonging to this project
+        type: string
+        required: false
+      - in: query
+        name: acl
+        description: find repositories controlled by this ACL
+        type: string
+        required: false
+      - in: query
+        name: member_email
+        type: string
+        description: find repositories by user present in one of the ACLs groups
+        required: false
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            $ref: '#/definitions/RepositoryGet'
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        404:
+          description: No result found
+# ACL
+  /acl:
+    get:
+      tags:
+        - ACLs
+      summary: searches ACL
+      operationId: getACL
+      description: |
+        Lists ACL matching parameters in the query
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: skip
+        description: number of records to skip for pagination
+        type: integer
+        format: int32
+        minimum: 0
+      - in: query
+        name: limit
+        description: maximum number of records to return
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+      - in: query
+        name: order_by
+        description: order results by this value
+        type: string
+        enum:
+        - id
+      - in: query
+        name: desc
+        description: order results in descending order
+        type: boolean
+      - in: query
+        name: id
+        description: find ACL by id
+        type: string
+        required: false
+      - in: query
+        name: group
+        description: find ACL by group on which they apply
+        type: string
+        required: false
+      - in: query
+        name: project
+        description: find ACL used in this this project
+        type: string
+        required: false
+      - in: query
+        name: repository
+        description: find ACL used by this repository
+        type: string
+        required: false
+      - in: query
+        name: member_email
+        type: string
+        description: find ACL by user present in one of the ACLs groups
+        required: false
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            $ref: '#/definitions/ACLGet'
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        404:
+          description: No result found
+# Groups
+  /groups:
+    get:
+      tags:
+        - Groups
+      summary: searches groups
+      operationId: getGroups
+      description: |
+        Lists groups matching parameters in the query
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: skip
+        description: number of records to skip for pagination
+        type: integer
+        format: int32
+        minimum: 0
+      - in: query
+        name: limit
+        description: maximum number of records to return
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+      - in: query
+        name: order_by
+        description: order results by this value
+        type: string
+        enum:
+        - id
+      - in: query
+        name: desc
+        description: order results in descending order
+        type: boolean
+      - in: query
+        name: id
+        description: find group by id
+        type: string
+        required: false
+      - in: query
+        name: name
+        description: find group by name
+        type: string
+        required: false
+      - in: query
+        name: acl
+        description: find groups by ACL it belongs to
+        type: string
+        required: false
+      - in: query
+        name: project
+        description: find groups authorized for this project
+        type: string
+        required: false
+      - in: query
+        name: repository
+        description: find groups authorized for this repository
+        type: string
+        required: false
+      - in: query
+        name: member_email
+        type: string
+        description: find groups by user
+        required: false
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            $ref: '#/definitions/GroupGet'
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
+        404:
+          description: No result found
 definitions:
   # Generic paginated results
   PaginatedResults:
@@ -2810,16 +3069,134 @@ definitions:
         example: True
 # Resources
 # Projects
+  ProjectGet:
+    allOf:
+    - $ref: '#/definitions/PaginatedResults'
+    - properties:
+        results:
+          type: array
+          items:
+            $ref: '#/definitions/ProjectItem'
   ProjectItem:
     type: object
     properties:
+      id:
+        type: string
+        description: the id of the project in the resources backend
+        example: 'software-factory-project'
       name:
         type: string
         description: the name of the project
         example: 'software-factory'
+      description:
+        type: string
+        description: the description of the project
+        example: 'The next-gen CI'
+      website:
+        type: string
+        description: the website of the project
+        example: 'https://softwarefactory-project.io'
+      documentation:
+        type: string
+        description: the documentation URL of the project
+        example: 'https://softwarefactory-project.io/docs/'
+      issue_tracker:
+        type: string
+        description: the issue tracker of the project
+        example: 'SFStoryboard'
+      mailing_lists:
+        type: array
+        description: a list of mailing lists related to this project
+        items:
+          type: string
+      contacts:
+        type: array
+        description: a list of contact e-mails for this project
+        items:
+          type: string
       repositories:
         type: array
-        description: a list of repositories under this project
+        description: a list of repository ids under this project
+        items:
+          type: string
+# Repositories
+  RepositoryGet:
+    allOf:
+    - $ref: '#/definitions/PaginatedResults'
+    - properties:
+        results:
+          type: array
+          items:
+            $ref: '#/definitions/RepositoryItem'
+  RepositoryItem:
+    type: object
+    properties:
+      id:
+        type: string
+        description: the id of the repository in the resources backend
+        example: 'managesf'
+      name:
+        type: string
+        description: the name of the repository
+        example: 'managesf'
+      description:
+        type: string
+        description: the description of the repository
+        example: 'The gateway service and REST API for Software Factory'
+      ACL:
+        type: string
+        description: the access control rules for the repository
+        example: 'sf-acl'
+# ACL
+  ACLGet:
+    allOf:
+    - $ref: '#/definitions/PaginatedResults'
+    - properties:
+        results:
+          type: array
+          items:
+            $ref: '#/definitions/ACLItem'
+  ACLItem:
+    type: object
+    properties:
+      id:
+        type: string
+        description: the id of the ACL in the resources backend
+        example: 'managesf'
+      file:
+        type: string
+        description: the raw rules of the ACL
+      groups:
+        type: array
+        description: a list of groups affected by this ACL
+        items:
+          type: string
+# Groups
+  GroupGet:
+    allOf:
+    - $ref: '#/definitions/PaginatedResults'
+    - properties:
+        results:
+          type: array
+          items:
+            $ref: '#/definitions/GroupItem'
+  GroupItem:
+    type: object
+    properties:
+      id:
+        type: string
+        description: the id of the group in the resources backend
+        example: 'config-core'
+      name:
+        type: string
+        description: the name of the group
+        example: 'config-core'
+      description:
+        type: string
+        description: a description of the group
+      members:
+        type: array
+        description: a list of members in this group
         items:
           type: string
 # Reviews

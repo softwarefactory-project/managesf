@@ -86,10 +86,3 @@ class JobController(base.APIv2RestController):
             response.status = 500
             self._logger.exception(e)
             return {'error_description': str(e)}
-
-
-if manager:
-    jobs = JobController()
-else:
-    # TODO have a generic controller for unimplemented endpoints
-    jobs = base.APIv2RestController()
