@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa53dc9_6b55df1b",
+        "filename": "managesf/api/v2/resources/services/sfgerrit.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-18T19:41:53Z",
+      "side": 1,
+      "message": "That\u0027s not true because there is already a support for storyboard. I\u0027m sure that\u0027s correct to set the resources interface at this level. Instead it seems more logical to me to move only that content https://softwarefactory-project.io/r/gitweb?p\u003dsoftware-factory/managesf.git;a\u003dtree;f\u003dmanagesf/model/yamlbkd/resources;h\u003d10885adfbfe51d914a4d1134aa91928d57185d96;hb\u003dHEAD. For instance code in gitacl.py is 100% Gerrit so I think we can have gitacl.py that is just w wrapper to resources/services/sfgerrit.py:ACL. Same for gitrepository.py, we can keep that file as a wrapper and have resources/services/sfgerrit:REPO and if expect to have a github, gitlab, whatever support later we can then have resources/services/github.py:REPO/ACL ?\nLet\u0027s discuss tomorrow.",
+      "revId": "5ec8ff85e06e9833a5de292a976aef9518b2d048",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
