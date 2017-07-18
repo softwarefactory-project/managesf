@@ -15,50 +15,88 @@
 
 
 import traceback
-from datetime import datetime
 
 from pecan import expose
 from pecan import request, response, abort
 
 from managesf.controllers.api.v2 import base
-from managesf.api.v2.base import isotime
-from managesf.api.v2.managers import build_manager as manager
+from managesf.api.v2.managers import resource_manager as manager
 
 
-class BuildController(base.APIv2RestController):
+class ACLController(base.APIv2RestController):
+
+    @expose('json')
+    def get(self, **kwargs):
+        _policy = 'managesf.resources:get'
+        if not kwargs:
+            kwargs = request.json if request.content_length else {}
+        target = dict((k, v) for k, v in kwargs.items()
+                      if k not in ['order_by', 'skip', 'limit', ])
+        if not base.authorize(_policy,
+                              target=target):
+            return abort(401,
+                         detail='Failure to comply with policy %s' % _policy)
+        response.status = 400
+        try:
+            results = manager.acls.get(**kwargs)
+            if results['total'] == 0:
+                response.status = 404
+            else:
+                response.status = 200
+            return results
+        except NotImplementedError as e:
+            response.status = 404
+            return {'error_description': str(e)}
+        except Exception as e:
+            response.status = 500
+            self._logger.exception(e)
+            return {'error_description': str(e),
+                    'traceback': traceback.format_exc()}
+
+
+class ProjectsController(base.APIv2RestController):
+
+    @expose('json')
+    def get(self, **kwargs):
+        _policy = 'managesf.resources:get'
+        if not kwargs:
+            kwargs = request.json if request.content_length else {}
+        target = dict((k, v) for k, v in kwargs.items()
+                      if k not in ['order_by', 'skip', 'limit', ])
+        if not base.authorize(_policy,
+                              target=target):
+            return abort(401,
+                         detail='Failure to comply with policy %s' % _policy)
+        response.status = 400
+        try:
+            results = manager.projects.get(**kwargs)
+            if results['total'] == 0:
+                response.status = 404
+            else:
+                response.status = 200
+            return results
+        except NotImplementedError as e:
+            response.status = 404
+            return {'error_description': str(e)}
+        except Exception as e:
+            response.status = 500
+            self._logger.exception(e)
+            return {'error_description': str(e),
+                    'traceback': traceback.format_exc()}
+
+
+class ResourcesRootController(base.APIv2RestController):
 
     @expose('json')
     def get(self, **kwargs):
         # TODO change this when group lookup is fixed
-        _policy = 'any'
+        _policy = 'managesf.resources:get'
         if not kwargs:
             kwargs = request.json if request.content_length else {}
-        if 'started_before' in kwargs:
-            try:
-                kwargs['started_before'] = datetime.strptime(
-                    kwargs['started_before'],
-                    isotime)
-            except:
-                response.status = 400
-                msg = "timestamp must be formatted as '%s'" % isotime
-                return {'error_description': msg,
-                        'traceback': traceback.format_exc()}
-        if 'started_after' in kwargs:
-            try:
-                kwargs['started_after'] = datetime.strptime(
-                    kwargs['started_after'],
-                    isotime)
-            except:
-                response.status = 400
-                msg = "timestamp must be formatted as '%s'" % isotime
-                return {'error_description': msg,
-                        'traceback': traceback.format_exc()}
-        if 'in_progress' not in kwargs:
-            kwargs['in_progress'] = True
-        elif kwargs['in_progress'].lower() == 'true':
-            kwargs['in_progress'] = True
+        if kwargs.get('get_missing_resources', '').lower() == 'true':
+            kwargs['get_missing_resources'] = True
         else:
-            kwargs['in_progress'] = False
+            kwargs['get_missing_resources'] = False
         target = dict((k, v) for k, v in kwargs.items()
                       if k not in ['order_by', 'skip', 'limit'])
         if not base.authorize(_policy,
@@ -67,12 +105,12 @@ class BuildController(base.APIv2RestController):
                          detail='Failure to comply with policy %s' % _policy)
         response.status = 400
         try:
-            results = manager.builds.get(**kwargs)
+            results = manager.resources.get(**kwargs)
             response.status = 200
-            # no results -> 404
-            if results['total'] == 0:
-                response.status = 404
             return results
+        except NotImplementedError as e:
+            response.status = 404
+            return {'error_description': str(e)}
         except Exception as e:
             response.status = 500
             self._logger.exception(e)
@@ -80,8 +118,8 @@ class BuildController(base.APIv2RestController):
                     'traceback': traceback.format_exc()}
 
     @expose('json')
-    def post(self, **kwargs):
-        _policy = 'any'
+    def put(self, **kwargs):
+        _policy = 'managesf.resources:apply'
         if not kwargs:
             kwargs = request.json if request.content_length else {}
         if not base.authorize(_policy,
@@ -89,9 +127,45 @@ class BuildController(base.APIv2RestController):
             return abort(401,
                          detail='Failure to comply with policy %s' % _policy)
         try:
-            results = manager.builds.create(**kwargs)
-            response.status = 201
-            return results
+            status, logs = manager.resources.update(**kwargs)
+            if not status:
+                response.status = 409
+            else:
+                response.status = 201
+            return logs
+        except ValueError as e:
+            response.status = 400
+            return {'error_description': str(e)}
+        except NotImplementedError as e:
+            response.status = 404
+            return {'error_description': str(e)}
+        except Exception as e:
+            response.status = 500
+            self._logger.exception(e)
+            return {'error_description': str(e)}
+
+    @expose('json')
+    def post(self, **kwargs):
+        _policy = 'managesf.resources:validate'
+        if not kwargs:
+            kwargs = request.json if request.content_length else {}
+        if not base.authorize(_policy,
+                              target=kwargs):
+            return abort(401,
+                         detail='Failure to comply with policy %s' % _policy)
+        try:
+            status, logs = manager.resources.create(**kwargs)
+            if not status:
+                response.status = 409
+            else:
+                response.status = 200
+            return logs
+        except ValueError as e:
+            response.status = 400
+            return {'error_description': str(e)}
+        except NotImplementedError as e:
+            response.status = 404
+            return {'error_description': str(e)}
         except Exception as e:
             response.status = 500
             self._logger.exception(e)
@@ -107,79 +181,15 @@ class BuildController(base.APIv2RestController):
             return abort(401,
                          detail='Failure to comply with policy %s' % _policy)
         try:
-            results = manager.builds.delete(**kwargs)
+            results = manager.resources.delete(**kwargs)
             response.status = 200
             return results
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
+        except ValueError as e:
+            response.status = 400
             return {'error_description': str(e)}
-
-
-class BuildSetController(base.APIv2RestController):
-
-    @expose('json')
-    def get(self, **kwargs):
-        # TODO change this when group lookup is fixed
-        _policy = 'any'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        if 'in_progress' not in kwargs:
-            kwargs['in_progress'] = True
-        elif kwargs['in_progress'].lower() == 'true':
-            kwargs['in_progress'] = True
-        else:
-            kwargs['in_progress'] = False
-        target = dict((k, v) for k, v in kwargs.items()
-                      if k not in ['order_by', 'skip', 'limit'])
-        if not base.authorize(_policy,
-                              target=target):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        response.status = 400
-        try:
-            results = manager.buildsets.get(**kwargs)
-            response.status = 200
-            # no results -> 404
-            if results['total'] == 0:
-                response.status = 404
-            return results
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
+        except NotImplementedError as e:
+            response.status = 404
             return {'error_description': str(e)}
-
-    @expose('json')
-    def post(self, **kwargs):
-        _policy = 'any'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        if not base.authorize(_policy,
-                              target=kwargs):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            results = manager.buildsets.create(**kwargs)
-            response.status = 201
-            return results
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
-            return {'error_description': str(e)}
-
-    @expose('json')
-    def delete(self, **kwargs):
-        _policy = 'any'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        if not base.authorize(_policy,
-                              target=kwargs):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            results = manager.buildsets.delete(**kwargs)
-            response.status = 200
-            return results
         except Exception as e:
             response.status = 500
             self._logger.exception(e)
