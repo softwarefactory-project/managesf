@@ -53,12 +53,12 @@ class BuildController(base.APIv2RestController):
                 msg = "timestamp must be formatted as '%s'" % isotime
                 return {'error_description': msg,
                         'traceback': traceback.format_exc()}
-        if 'in_progress' not in kwargs:
-            kwargs['in_progress'] = True
-        elif kwargs['in_progress'].lower() == 'true':
-            kwargs['in_progress'] = True
+        if 'in_progress_only' not in kwargs:
+            kwargs['in_progress_only'] = False
+        elif kwargs['in_progress_only'].lower() == 'true':
+            kwargs['in_progress_only'] = True
         else:
-            kwargs['in_progress'] = False
+            kwargs['in_progress_only'] = False
         target = dict((k, v) for k, v in kwargs.items()
                       if k not in ['order_by', 'skip', 'limit'])
         if not base.authorize(_policy,
@@ -124,12 +124,12 @@ class BuildSetController(base.APIv2RestController):
         _policy = 'any'
         if not kwargs:
             kwargs = request.json if request.content_length else {}
-        if 'in_progress' not in kwargs:
-            kwargs['in_progress'] = True
-        elif kwargs['in_progress'].lower() == 'true':
-            kwargs['in_progress'] = True
+        if 'in_progress_only' not in kwargs:
+            kwargs['in_progress_only'] = False
+        elif kwargs['in_progress_only'].lower() == 'true':
+            kwargs['in_progress_only'] = True
         else:
-            kwargs['in_progress'] = False
+            kwargs['in_progress_only'] = False
         target = dict((k, v) for k, v in kwargs.items()
                       if k not in ['order_by', 'skip', 'limit'])
         if not base.authorize(_policy,

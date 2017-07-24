@@ -49,8 +49,9 @@ class BuildSetManager(base.BaseCRUDManager):
         id: the buildset id (ie its number in chronological order)
         pipeline: the pipeline in which the buildset was triggered
         score: the score of the buildset
-        in_progress: (boolean, defaults to True) if set to True, results may
-                     include builds that have yet to start or are in progress
+        in_progress_only: (boolean, defaults to False) if set to True, results
+                     will only include builds that have yet to start or are in
+                     progress
         """
         raise NotImplementedError
 
@@ -67,19 +68,19 @@ class BuildSet(base.Data):
         self.ref = ref
         self.score = score
         self.message = message
-        self.builds = builds
+        self._builds = builds
 
     def to_dict(self):
-        return {'id': self.id,
-                'zuul_ref': self.zuul_ref,
-                'pipeline': self.pipeline,
-                'repository': self.repository,
-                'change': self.change,
-                'patchset': self.patchset,
-                'ref': self.ref,
-                'score': self.score,
-                'message': self.message,
-                'builds': [b.to_dict() for b in self.builds]}
+        d = {'id': self.id,
+             'zuul_ref': self.zuul_ref,
+             'pipeline': self.pipeline,
+             'repository': self.repository,
+             'change': self.change,
+             'patchset': self.patchset,
+             'ref': self.ref,
+             'score': self.score,
+             'message': self.message, }
+        return d
 
 
 class BuildManager(base.BaseCRUDManager):
@@ -112,8 +113,8 @@ class BuildManager(base.BaseCRUDManager):
         result: the result of the build
         voting: whether the build is voting or non-voting
         node_name: find builds on nodes matching '%node%'
-        in_progress: (boolean, defaults to True) if set to True, results may
-                     include buildsets that have yet to start or are in
+        in_progress_only: (boolean, defaults to False) if set to True, results
+                     will only include builds that have yet to start or are in
                      progress"""
         raise NotImplementedError
 
