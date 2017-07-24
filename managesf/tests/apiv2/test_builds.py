@@ -19,6 +19,7 @@ from unittest import TestCase
 from mock import patch, Mock
 
 from managesf.api.v2.base import isotime
+from managesf.api.v2.builds import Build, BuildSet
 from managesf.api.v2.builds.services import sfzuul  # noQA
 from managesf.tests.fixtures import ZUUL_DB_URI
 from managesf.tests import dummy_conf
@@ -437,6 +438,45 @@ class TestHelperFunctions(TestCase):
             self.assertEqual(0, len(buildsets))
 
 
+class TestInProgressSwitch(TestCase):
+    @classmethod
+    def setupClass(cls):
+        c = dummy_conf()
+        c.zuul['dburi'] = ZUUL_DB_URI
+        c.zuul['status_url'] = 'blop'
+        cls.manager = sfzuul.ZuulBuildsManager(c)
+
+    def test_in_progress_switch(self):
+        with patch.object(self.manager.builds, '_get_from_status_url') as g:
+            g.return_value = [Build(build_id=9999, pipeline=None,
+                                    repository=None, change=None,
+                                    patchset=None, ref=None, uuid=None,
+                                    job_name='eh eh', result=None,
+                                    start_time=None, end_time=None,
+                                    voting=None, log_url=None,
+                                    node_name=None, buildset_id=None)]
+            r = self.manager.builds.get(id=9999,
+                                        in_progress_only=False)
+            self.assertEqual(0, r['total'])
+            r = self.manager.builds.get(id=9999,
+                                        in_progress_only=True)
+            self.assertEqual(1, r['total'])
+            self.assertEqual('eh eh', r['results'][0].job_name)
+        with patch.object(self.manager.buildsets, '_get_from_status_url') as g:
+            g.return_value = [BuildSet(buildset_id=9999, zuul_ref=None,
+                                       pipeline=None, repository=None,
+                                       change=None, patchset=None,
+                                       ref=None, score=None,
+                                       message='eh eh', builds=[])]
+            r = self.manager.buildsets.get(id=9999,
+                                           in_progress_only=False)
+            self.assertEqual(0, r['total'])
+            r = self.manager.buildsets.get(id=9999,
+                                           in_progress_only=True)
+            self.assertEqual(1, r['total'])
+            self.assertEqual('eh eh', r['results'][0].message)
+
+
 class TestZuulBuildManagerFromStatusURL(TestCase):
     @classmethod
     def setupClass(cls):
@@ -539,7 +579,7 @@ class TestZuulBuildManagerFromDB(TestCase):
         """Test that every filtering parameter is accounted for"""
         # uuid
         b = self.manager.builds.get(uuid='4b5b02270c664b3c95e7c1c0711f0534',
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(1, b['total'], b)
         self.assertEqual(1, len(b['results']), b)
         for r in b['results']:
@@ -548,7 +588,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # job_name
         b = self.manager.builds.get(job_name='config-check',
-                                    in_progress=False,)
+                                    in_progress_only=False,)
         self.assertEqual(4, b['total'], b)
         for r in b['results']:
             self.assertEqual('config-check',
@@ -556,7 +596,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # id
         b = self.manager.builds.get(id=1,
-                                    in_progress=False,)
+                                    in_progress_only=False,)
         self.assertEqual(1, b['total'], b)
         for r in b['results']:
             self.assertEqual(1,
@@ -564,7 +604,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # ref
         b = self.manager.builds.get(ref='refs/changes/01/1/1',
-                                    in_progress=False,)
+                                    in_progress_only=False,)
         self.assertEqual(2, b['total'], b)
         for r in b['results']:
             self.assertEqual('refs/changes/01/1/1',
@@ -572,7 +612,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # repository
         b = self.manager.builds.get(repository='sexbobomb',
-                                    in_progress=False,)
+                                    in_progress_only=False,)
         self.assertEqual(20, b['total'], b)
         for r in b['results']:
             self.assertEqual('sexbobomb',
@@ -580,14 +620,14 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # change & patchset
         b = self.manager.builds.get(change=2,
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(6, b['total'], b)
         for r in b['results']:
             self.assertEqual(2,
                              int(r.change),
                              r.to_dict())
         b = self.manager.builds.get(change=2, patchset=1,
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(3, b['total'], b)
         for r in b['results']:
             self.assertEqual(2,
@@ -598,10 +638,10 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         self.assertRaisesRegexp(ValueError, "Please specify a change",
                                 self.manager.builds.get,
-                                patchset=1, in_progress=False)
+                                patchset=1, in_progress_only=False)
         # buildset_id
         b = self.manager.builds.get(buildset_id=5,
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(2, b['total'], b)
         for r in b['results']:
             self.assertEqual(5,
@@ -609,7 +649,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # pipeline
         b = self.manager.builds.get(pipeline='gate',
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(8, b['total'], b)
         for r in b['results']:
             self.assertEqual('gate',
@@ -618,21 +658,21 @@ class TestZuulBuildManagerFromDB(TestCase):
         # started_before
         test_time = datetime.strptime('2017-07-05T15:35:38', isotime)
         b = self.manager.builds.get(started_before=test_time,
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(38, b['total'], b)
         for r in b['results']:
             self.assertTrue(test_time > r.start_time,
                             r.to_dict())
         # started_after
         b = self.manager.builds.get(started_after=test_time,
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(5, b['total'], b)
         for r in b['results']:
             self.assertTrue(test_time <= r.start_time,
                             r.to_dict())
         # result
         b = self.manager.builds.get(result='FAILURE',
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(2, b['total'], b)
         for r in b['results']:
             self.assertEqual('FAILURE',
@@ -640,7 +680,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # voting
         b = self.manager.builds.get(voting=1,
-                                    in_progress=False)
+                                    in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         for r in b['results']:
             self.assertEqual(1,
@@ -652,7 +692,7 @@ class TestZuulBuildManagerFromDB(TestCase):
         """Test that every filtering parameter is accounted for"""
         # ref
         b = self.manager.buildsets.get(ref='refs/changes/01/1/1',
-                                       in_progress=False,)
+                                       in_progress_only=False,)
         self.assertEqual(2, b['total'], b)
         for r in b['results']:
             self.assertEqual('refs/changes/01/1/1',
@@ -660,7 +700,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # repository
         b = self.manager.buildsets.get(repository='sexbobomb',
-                                       in_progress=False,)
+                                       in_progress_only=False,)
         self.assertEqual(17, b['total'], b)
         for r in b['results']:
             self.assertEqual('sexbobomb',
@@ -668,14 +708,14 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # change & patchset
         b = self.manager.buildsets.get(change=2,
-                                       in_progress=False)
+                                       in_progress_only=False)
         self.assertEqual(4, b['total'], b)
         for r in b['results']:
             self.assertEqual(2,
                              int(r.change),
                              r.to_dict())
         b = self.manager.buildsets.get(change=2, patchset=1,
-                                       in_progress=False)
+                                       in_progress_only=False)
         self.assertEqual(2, b['total'], b)
         for r in b['results']:
             self.assertEqual(2,
@@ -686,11 +726,11 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         self.assertRaisesRegexp(ValueError, "Please specify a change",
                                 self.manager.buildsets.get,
-                                patchset=1, in_progress=False)
+                                patchset=1, in_progress_only=False)
         # zuul_ref
         zuul_ref = 'Zd46db7de71d445b6863429b37640d04d'
         b = self.manager.buildsets.get(zuul_ref=zuul_ref,
-                                       in_progress=False,)
+                                       in_progress_only=False,)
         self.assertEqual(1, b['total'], b)
         for r in b['results']:
             self.assertEqual(zuul_ref,
@@ -698,7 +738,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # id
         b = self.manager.buildsets.get(id=7,
-                                       in_progress=False,)
+                                       in_progress_only=False,)
         self.assertEqual(1, b['total'], b)
         for r in b['results']:
             self.assertEqual(7,
@@ -706,7 +746,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # pipeline
         b = self.manager.buildsets.get(pipeline='check',
-                                       in_progress=False,)
+                                       in_progress_only=False,)
         self.assertEqual(7, b['total'], b)
         for r in b['results']:
             self.assertEqual('check',
@@ -714,7 +754,7 @@ class TestZuulBuildManagerFromDB(TestCase):
                              r.to_dict())
         # score
         b = self.manager.buildsets.get(score=-2,
-                                       in_progress=False,)
+                                       in_progress_only=False,)
         self.assertEqual(1, b['total'], b)
         for r in b['results']:
             self.assertEqual(-2,
@@ -724,86 +764,100 @@ class TestZuulBuildManagerFromDB(TestCase):
     def test_get_build_ordering(self):
         """Test ordering parameters"""
         # id
-        b = self.manager.builds.get(order_by='id', in_progress=False, )
+        b = self.manager.builds.get(order_by='id', in_progress_only=False, )
         self.assertEqual(43, b['total'], b)
         self.assertEqual(1, b['results'][0].id,
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='id', in_progress=False,
+        b = self.manager.builds.get(order_by='id', in_progress_only=False,
                                     desc=True)
         self.assertEqual(43, b['results'][0].id,
                          b['results'][0].to_dict())
         # buildset_id
-        b = self.manager.builds.get(order_by='buildset_id', in_progress=False)
+        b = self.manager.builds.get(order_by='buildset_id',
+                                    in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         self.assertEqual(1, b['results'][0].buildset_id,
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='buildset_id', in_progress=False,
+        b = self.manager.builds.get(order_by='buildset_id',
+                                    in_progress_only=False,
                                     desc=True)
         self.assertEqual(40, b['results'][0].buildset_id,
                          b['results'][0].to_dict())
         # pipeline
-        b = self.manager.builds.get(order_by='pipeline', in_progress=False)
+        b = self.manager.builds.get(order_by='pipeline',
+                                    in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         self.assertEqual('check', b['results'][0].pipeline,
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='pipeline', in_progress=False,
+        b = self.manager.builds.get(order_by='pipeline',
+                                    in_progress_only=False,
                                     desc=True)
         self.assertEqual('post', b['results'][0].pipeline,
                          b['results'][0].to_dict())
         # change
-        b = self.manager.builds.get(order_by='change', in_progress=False)
+        b = self.manager.builds.get(order_by='change',
+                                    in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         self.assertEqual(0, b['results'][0].change,
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='change', in_progress=False,
+        b = self.manager.builds.get(order_by='change',
+                                    in_progress_only=False,
                                     desc=True)
         self.assertEqual(10, b['results'][0].change,
                          b['results'][0].to_dict())
         # repository
-        b = self.manager.builds.get(order_by='repository', in_progress=False)
+        b = self.manager.builds.get(order_by='repository',
+                                    in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         self.assertEqual('config', b['results'][0].repository,
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='repository', in_progress=False,
+        b = self.manager.builds.get(order_by='repository',
+                                    in_progress_only=False,
                                     desc=True)
         self.assertEqual('zuul-demo', b['results'][0].repository,
                          b['results'][0].to_dict())
         # result
-        b = self.manager.builds.get(order_by='result', in_progress=False)
+        b = self.manager.builds.get(order_by='result', in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         self.assertEqual('FAILURE', b['results'][0].result,
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='result', in_progress=False,
+        b = self.manager.builds.get(order_by='result', in_progress_only=False,
                                     desc=True)
         self.assertEqual('SUCCESS', b['results'][0].result,
                          b['results'][0].to_dict())
         # job_name
-        b = self.manager.builds.get(order_by='job_name', in_progress=False)
+        b = self.manager.builds.get(order_by='job_name',
+                                    in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         self.assertEqual('config-check', b['results'][0].job_name,
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='job_name', in_progress=False,
+        b = self.manager.builds.get(order_by='job_name',
+                                    in_progress_only=False,
                                     desc=True)
         self.assertEqual('sexbobomb-unit-tests', b['results'][0].job_name,
                          b['results'][0].to_dict())
         # start_time
-        b = self.manager.builds.get(order_by='start_time', in_progress=False)
+        b = self.manager.builds.get(order_by='start_time',
+                                    in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         self.assertEqual('2017-06-28T21:34:38',
                          b['results'][0].start_time.strftime(isotime),
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='start_time', in_progress=False,
+        b = self.manager.builds.get(order_by='start_time',
+                                    in_progress_only=False,
                                     desc=True)
         self.assertEqual('2017-07-05T15:35:43',
                          b['results'][0].start_time.strftime(isotime),
                          b['results'][0].to_dict())
         # end_time
-        b = self.manager.builds.get(order_by='end_time', in_progress=False)
+        b = self.manager.builds.get(order_by='end_time',
+                                    in_progress_only=False)
         self.assertEqual(43, b['total'], b)
         self.assertEqual('2017-06-28T21:34:53',
                          b['results'][0].end_time.strftime(isotime),
                          b['results'][0].to_dict())
-        b = self.manager.builds.get(order_by='end_time', in_progress=False,
+        b = self.manager.builds.get(order_by='end_time',
+                                    in_progress_only=False,
                                     desc=True)
         self.assertEqual('2017-07-05T15:35:43',
                          b['results'][0].end_time.strftime(isotime),
@@ -812,49 +866,55 @@ class TestZuulBuildManagerFromDB(TestCase):
     def test_get_buildset_ordering(self):
         """Test ordering parameters"""
         # id
-        b = self.manager.buildsets.get(order_by='id', in_progress=False, )
+        b = self.manager.buildsets.get(order_by='id', in_progress_only=False, )
         self.assertEqual(40, b['total'], b)
         self.assertEqual(1, b['results'][0].id,
                          b['results'][0].to_dict())
-        b = self.manager.buildsets.get(order_by='id', in_progress=False,
+        b = self.manager.buildsets.get(order_by='id', in_progress_only=False,
                                        desc=True)
         self.assertEqual(40, b['results'][0].id,
                          b['results'][0].to_dict())
         # pipeline
-        b = self.manager.buildsets.get(order_by='pipeline', in_progress=False)
+        b = self.manager.buildsets.get(order_by='pipeline',
+                                       in_progress_only=False)
         self.assertEqual(40, b['total'], b)
         self.assertEqual('check', b['results'][0].pipeline,
                          b['results'][0].to_dict())
-        b = self.manager.buildsets.get(order_by='pipeline', in_progress=False,
+        b = self.manager.buildsets.get(order_by='pipeline',
+                                       in_progress_only=False,
                                        desc=True)
         self.assertEqual('post', b['results'][0].pipeline,
                          b['results'][0].to_dict())
         # change
-        b = self.manager.buildsets.get(order_by='change', in_progress=False)
+        b = self.manager.buildsets.get(order_by='change',
+                                       in_progress_only=False)
         self.assertEqual(40, b['total'], b)
         self.assertEqual(0, b['results'][0].change,
                          b['results'][0].to_dict())
-        b = self.manager.buildsets.get(order_by='change', in_progress=False,
+        b = self.manager.buildsets.get(order_by='change',
+                                       in_progress_only=False,
                                        desc=True)
         self.assertEqual(10, b['results'][0].change,
                          b['results'][0].to_dict())
         # repository
         b = self.manager.buildsets.get(order_by='repository',
-                                       in_progress=False)
+                                       in_progress_only=False)
         self.assertEqual(40, b['total'], b)
         self.assertEqual('config', b['results'][0].repository,
                          b['results'][0].to_dict())
         b = self.manager.buildsets.get(order_by='repository',
-                                       in_progress=False,
+                                       in_progress_only=False,
                                        desc=True)
         self.assertEqual('zuul-demo', b['results'][0].repository,
                          b['results'][0].to_dict())
         # score
-        b = self.manager.buildsets.get(order_by='score', in_progress=False)
+        b = self.manager.buildsets.get(order_by='score',
+                                       in_progress_only=False)
         self.assertEqual(40, b['total'], b)
         self.assertEqual(-4, b['results'][0].score,
                          b['results'][0].to_dict())
-        b = self.manager.buildsets.get(order_by='score', in_progress=False,
+        b = self.manager.buildsets.get(order_by='score',
+                                       in_progress_only=False,
                                        desc=True)
         self.assertEqual(2, b['results'][0].score,
                          b['results'][0].to_dict())
