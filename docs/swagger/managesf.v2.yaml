@@ -148,15 +148,10 @@ paths:
         enum:
         - last_run
         - name
-        - repository
         - exec_count
       - in: query
         name: desc
         description: order results in descending order
-        type: boolean
-      - in: query
-        name: per_repo
-        description: if set to true, distinguish jobs per repositories, also giving them an id of <repository>/<job_name> in results
         type: boolean
       - in: query
         name: repository
@@ -253,10 +248,10 @@ paths:
         description: find buildsets with this score
         type: string
       - in: query
-        name: in_progress
-        description: if set to True, results may include buildsets that have yet to start or are in progress
+        name: in_progress_only
+        description: if set to True, returns buildsets that have yet to start or are in progress
         type: boolean
-        default: true
+        default: false
       responses:
         200:
           description: search results matching criteria
@@ -374,10 +369,10 @@ paths:
         description: find builds run on a specific node
         type: string
       - in: query
-        name: in_progress
-        description: if set to True, results may include builds that have yet to start or are in progress
+        name: in_progress_only
+        description: if set to True, returns builds that have yet to start or are in progress
         type: boolean
-        default: true
+        default: false
       responses:
         200:
           description: search results matching criteria
@@ -2517,18 +2512,42 @@ definitions:
         type: integer
         description: how many times the job has been built on the platform
         example: 17
-      last_successes:
-        type: array
-        description: last successful builds for this job, per pipeline, in descending order
-        items:
-          $ref: '#/definitions/BuildItem'
-      last_failures:
-        type: array
-        description: last failed builds for this job, per pipeline, in descending order
-        items:
-          $ref: '#/definitions/BuildItem'
+      last_success:
+        type: object
+        description: last successful build for this job
+        allOf:
+        - $ref: '#/definitions/lastBuildInfo'
+      last_failure:
+        type: object
+        description: last unsuccessful build for this job
+        allOf:
+        - $ref: '#/definitions/lastBuildInfo'
+      last_run:
+        type: object
+        description: last build for this job
+        allOf:
+        - $ref: '#/definitions/lastBuildInfo'
     required:
     - name
+  lastBuildInfo:
+    properties:
+      id:
+        type: string
+        description: the build's id
+      start_time:
+        type: string
+        format: date-time
+        description: the starting time of the build in ISO 8601 format
+        example: 2017-07-06T09:43:52Z
+      end_time:
+        type: string
+        format: date-time
+        description: the ending time of the build in ISO 8601 format
+        example: 2017-07-06T10:43:52Z
+      duration:
+        type: integer
+        description: the duration of the build
+        example: 3600
   # builds
   BuildGet:
     allOf:
@@ -2652,11 +2671,6 @@ definitions:
         type: string
         description: the result of the buildset
         example: Build succeeded.
-      builds:
-        type: array
-        description: the builds that make up this buildset
-        items:
-          $ref: '#/definitions/BuildItem'
   # nodes
   NodeItem:
     properties:

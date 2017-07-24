@@ -15,13 +15,12 @@
 # under the License.
 
 
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, and_
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import alias
 
 from managesf.api.v2 import base
 from managesf.api.v2.builds.services.sfzuul import ZuulSQLConnection
-from managesf.api.v2.managers import build_manager
 from managesf.api.v2 import jobs
 
 
@@ -43,45 +42,100 @@ class ZuulJobManager(jobs.JobManager):
         super(ZuulJobManager, self).__init__()
         self.manager = manager
 
-    @property
-    def pipelines(self):
+    def _build_last_table(self, last_type=None, **kwargs):
+        """build a subquery creating the following table:
+        |job_name|last_X_build_id|last_X_start_time|
+        last_X_end_time|last_X_duration| where X is 'last_type': 'success',
+        'failure' or ''."""
+        # 'SUCCESS', 'FAILURE' or None
+        if not last_type:
+            last_type = ''
+        lt = last_type.lower()
         c = self.manager.connection
-        bst = c.zuul_buildset_table
-        with c.engine.begin() as conn:
-            query = select([bst.c.pipeline]).group_by(bst.c.pipeline)
-            pipelines = [u[0] for u in conn.execute(query)]
-        return pipelines
+        bt1 = c.zuul_build_table.alias('BT1_%s' % (lt or 'RUN'))
+
+        def max_join():
+            cols = [bt1.c.job_name,
+                    func.max(bt1.c.start_time).
+                    label('last_%s_start_time' % (lt or 'run'))]
+            query = select(cols).select_from(bt1)
+            if lt != '':
+                query = query.where(bt1.c.result == lt.upper())
+            query = query.group_by(bt1.c.job_name)
+            return query.alias('MAX_%s' % (lt or 'RUN'))
+
+        sq = max_join()
+        bt2 = c.zuul_build_table.alias('BT2_%s' % (lt or 'RUN'))
+        cols = [bt2.c.job_name,
+                bt2.c.id.label('last_%s_build_id' % (lt or 'run')),
+                getattr(sq.c, "last_%s_start_time" % (lt or 'run')),
+                bt2.c.end_time.label('last_%s_end_time' % (lt or 'run')), ]
+        q = select(cols).select_from(bt2.join(sq,
+          and_(sq.c.job_name == bt2.c.job_name,
+               getattr(sq.c, "last_%s_start_time" % (lt or 'run')) == bt2.c.start_time)))  # noqa
+        return q.alias('LAST_%s' % (lt or 'RUN'))
 
     def _get_base_query(self, **kwargs):
         c = self.manager.connection
-        bst = c.zuul_buildset_table
-        bt = c.zuul_build_table
-        to_select = [bt.c.job_name, func.count(bt.c.job_name)]
-        if kwargs['per_repo']:
-            to_select.append(bst.c.project)
-        query = select(to_select).select_from(bt.join(bst))
-        if 'job_name' in kwargs:
-            query = query.where(bt.c.job_name == kwargs['job_name'])
+        bt = c.zuul_build_table.alias('JOB_BT')
+        job_cols = [bt.c.job_name.label('job'),
+                    func.count(bt.c.job_name).label('exec_count')]
+        job = select(job_cols).select_from(bt).group_by(bt.c.job_name)
+        l_success = self._build_last_table('SUCCESS')
+        l_failure = self._build_last_table('FAILURE')
+        l_run = self._build_last_table()
+        to_select = [job.c.job, job.c.exec_count,
+                     # Last success data
+                     l_success.c.last_success_build_id,
+                     l_success.c.last_success_start_time,
+                     l_success.c.last_success_end_time,
+                     # Last failure data
+                     l_failure.c.last_failure_build_id,
+                     l_failure.c.last_failure_start_time,
+                     l_failure.c.last_failure_end_time,
+                     # Last run data
+                     l_run.c.last_run_build_id,
+                     l_run.c.last_run_start_time,
+                     l_run.c.last_run_end_time, ]
+        select_from = job.alias('JOB').outerjoin(
+            l_success,
+            job.c.job == l_success.c.job_name)
+        select_from = select_from.outerjoin(
+            l_failure,
+            job.c.job == l_failure.c.job_name)
+        select_from = select_from.outerjoin(
+            l_run,
+            job.c.job == l_run.c.job_name)
+        if 'repository' in kwargs or 'pipeline' in kwargs:
+            rp_bst = c.zuul_buildset_table.alias('RP_BST')
+            rp_bt = c.zuul_build_table.alias('RP_BT')
+            rp_table = select([rp_bt.c.job_name, rp_bst.c.project,
+                               rp_bst.c.pipeline])
+            rp_table = rp_table.select_from(rp_bt.join(rp_bst))
+            rp_table = (rp_table.group_by(rp_bst.c.pipeline)
+                        .group_by(rp_bst.c.project)
+                        .group_by(rp_bt.c.job_name)).alias('REPO_PIPE_TBL')
+            select_from = select_from.join(
+                rp_table,
+                job.c.job == rp_table.c.job_name)
+        query = select(to_select).select_from(select_from)
         if 'repository' in kwargs:
-            query = query.where(bst.c.project == kwargs['repository'])
+            query = query.where(rp_table.c.project == kwargs['repository'])
         if 'pipeline' in kwargs:
-            query = query.where(bst.c.pipeline == kwargs['pipeline'])
-        if kwargs['per_repo']:
-            query = query.group_by(bst.c.project)
-        query = query.group_by(bt.c.job_name)
+            query = query.where(rp_table.c.pipeline == kwargs['pipeline'])
+        if 'name' in kwargs:
+            query = query.where(job.c.job == kwargs['name'])
+        query = query.group_by(job.c.job)
         self._logger.debug(str(query.compile(
             compile_kwargs={"literal_binds": True})))
-        return query
+        return query, job, l_success, l_failure, l_run
 
-    def _paginate_query(self, query, **kwargs):
-        c = self.manager.connection
-        bst = c.zuul_buildset_table
-        bt = c.zuul_build_table
+    def _paginate_query(self, query, job, l_success, l_failure, l_run,
+                        **kwargs):
         if 'order_by' in kwargs:
-            order = {'last_run': bt.c.start_time,
-                     'job_name': bt.c.job_name,
-                     'repository': bst.c.project,
-                     'exec_count': 'count_1'}
+            order = {'last_run': l_run.c.last_run_start_time,
+                     'name': job.c.job,
+                     'exec_count': job.c.exec_count}
         if kwargs.get('desc'):
             query = query.order_by(desc(order[kwargs['order_by']]))
         else:
@@ -89,59 +143,25 @@ class ZuulJobManager(jobs.JobManager):
         query = query.limit(kwargs['limit']).offset(kwargs['skip'])
         self._logger.debug(str(query.compile(
             compile_kwargs={"literal_binds": True})))
+        with open('/tmp/query', 'w') as f:
+            f.write(str(query.compile(
+                compile_kwargs={"literal_binds": True})))
         return query
-
-    def _get_last_builds(self, pipelines, job_name, repository=None):
-        c = self.manager.connection
-        bt = c.zuul_build_table
-        bst = c.zuul_buildset_table
-        last_successes = []
-        last_failures = []
-        for pl in pipelines:
-            s_query = bt.join(bst).select()
-            s_query = s_query.where(bt.c.job_name == job_name)
-            if repository:
-                s_query = s_query.where(bst.c.project == repository)
-            s_query = s_query.where(bst.c.pipeline == pl)
-            s_query = s_query.where(bt.c.result == 'SUCCESS')
-            s_query = s_query.order_by(desc(bt.c.start_time))
-            with c.engine.begin() as conn:
-                last_success = conn.execute(s_query).fetchone()
-            if last_success is not None:
-                r = build_manager.builds.get(id=last_success[0])
-                last_successes.append(r['results'][0])
-            f_query = bt.join(bst).select()
-            f_query = f_query.where(bt.c.job_name == job_name)
-            if repository:
-                f_query = f_query.where(bst.c.project == repository)
-            f_query = f_query.where(bst.c.pipeline == pl)
-            f_query = f_query.where(bt.c.result == 'FAILURE')
-            f_query = f_query.order_by(desc(bt.c.start_time))
-            with c.engine.begin() as conn:
-                last_failure = conn.execute(f_query).fetchone()
-            if last_failure is not None:
-                r = build_manager.builds.get(id=last_failure[0])
-                last_failures.append(r['results'][0])
-        return last_successes, last_failures
 
     @base.paginate
     def get(self, **kwargs):
         c = self.manager.connection
         results = []
-        if 'per_repo' not in kwargs:
-            kwargs['per_repo'] = False
-        if kwargs['order_by'] == 'repository' and not kwargs['per_repo']:
-            raise Exception("Jobs must be distinguished per repo in order "
-                            "to be ordered per repository")
-        pipelines = self.pipelines
         # prepare queries
-        base_query = self._get_base_query(**kwargs)
+        base_query, job, l_s, l_f, l_run = self._get_base_query(**kwargs)
         # Get the total amount of results
         query_alias = alias(base_query, 'count_alias')
         count = select([func.count('*')]).select_from(query_alias)
-        # self._logger.debug(str(count.compile(
-        #     compile_kwargs={"literal_binds": True})))
-        paginated_query = self._paginate_query(base_query, **kwargs)
+        self._logger.debug(str(count.compile(
+             compile_kwargs={"literal_binds": True})))
+        paginated_query = self._paginate_query(base_query, job, l_s,
+                                               l_f, l_run,
+                                               **kwargs)
         with c.engine.begin() as conn:
             total = conn.execute(count).fetchall()
             if total:
@@ -150,14 +170,28 @@ class ZuulJobManager(jobs.JobManager):
                 total = 0
             for j in conn.execute(paginated_query):
                 exec_count = j[1]
-                rep = None
-                if kwargs['per_repo']:
-                    rep = j[2]
-                last_successes, last_failures = self._get_last_builds(
-                    pipelines, job_name=j[0], repository=rep)
-                job = jobs.Job(name=j[0], repository=rep,
-                               last_successes=last_successes,
-                               last_failures=last_failures,
+                s_duration = None
+                f_duration = None
+                l_duration = None
+                if j[4] and j[3]:
+                    s_duration = (j[4] - j[3]).seconds
+                if j[7] and j[6]:
+                    f_duration = (j[7] - j[6]).seconds
+                if j[10] and j[9]:
+                    l_duration = (j[10] - j[9]).seconds
+                job = jobs.Job(name=j[0],
+                               last_success={'id': j[2],
+                                             'start_time': j[3],
+                                             'end_time': j[4],
+                                             'duration': s_duration},
+                               last_failure={'id': j[5],
+                                             'start_time': j[6],
+                                             'end_time': j[7],
+                                             'duration': f_duration},
+                               last_run={'id': j[8],
+                                         'start_time': j[9],
+                                         'end_time': j[10],
+                                         'duration': l_duration},
                                exec_count=exec_count)
                 results.append(job)
         return results, total
