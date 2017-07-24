@@ -16,6 +16,7 @@
 from unittest import TestCase
 
 from mock import patch, call, Mock
+from managesf.api.v2.builds import Build
 from managesf.tests import dummy_conf
 from managesf.tests.fixtures import ZUUL_DB_URI
 
@@ -171,7 +172,20 @@ class TestZuulJobManager(TestCase):
         pipelines = ['gate', ]
         job = 'sexbobomb-functional-tests'
         bm = Mock()
-        bm.builds.get.return_value = {'results': ['mocked']}
+        bm.builds.get.return_value = {'results': [Build(build_id=1,
+                                                        pipeline=None,
+                                                        repository=None,
+                                                        change=None,
+                                                        patchset=None,
+                                                        ref=None, uuid=None,
+                                                        job_name=None,
+                                                        result=None,
+                                                        start_time=1,
+                                                        end_time=2,
+                                                        voting=None,
+                                                        log_url=None,
+                                                        node_name=None,
+                                                        buildset_id=None,)]}
         sfzuul.build_manager = bm
         self.manager.jobs._get_last_builds(pipelines, job)
         calls = [call(id=15), call(id=6)]
@@ -180,7 +194,20 @@ class TestZuulJobManager(TestCase):
         pipelines = ['post', ]
         job = 'sexbobomb-unit-tests'
         bm = Mock()
-        bm.builds.get.return_value = {'results': ['mocked']}
+        bm.builds.get.return_value = {'results': [Build(build_id=1,
+                                                        pipeline=None,
+                                                        repository=None,
+                                                        change=None,
+                                                        patchset=None,
+                                                        ref=None, uuid=None,
+                                                        job_name=None,
+                                                        result=None,
+                                                        start_time=1,
+                                                        end_time=2,
+                                                        voting=None,
+                                                        log_url=None,
+                                                        node_name=None,
+                                                        buildset_id=None,)]}
         sfzuul.build_manager = bm
         self.manager.jobs._get_last_builds(pipelines, job)
         calls = [call(id=16), ]

@@ -14,6 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from operator import attrgetter
 
 from sqlalchemy import desc, func
 from sqlalchemy.sql import select
@@ -78,7 +79,7 @@ class ZuulJobManager(jobs.JobManager):
         bst = c.zuul_buildset_table
         bt = c.zuul_build_table
         if 'order_by' in kwargs:
-            order = {'last_run': bt.c.start_time,
+            order = {'last_run': func.max(bt.c.start_time),
                      'job_name': bt.c.job_name,
                      'repository': bst.c.project,
                      'exec_count': 'count_1'}
@@ -122,7 +123,11 @@ class ZuulJobManager(jobs.JobManager):
             if last_failure is not None:
                 r = build_manager.builds.get(id=last_failure[0])
                 last_failures.append(r['results'][0])
-        return last_successes, last_failures
+        # sort successes and failures by last run
+        return (sorted(last_successes, key=attrgetter('start_time'),
+                       reverse=True),
+                sorted(last_failures, key=attrgetter('start_time'),
+                       reverse=True))
 
     @base.paginate
     def get(self, **kwargs):

@@ -253,10 +253,10 @@ paths:
         description: find buildsets with this score
         type: string
       - in: query
-        name: in_progress
-        description: if set to True, results may include buildsets that have yet to start or are in progress
+        name: in_progress_only
+        description: if set to True, returns buildsets that have yet to start or are in progress
         type: boolean
-        default: true
+        default: false
       responses:
         200:
           description: search results matching criteria
@@ -374,10 +374,10 @@ paths:
         description: find builds run on a specific node
         type: string
       - in: query
-        name: in_progress
-        description: if set to True, results may include builds that have yet to start or are in progress
+        name: in_progress_only
+        description: if set to True, returns builds that have yet to start or are in progress
         type: boolean
-        default: true
+        default: false
       responses:
         200:
           description: search results matching criteria

@@ -49,8 +49,9 @@ class BuildSetManager(base.BaseCRUDManager):
         id: the buildset id (ie its number in chronological order)
         pipeline: the pipeline in which the buildset was triggered
         score: the score of the buildset
-        in_progress: (boolean, defaults to True) if set to True, results may
-                     include builds that have yet to start or are in progress
+        in_progress_only: (boolean, defaults to False) if set to True, results
+                     will only include builds that have yet to start or are in
+                     progress
         """
         raise NotImplementedError
 
@@ -112,8 +113,8 @@ class BuildManager(base.BaseCRUDManager):
         result: the result of the build
         voting: whether the build is voting or non-voting
         node_name: find builds on nodes matching '%node%'
-        in_progress: (boolean, defaults to True) if set to True, results may
-                     include buildsets that have yet to start or are in
+        in_progress_only: (boolean, defaults to False) if set to True, results
+                     will only include builds that have yet to start or are in
                      progress"""
         raise NotImplementedError
 

@@ -22,6 +22,8 @@ from operator import attrgetter
 # from zuul.connection.sql import SQLConnection
 import requests
 import sqlalchemy as sa
+from sqlalchemy.sql import select
+from sqlalchemy.sql.expression import alias
 
 from managesf.api.v2 import base
 from managesf.api.v2 import builds
@@ -172,25 +174,33 @@ class ZuulBuildManager(builds.BuildManager):
     def get(self, **kwargs):
         if 'patchset' in kwargs and 'change' not in kwargs:
             raise ValueError('Please specify a change')
-        results = []
-        results += self._get_from_db(**kwargs)
-        if kwargs.get('in_progress'):
-            results += self._get_from_status_url(**kwargs)
-        if kwargs['order_by'] in ['start_time', 'end_time']:
-            # starting or ending in the future
-            fake_time = datetime.now() + timedelta(days=36500)
-            return sorted(results,
-                          key=lambda x: get_time(x, fake_time,
-                                                 kwargs['order_by']),
+        total = None
+        if kwargs.get('in_progress_only'):
+            results = self._get_from_status_url(**kwargs)
+        else:
+            results, total = self._get_from_db(**kwargs)
+        if total is not None:
+            return results, total
+        else:
+            if kwargs['order_by'] in ['start_time', 'end_time']:
+                # starting or ending in the future
+                fake_time = datetime.now() + timedelta(days=36500)
+                return sorted(results,
+                              key=lambda x: get_time(x, fake_time,
+                                                     kwargs['order_by']),
+                              reverse=kwargs['desc'])
+            return sorted(results, key=attrgetter(kwargs['order_by']),
                           reverse=kwargs['desc'])
-        return sorted(results, key=attrgetter(kwargs['order_by']),
-                      reverse=kwargs['desc'])
 
     def _build_query(self, **kwargs):
         c = self.manager.connection
         bt = c.zuul_build_table
         bst = c.zuul_buildset_table
-        query = bt.join(bst).select()
+        to_select = [bt.c.id, bst.c.pipeline, bst.c.project, bst.c.change,
+                     bst.c.patchset, bst.c.ref, bt.c.uuid, bt.c.job_name,
+                     bt.c.result, bt.c.start_time, bt.c.end_time, bt.c.voting,
+                     bt.c.log_url, bt.c.node_name, bt.c.buildset_id]
+        query = select(to_select).select_from(bt.join(bst))
         if 'id' in kwargs:
             query = query.where(bt.c.id == kwargs['id'])
         if 'uuid' in kwargs:
@@ -230,21 +240,55 @@ class ZuulBuildManager(builds.BuildManager):
             compile_kwargs={"literal_binds": True})))
         return query
 
+    def _paginate_db_query(self, query, **kwargs):
+        c = self.manager.connection
+        bst = c.zuul_buildset_table
+        bt = c.zuul_build_table
+        if 'order_by' in kwargs:
+            order = {'id': bt.c.id,
+                     'buildset_id': bt.c.buildset_id,
+                     'pipeline': bst.c.pipeline,
+                     'change': bst.c.change,
+                     'repository': bst.c.project,
+                     'result': bt.c.result,
+                     'job_name': bt.c.job_name,
+                     'start_time': bt.c.start_time,
+                     'end_time': bt.c.end_time}
+            if kwargs.get('desc'):
+                query = query.order_by(sa.desc(order[kwargs['order_by']]))
+            else:
+                query = query.order_by(order[kwargs['order_by']])
+            # order by patchsets within changes
+            if kwargs['order_by'] == 'change':
+                query = query.order_by(bst.c.patchset)
+        query = query.limit(kwargs['limit']).offset(kwargs['skip'])
+        self._logger.debug(str(query.compile(
+            compile_kwargs={"literal_binds": True})))
+        return query
+
     def _get_from_db(self, **kwargs):
         query = self._build_query(**kwargs)
+        query_alias = alias(query, 'count_alias')
+        count = select([sa.func.count('*')]).select_from(query_alias)
+        query = self._paginate_db_query(query, **kwargs)
         results = []
         c = self.manager.connection
         with c.engine.begin() as conn:
+            total = conn.execute(count).fetchall()
+            if total:
+                total = total[0][0]
+            else:
+                total = 0
             for b in conn.execute(query):
-                build = builds.Build(build_id=b[0], pipeline=b[12],
-                                     repository=b[13], change=b[14],
-                                     patchset=b[15], ref=b[16], uuid=b[2],
-                                     job_name=b[3], result=b[4],
-                                     start_time=b[5], end_time=b[6],
-                                     voting=b[7], log_url=b[8],
-                                     node_name=b[9], buildset_id=b[1])
+                build = builds.Build(build_id=b[0], pipeline=b[1],
+                                     repository=b[2], change=b[3],
+                                     patchset=b[4], ref=b[5], uuid=b[6],
+                                     job_name=b[7], result=b[8],
+                                     start_time=b[9], end_time=b[10],
+                                     voting=b[11], log_url=b[12],
+                                     node_name=b[13], buildset_id=b[14])
                 results.append(build)
-        return results
+        return results, total
 
     def _get_from_status_url(self, **kwargs):
         url = self.manager.status_url
@@ -293,12 +337,16 @@ class ZuulBuildSetManager(builds.BuildSetManager):
     def get(self, **kwargs):
         if 'patchset' in kwargs and 'change' not in kwargs:
             raise ValueError('Please specify a change')
-        results = []
-        results += self._get_from_db(**kwargs)
-        if kwargs.get('in_progress'):
-            results += self._get_from_status_url(**kwargs)
-        return sorted(results, key=attrgetter(kwargs['order_by']),
-                      reverse=kwargs['desc'])
+        total = None
+        if kwargs.get('in_progress_only'):
+            results = self._get_from_status_url(**kwargs)
+        else:
+            results, total = self._get_from_db(**kwargs)
+        if total is not None:
+            return results, total
+        else:
+            return sorted(results, key=attrgetter(kwargs['order_by']),
+                          reverse=kwargs['desc'])
 
     def _build_query(self, **kwargs):
         c = self.manager.connection
@@ -324,20 +372,49 @@ class ZuulBuildSetManager(builds.BuildSetManager):
             compile_kwargs={"literal_binds": True})))
         return query
 
+    def _paginate_db_query(self, query, **kwargs):
+        c = self.manager.connection
+        bst = c.zuul_buildset_table
+        if 'order_by' in kwargs:
+            order = {'id': bst.c.id,
+                     'pipeline': bst.c.pipeline,
+                     'change': bst.c.change,
+                     'repository': bst.c.project,
+                     'score': bst.c.score}
+            if kwargs.get('desc'):
+                query = query.order_by(sa.desc(order[kwargs['order_by']]))
+            else:
+                query = query.order_by(order[kwargs['order_by']])
+            # order by patchsets within changes
+            if kwargs['order_by'] == 'change':
+                query = query.order_by(bst.c.patchset)
+        query = query.limit(kwargs['limit']).offset(kwargs['skip'])
+        self._logger.debug(str(query.compile(
+            compile_kwargs={"literal_binds": True})))
+        return query
+
     def _get_from_db(self, **kwargs):
         c = self.manager.connection
         results = []
         query = self._build_query(**kwargs)
+        query_alias = alias(query, 'count_alias')
+        count = select([sa.func.count('*')]).select_from(query_alias)
+        query = self._paginate_db_query(query, **kwargs)
         with c.engine.begin() as conn:
+            total = conn.execute(count).fetchall()
+            if total:
+                total = total[0][0]
+            else:
+                total = 0
             for bs in conn.execute(query):
-                _builds = self.manager.builds.get(id=bs[0])['results']
+                _builds = self.manager.builds.get(buildset_id=bs[0])['results']
                 buildset = builds.BuildSet(buildset_id=bs[0], zuul_ref=bs[1],
                                            pipeline=bs[2], repository=bs[3],
                                            change=bs[4], patchset=bs[5],
                                            ref=bs[6], score=bs[7],
                                            message=bs[8], builds=_builds)
                 results.append(buildset)
-        return results
+        return results, total
 
     def _get_from_status_url(self, **kwargs):
         url = self.manager.status_url

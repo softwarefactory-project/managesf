@@ -115,7 +115,7 @@ def paginate(func):
         except ValueError:
             results = r
             total = len(r)
-        if not total:
+        if total is None:
             total = len(r)
         # results is expected to be ordered in one way or an other
         if len(results) > limit:
