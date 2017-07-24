@@ -14,8 +14,6 @@
 # under the License.
 
 
-from operator import itemgetter
-
 from managesf.api.v2 import base
 
 
@@ -24,8 +22,7 @@ class JobManager(base.BaseCRUDManager):
 
     def __init__(self):
         super(JobManager, self).__init__()
-        self.ordering_options = ['last_run', 'job_name',
-                                 'repository', 'exec_count']
+        self.ordering_options = ['last_run', 'name', 'exec_count']
 
     def create(self, **kwargs):
         """Not relevant here"""
@@ -42,10 +39,8 @@ class JobManager(base.BaseCRUDManager):
 
     def get(self, **kwargs):
         """lists one or several jobs depending on filtering with kwargs.
-        per_repo: (boolean) if set to True, distinguish jobs per repo, default
-          is False
         Possible filtering arguments:
-        job_name: the name of the job
+        name: the name of the job
         repository: the git repository on which the job is built
         pipeline: the pipeline to which the job is built
         """
@@ -54,30 +49,29 @@ class JobManager(base.BaseCRUDManager):
 
 class Job(base.Data):
     """job info"""
-    def __init__(self, name, repository=None,
-                 last_successes=None, last_failures=None, exec_count=0,
+    def __init__(self, name,
+                 last_success=None, last_failure=None,
+                 last_run=None,  exec_count=0,
                  **kwargs):
-        if repository:
-            self.id = "%s/%s" % (repository, name)
-        else:
-            self.id = name
+        self.id = name
         self.name = name
-        self.last_successes = last_successes or []
-        self.last_failures = last_failures or []
+        self.last_success = last_success or None
+        self.last_run = last_run or None
+        self.last_failure = last_failure or None
         self.exec_count = exec_count
 
     def to_dict(self):
         d = {'name': self.name,
              'id': self.id,
-             'last_successes': {},
-             'last_failures': {},
+             'last_success': self.last_success,
+             'last_failure': self.last_failure,
+             'last_run': self.last_run,
              'exec_count': self.exec_count, }
-        d['last_successes'] = sorted(
-            [s.to_dict() for s in self.last_successes],
-            key=itemgetter('start_time'), reverse=True)
-        d['last_failures'] = sorted(
-            [s.to_dict() for s in self.last_failures],
-            key=itemgetter('start_time'), reverse=True)
+        for l in ['last_success', 'last_failure', 'last_run']:
+            if d[l]['start_time']:
+                d[l]['start_time'] = d[l]['start_time'].strftime(base.isotime)
+            if d[l]['end_time']:
+                d[l]['end_time'] = d[l]['end_time'].strftime(base.isotime)
         return d
 
 
