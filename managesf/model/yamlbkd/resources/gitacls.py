@@ -100,7 +100,7 @@ class ACLOps(object):
                                 "a note rule and a group to be specified "
                                 "(not: %s)" % (section_name, k, v))
                     else:
-                        if not re.match('group .+$', v):
+                        if not re.match('((deny group)|group) .+$', v):
                             logs.append(
                                 "ACLs file section (%s), key (%s) expects "
                                 "a group to be specified (not: %s)" % (
