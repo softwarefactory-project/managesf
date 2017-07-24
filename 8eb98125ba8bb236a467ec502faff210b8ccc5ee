@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5aa745d1_431d7a65",
+        "filename": "managesf/model/yamlbkd/resources/gitacls.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-24T11:32:39Z",
+      "side": 1,
+      "message": "nits: no need for extra (), \"(deny group|group)\" works too",
+      "revId": "8eb98125ba8bb236a467ec502faff210b8ccc5ee",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
