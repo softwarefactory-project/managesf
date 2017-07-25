@@ -213,4 +213,6 @@ class YAMLBackend(object):
     def get_data(self):
         """ Return the full data structure.
         """
-        return self.data
+        data = self.data
+        data['hash'] = self._get_repo_hash()
+        return data
