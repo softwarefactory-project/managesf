@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5aa745d1_11bc5c6b",
+        "filename": "managesf/api/v2/resources/__init__.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-27T08:35:44Z",
+      "side": 1,
+      "message": "Can\u0027t we reuse the class defined in the yamlbkd directly?",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_b1ba486d",
+        "filename": "managesf/api/v2/resources/services/manageSF.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-27T08:35:44Z",
+      "side": 1,
+      "message": "Why adding a cache when the yamlbkd already has a cache?",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_d1b5d47e",
+        "filename": "managesf/controllers/api/v2/resources.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-27T08:35:44Z",
+      "side": 1,
+      "message": "Any chance to refactor that code duplication into a parent method?",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_f1c0d0e2",
+        "filename": "managesf/tests/fixtures/sf_resources.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-27T08:35:44Z",
+      "side": 1,
+      "message": "why not storing the pretty printed version?",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
