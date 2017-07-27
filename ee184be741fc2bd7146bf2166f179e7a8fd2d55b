@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "5aa745d1_2c5ffb0f",
+        "filename": "managesf/api/v2/resources/__init__.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-27T11:00:52Z",
+      "side": 1,
+      "message": "Well that\u0027s true every resources get a MODEL data structure (yamlbkd/resources/project.py). You\u0027ll find attribute and doc str. And you get the advantage of staying up to date when a backend resource evolve.",
+      "parentUuid": "5aa745d1_cc08972b",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5aa745d1_b1ba486d",
         "filename": "managesf/api/v2/resources/services/manageSF.py",
         "patchSetId": 8
@@ -102,6 +120,24 @@
       "side": 1,
       "message": "Then why not improving the yamlbkd cache directly? Since this is redefining resources structure, it will make code maintaince harder otherwise... I really think the table creation and variable type should be part of the yamlbkd.",
       "parentUuid": "5aa745d1_b1480889",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_cca4170a",
+        "filename": "managesf/api/v2/resources/services/manageSF.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-27T11:00:52Z",
+      "side": 1,
+      "message": "I agree that have all key name generically fetched form resources/MODEL will ease code maintenance. So better to handle that more generic if possible. After it can also make sense that this relay db is maintained at the resources backend level but I won\u0027t block on that. Finally about the yamlbkd cache that\u0027s not the same usage indeed the cache only store merged data to avoid reading/(+ lazy validating) all yaml files (rdo -\u003e a lot of file) if the HEAD hash is the same. yamlbkd/yamlbackend.py is agnostic about data format.",
+      "parentUuid": "5aa745d1_ac0d4b39",
       "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
