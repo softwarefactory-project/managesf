@@ -2,6 +2,57 @@
   "comments": [
     {
       "key": {
+        "uuid": "5aa745d1_cc6d37ce",
+        "filename": "managesf/model/yamlbkd/yamlbackend.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-27T10:24:28Z",
+      "side": 1,
+      "message": "self.hash \u003d repo_hash",
+      "revId": "67b714b02fa8a9494ecf8efff6e04412e48ebd4d",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_ec78f391",
+        "filename": "managesf/model/yamlbkd/yamlbackend.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-27T10:24:28Z",
+      "side": 1,
+      "message": "self.hash \u003d repo_hash",
+      "revId": "67b714b02fa8a9494ecf8efff6e04412e48ebd4d",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_ac72ebab",
+        "filename": "managesf/model/yamlbkd/yamlbackend.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-07-27T10:24:28Z",
+      "side": 1,
+      "message": "self.data[\u0027hash\u0027] \u003d self.hash",
+      "revId": "67b714b02fa8a9494ecf8efff6e04412e48ebd4d",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5aa745d1_71ff2035",
         "filename": "managesf/model/yamlbkd/yamlbackend.py",
         "patchSetId": 1
