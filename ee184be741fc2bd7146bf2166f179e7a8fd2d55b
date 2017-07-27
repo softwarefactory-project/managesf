@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5aa745d1_712280bb",
+        "filename": "managesf/api/v2/resources/__init__.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-07-27T09:27:31Z",
+      "side": 1,
+      "message": "This class is different, used for REST serialization",
+      "parentUuid": "5aa745d1_11bc5c6b",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5aa745d1_b1ba486d",
         "filename": "managesf/api/v2/resources/services/manageSF.py",
         "patchSetId": 8
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "5aa745d1_b1480889",
+        "filename": "managesf/api/v2/resources/services/manageSF.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-07-27T09:27:31Z",
+      "side": 1,
+      "message": "It\u0027s more of a transformed data structure to make querying easier. It has a cache mechanism distinct from the yamlbkd cache so that it\u0027s not rebuilt every time",
+      "parentUuid": "5aa745d1_b1ba486d",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5aa745d1_d1b5d47e",
         "filename": "managesf/controllers/api/v2/resources.py",
         "patchSetId": 8
@@ -47,6 +83,24 @@
       "writtenOn": "2017-07-27T08:35:44Z",
       "side": 1,
       "message": "Any chance to refactor that code duplication into a parent method?",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_5158a456",
+        "filename": "managesf/controllers/api/v2/resources.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-07-27T09:27:31Z",
+      "side": 1,
+      "message": "REST controllers are indeed very similar, I\u0027ll do that in an upcoming patch",
+      "parentUuid": "5aa745d1_d1b5d47e",
       "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
