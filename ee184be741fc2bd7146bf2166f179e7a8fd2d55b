@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "5aa745d1_cc08972b",
+        "filename": "managesf/api/v2/resources/__init__.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-27T09:46:18Z",
+      "side": 1,
+      "message": "That sounds like unnecessary code/doc duplication, can\u0027t the class in yamlbkd be used for REST serialization?",
+      "parentUuid": "5aa745d1_712280bb",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5aa745d1_b1ba486d",
         "filename": "managesf/api/v2/resources/services/manageSF.py",
         "patchSetId": 8
@@ -66,6 +84,24 @@
       "side": 1,
       "message": "It\u0027s more of a transformed data structure to make querying easier. It has a cache mechanism distinct from the yamlbkd cache so that it\u0027s not rebuilt every time",
       "parentUuid": "5aa745d1_b1ba486d",
+      "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_ac0d4b39",
+        "filename": "managesf/api/v2/resources/services/manageSF.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-27T09:46:18Z",
+      "side": 1,
+      "message": "Then why not improving the yamlbkd cache directly? Since this is redefining resources structure, it will make code maintaince harder otherwise... I really think the table creation and variable type should be part of the yamlbkd.",
+      "parentUuid": "5aa745d1_b1480889",
       "revId": "ee184be741fc2bd7146bf2166f179e7a8fd2d55b",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
