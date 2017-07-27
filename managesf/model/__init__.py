@@ -16,7 +16,8 @@
 import logging
 
 from pecan import conf  # noqa
-from sqlalchemy import create_engine, Column, String, Unicode, UnicodeText
+from sqlalchemy import create_engine, Column, String
+from sqlalchemy import Unicode, UnicodeText, TEXT
 from sqlalchemy import Boolean, Integer, exc, event
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import sessionmaker
@@ -77,6 +78,25 @@ class SFUser(Base):
     email = Column(String(255), nullable=False, unique=True)
     cauth_id = Column(Integer(), nullable=False)
     idp_sync = Column(Boolean(), default=True)
+
+
+class SFUserSSHKey(Base):
+    __tablename__ = 'SF_USERS_KEYS'
+    id = Column(Integer(), primary_key=True)
+    sf_user_id = Column(Integer(), ForeignKey('SF_USERS.id'),
+                        nullable=False)
+    key = Column(TEXT(), nullable=False)
+
+
+class SFUserEmail(Base):
+    __tablename__ = 'SF_USERS_EMAILS'
+    id = Column(Integer(), primary_key=True)
+    sf_user_id = Column(Integer(), ForeignKey('SF_USERS.id'),
+                        nullable=False)
+    # Gerrit requires email unicity
+    email = Column(TEXT(), nullable=False, unique=True)
+    primary = Column(Boolean(), default=False)
+    confirmed = Column(Boolean(), default=True)
 
 
 class SFUserServiceMapping(Base):
