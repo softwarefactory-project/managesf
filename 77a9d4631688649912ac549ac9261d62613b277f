@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5aa745d1_f199f020",
+        "filename": "docs/swagger/managesf.v2.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-07-27T08:26:33Z",
+      "side": 0,
+      "message": "Thinking about this, it feels like running_build should be collected and returned separately from builds/jobs backend",
+      "revId": "77a9d4631688649912ac549ac9261d62613b277f",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
