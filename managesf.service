@@ -7,7 +7,7 @@ Type=simple
 User=managesf
 Group=managesf
 SyslogIdentifier=managesf
-ExecStart=/usr/bin/gunicorn_pecan --workers 1 --access-logfile - --access-logformat '%(h)s %(l)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"' --chdir / -b 0.0.0.0:20001 --name managesf /etc/managesf/config.py
+ExecStart=/usr/bin/gunicorn_pecan --workers 1 -t 600 --access-logfile - --access-logformat '%(h)s %(l)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"' --chdir / -b 0.0.0.0:20001 --name managesf /etc/managesf/config.py
 
 [Install]
 WantedBy=multi-user.target

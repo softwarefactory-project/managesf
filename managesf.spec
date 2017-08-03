@@ -1,7 +1,7 @@
 %global         sum A python API used to centralize management of services deployed under Software Factory
 
 Name:           managesf
-Version:        0.12.0
+Version:        0.12.1
 Release:        1%{?dist}
 Summary:        %{sum}
 
@@ -133,6 +133,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Thu Aug 03 2017 Fabien Boucher <fboucher@redhat.com> - 0.12.1-1
+- Set a worker timeout to avoid the 30 seconds default timeout
+
 * Wed May 24 2017 Fabien Boucher <fboucher@redhat.com> - 0.12.0-1
 - Switch to gunicorn
 
