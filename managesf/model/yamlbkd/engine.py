@@ -22,7 +22,7 @@ import logging
 from StringIO import StringIO
 from pecan import conf
 
-from managesf.model.yamlbkd.yamlbackend import YAMLBackend
+from managesf.model.yamlbkd.yamlbackend import YAMLBackend, YAMLtoSQLBackend
 from managesf.model.yamlbkd.yamlbackend import YAMLDBException
 from managesf.model.yamlbkd.resource import ModelInvalidException
 from managesf.model.yamlbkd.resource import ResourceInvalidException
@@ -505,6 +505,18 @@ class SFResourceBackendEngine(object):
         current = YAMLBackend(cur_uri, cur_ref,
                               self.subdir, self.workdir,
                               "%s_cache" % self.workdir.rstrip('/'))
+        return current.get_data()
+
+    def get_sql(self, cur_uri, cur_ref):
+        """ Top level get function. This read the HEAD of the
+        repo and return the resources data tree as a list of SQLite tables.
+        """
+        logger.info("Resources engine: get resource tree requested")
+        if not os.path.isdir(self.workdir):
+            os.mkdir(self.workdir)
+        current = YAMLtoSQLBackend(cur_uri, cur_ref,
+                                   self.subdir, self.workdir,
+                                   "%s_cache" % self.workdir.rstrip('/'))
         return current.get_data()
 
     def direct_apply(self, prev, new):
