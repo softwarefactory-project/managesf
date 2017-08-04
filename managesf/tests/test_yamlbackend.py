@@ -40,25 +40,39 @@ class YAMLBackendTest(TestCase):
         # Prepare a GIT repo with content
         repo_path = rtu.prepare_git_repo(self.db_path)
         # Add a file of data
-        data = {'resources': {'projects': {
-                'id1': {'name': 'resource_a'}
-                }}}
+        data = {'resources': {'repos': {'repo1': {},
+                                        },
+                              'projects': {'project1': {},
+                                           },
+                              'groups': {'group1': {}
+                                         },
+                              'acls': {'acl1': {}
+                                       },
+                              }
+                }
         rtu.add_yaml_data(repo_path, data)
         # Init the YAML DB
         clone_path, cache_path = rtu.prepare_db_env(self.db_path)
         db = yamlbackend.YAMLBackend("file://%s" % repo_path,
                                      "master", "resources",
                                      clone_path, cache_path)
-        self.assertIn('id1', db.get_data()['resources']['projects'])
+        self.assertIn('project1', db.get_data()['resources']['projects'])
         # Add another file of data
-        data = {'resources': {'projects': {
-                'id2': {'name': 'resource_b'}
-                }}}
+        data = {'resources': {'repos': {'repo2': {},
+                                        },
+                              'projects': {'project2': {},
+                                           },
+                              'groups': {'group2': {}
+                                         },
+                              'acls': {'acl2': {}
+                                       },
+                              }
+                }
         rtu.add_yaml_data(repo_path, data)
         db.refresh()
         project_ids = db.get_data()['resources']['projects'].keys()
-        self.assertIn('id1', project_ids)
-        self.assertIn('id2', project_ids)
+        self.assertIn('project1', project_ids)
+        self.assertIn('project2', project_ids)
         self.assertEqual(len(project_ids), 2)
         # Add another file of data for another resource
         data = {'resources': {'groups': {
@@ -92,7 +106,16 @@ class YAMLBackendTest(TestCase):
     def test_db_data_struct(self):
         # Init the DB with valid data
         repo_path = rtu.prepare_git_repo(self.db_path)
-        data = {'resources': {'projects': {}}}
+        data = {'resources': {'repos': {'repo1': {},
+                                        },
+                              'projects': {'project1': {},
+                                           },
+                              'groups': {'group1': {}
+                                         },
+                              'acls': {'acl1': {}
+                                       },
+                              }
+                }
         rtu.add_yaml_data(repo_path, data)
         clone_path, cache_path = rtu.prepare_db_env(self.db_path)
         db = yamlbackend.YAMLBackend("file://%s" % repo_path,
@@ -134,7 +157,16 @@ projects: {}
     def test_db_cache(self):
         # Init the DB with validate data
         repo_path = rtu.prepare_git_repo(self.db_path)
-        data = {'resources': {'projects': {}}}
+        data = {'resources': {'repos': {'repo1': {},
+                                        },
+                              'projects': {'project1': {},
+                                           },
+                              'groups': {'group1': {}
+                                         },
+                              'acls': {'acl1': {}
+                                       },
+                              }
+                }
         rtu.add_yaml_data(repo_path, data)
         clone_path, cache_path = rtu.prepare_db_env(self.db_path)
         db = yamlbackend.YAMLBackend("file://%s" % repo_path,
@@ -148,7 +180,7 @@ projects: {}
         cached_data = yaml.load(file(db.cache_path))
         self.assertIn('projects', cached_data['resources'])
         # Add more data in the db
-        data = {'resources': {'groups': {}}}
+        data = {'resources': {'groups': {'group2': {}}}}
         rtu.add_yaml_data(repo_path, data)
         db = yamlbackend.YAMLBackend("file://%s" % repo_path,
                                      "master", "resources",
@@ -172,3 +204,74 @@ projects: {}
         cache_hash3 = db._get_cache_hash()
         self.assertEqual(cache_hash3, cache_hash2)
         self.assertFalse(l.called or u.called)
+
+
+class YAMLtoSQLBackendTest(YAMLBackendTest):
+    def setUp(self):
+        self.db_path = []
+
+    def tearDown(self):
+        for db_path in self.db_path:
+            if os.path.isdir(db_path):
+                shutil.rmtree(db_path)
+            else:
+                os.unlink(db_path)
+
+    def test_load_valid_db_data(self):
+        # Prepare a GIT repo with content
+        repo_path = rtu.prepare_git_repo(self.db_path)
+        # Add a file of data
+        data = {'resources': {'repos': {'repository1': {},
+                                        },
+                              'projects': {'project1': {},
+                                           },
+                              'groups': {'group1': {}
+                                         },
+                              'acls': {'acl1': {}
+                                       },
+                              }
+                }
+        rtu.add_yaml_data(repo_path, data)
+        # Init the YAML DB
+        clone_path, cache_path = rtu.prepare_db_env(self.db_path)
+        db = yamlbackend.YAMLtoSQLBackend("file://%s" % repo_path,
+                                          "master", "resources",
+                                          clone_path, cache_path)
+        r = db.get_data()
+        engine = r['engine']
+        tables = r['tables']
+        data = r['data']
+        self.assertIn('project1', data['resources']['projects'])
+        with engine.begin() as conn:
+            for x in ['repository', 'project', 'group', 'acl']:
+                q = tables[x].select()
+                p = conn.execute(q).fetchone()
+                self.assertEqual(x + '1', p[0])
+        # Add another file of data
+        data = {'resources': {'repos': {'repository2': {},
+                                        },
+                              'projects': {'project2': {},
+                                           },
+                              'groups': {'group2': {}
+                                         },
+                              'acls': {'acl2': {}
+                                       },
+                              }
+                }
+        rtu.add_yaml_data(repo_path, data)
+        db.refresh()
+        r = db.get_data()
+        engine = r['engine']
+        tables = r['tables']
+        data = r['data']
+        project_ids = data['resources']['projects'].keys()
+        self.assertIn('project1', project_ids)
+        self.assertIn('project2', project_ids)
+        self.assertEqual(len(project_ids), 2)
+        with engine.begin() as conn:
+            for x in ['repository', 'project', 'group', 'acl']:
+                q = tables[x].select()
+                p = conn.execute(q).fetchall()
+                self.assertEqual(2, len(p))
+                self.assertIn(x + '1', [k[0] for k in p])
+                self.assertIn(x + '2', [k[0] for k in p])
