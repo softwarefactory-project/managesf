@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ab451fb_ffa09ba7",
+        "filename": "managesf/model/yamlbkd/engine.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 514,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-08-08T16:01:53Z",
+      "side": 1,
+      "message": "... get SQL resource tree ...",
+      "revId": "b4c746644df05cec20226a477db24ea8733b0945",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3ab451fb_df8cbf37",
+        "filename": "managesf/model/yamlbkd/yamlbackend.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-08-08T16:01:53Z",
+      "side": 1,
+      "message": "Why not doing _fill_tables() here as _fill_tables() already call _load_tables() ?",
+      "revId": "b4c746644df05cec20226a477db24ea8733b0945",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3ab451fb_bf81f3fd",
+        "filename": "managesf/model/yamlbkd/yamlbackend.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 421,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-08-08T16:01:53Z",
+      "side": 1,
+      "message": "_update_cache() should call _fill_tables() directly instead wdyt ?",
+      "revId": "b4c746644df05cec20226a477db24ea8733b0945",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
