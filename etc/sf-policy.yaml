@@ -17,9 +17,6 @@
 'any': '@'
 'none': '!'
 
-'managesf.backup:get': 'rule:admin_api'
-'managesf.backup:create': 'rule:admin_api'
-
 'managesf.restore:restore': 'rule:admin_api'
 
 'managesf.localuser:get': 'rule:authenticated_api'
