@@ -68,7 +68,6 @@ class dummy_conf():
         'host': 'managesf.tests.dom',
         'sshkey_priv_path': '/tmp/id_rsa',
         'sshkey_update_path': '/tmp/id_rsa',
-        'backup_dir': '/tmp',
     }
     resources = {
         'workdir': '/tmp/workspace',
