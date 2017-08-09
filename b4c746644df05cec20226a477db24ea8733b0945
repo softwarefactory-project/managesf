@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "3ab451fb_df2f1ff5",
+        "filename": "managesf/model/yamlbkd/yamlbackend.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-08-09T11:53:24Z",
+      "side": 1,
+      "message": "_fill_tables is used only if the cache is outdated, as it destroys the previous file cache and rebuilds it. _load_tables only creates the sqlalchemy table structures, which is called within _fill_tables as everything is rebuilt from scratch.",
+      "parentUuid": "3ab451fb_df8cbf37",
+      "revId": "b4c746644df05cec20226a477db24ea8733b0945",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ab451fb_bf81f3fd",
         "filename": "managesf/model/yamlbkd/yamlbackend.py",
         "patchSetId": 1
@@ -47,6 +65,24 @@
       "writtenOn": "2017-08-08T16:01:53Z",
       "side": 1,
       "message": "_update_cache() should call _fill_tables() directly instead wdyt ?",
+      "revId": "b4c746644df05cec20226a477db24ea8733b0945",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3ab451fb_df1cbf79",
+        "filename": "managesf/model/yamlbkd/yamlbackend.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 421,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-08-09T11:53:24Z",
+      "side": 1,
+      "message": "This separation is needed until next release, to take care of cases where the yaml cache exists already on disk but not the sql cache (which will happen for an upgrade from 2.6)\nThis line can be removed after release N+1.",
+      "parentUuid": "3ab451fb_bf81f3fd",
       "revId": "b4c746644df05cec20226a477db24ea8733b0945",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
