@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ab451fb_3f816390",
+        "filename": "managesf/api/v2/resources/__init__.py",
+        "patchSetId": 12
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-08-09T09:44:03Z",
+      "side": 1,
+      "message": "Why not keeping the key list in the base class ResourceData and build the dict dynamically then return dict([(key, getattr(self, key) for key in self.rkeys]) ? or something similar ?",
+      "revId": "50dbfe193dbad4c6a613a45d8fd8041d7e139097",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
