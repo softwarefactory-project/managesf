@@ -49,7 +49,8 @@ def add_yaml_data(repo_path, data, free_style=False):
             yaml.safe_dump(data,
                            dbfile,
                            allow_unicode=True,
-                           default_flow_style=False)
+                           default_flow_style=False,
+                           Dumper=yaml.CDumper)
     else:
         file(os.path.join(db_path, filename), 'w').write(data)
     repo.execute(['git', 'add', sub_dir])
