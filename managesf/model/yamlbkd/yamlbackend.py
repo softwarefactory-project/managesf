@@ -21,6 +21,7 @@ import yaml
 import sqlalchemy as sqla
 from pecan import conf  # noqa
 
+
 logger = logging.getLogger(__name__)
 
 RESOURCES_STRUCT = {'resources': {'rtype': {'key': {}}}}
@@ -76,7 +77,8 @@ class YAMLBackend(object):
     def _update_cache(self):
         repo_hash = self._get_repo_hash()
         self.hash = repo_hash
-        yaml.dump(self.data, file(self.cache_path, 'w'))
+        yaml.dump(self.data, file(self.cache_path, 'w'),
+                  Dumper=yaml.CSafeDumper)
         file(self.cache_path_hash, 'w').write(repo_hash)
         logger.info("Cache file has been updated.")
 
@@ -87,8 +89,9 @@ class YAMLBackend(object):
             repo_hash = self._get_repo_hash()
             cached_repo_hash = self._get_cache_hash()
             if cached_repo_hash == repo_hash:
-                self.data = yaml.safe_load(file(self.cache_path))
                 self.hash = repo_hash
+                self.data = yaml.load(file(self.cache_path),
+                                      Loader=yaml.CSafeLoader)
                 logger.info("Load data from the cache.")
             else:
                 logger.info("DB cache is outdated.")
@@ -131,8 +134,9 @@ class YAMLBackend(object):
         for f in yamlfiles:
             logger.info("Reading %s ..." % f)
             try:
-                yaml_data = yaml.safe_load(
-                    file(os.path.join(self.db_path, f)))
+                yaml_data = yaml.load(
+                    file(os.path.join(self.db_path, f)),
+                    Loader=yaml.CSafeLoader)
             except:
                 raise YAMLDBException(
                     "YAML format corrupted in file %s" % (
@@ -229,6 +233,7 @@ class YAMLBackend(object):
 class YAMLtoSQLBackend(YAMLBackend):
     """This class is used to convert the resource tree into an SQLite
     database that can be easier to query."""
+
     def _initialize(self, git_repo_url, git_ref, sub_dir,
                     clone_path, cache_path):
         super(YAMLtoSQLBackend, self)._initialize(git_repo_url, git_ref,
@@ -247,7 +252,8 @@ class YAMLtoSQLBackend(YAMLBackend):
             cached_repo_hash = self._get_cache_hash()
             if cached_repo_hash == repo_hash:
                 logger.info("Load data from the cache.")
-                self.data = yaml.safe_load(file(self.cache_path))
+                self.data = yaml.load(file(self.cache_path),
+                                      Loader=yaml.CSafeLoader)
                 if os.path.isfile(self.sqlite_cache_path):
                     self._load_tables()
                 else:
