@@ -18,6 +18,7 @@ from pwd import getpwnam
 from grp import getgrnam
 import os
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,17 @@ def chown(path, user, group):
     uid = getpwnam(group).pw_uid
     gid = getgrnam(user).gr_gid
     os.chown(path, uid, gid)
+
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        logger.debug('calling %r' % method.__name__)
+        result = method(*args, **kw)
+        te = time.time()
+        logger.debug('%r ran in %2.2f sec' % (method.__name__, te-ts))
+        return result
+    return timed
 
 
 class RemoteUser(object):

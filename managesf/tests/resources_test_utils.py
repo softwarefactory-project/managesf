@@ -17,6 +17,10 @@
 import os
 import git
 import yaml
+try:
+    from yaml import CSafeDumper as YDumper
+except ImportError:
+    from yaml import SafeDumper as YDumper
 import tempfile
 
 
@@ -46,10 +50,11 @@ def add_yaml_data(repo_path, data, free_style=False):
     filename = "%s.yaml" % id(data)
     if not free_style:
         with open(os.path.join(db_path, filename), 'w') as dbfile:
-            yaml.safe_dump(data,
-                           dbfile,
-                           allow_unicode=True,
-                           default_flow_style=False)
+            yaml.dump(data,
+                      dbfile,
+                      allow_unicode=True,
+                      default_flow_style=False,
+                      Dumper=YDumper)
     else:
         file(os.path.join(db_path, filename), 'w').write(data)
     repo.execute(['git', 'add', sub_dir])

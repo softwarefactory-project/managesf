@@ -19,6 +19,10 @@ import logging
 import os
 import stat
 import yaml
+try:
+    from yaml import CSafeDumper as YDumper
+except ImportError:
+    from yaml import SafeDumper as YDumper
 
 from managesf.services import base
 # from managesf.services import exceptions as exc
@@ -55,7 +59,7 @@ class SFGerritReviewManager(base.CodeReviewManager):
                             'jobs': ['{name}-unit-tests', ],
                             'node': 'master'}}
                 job_yaml.append(project)
-                fd.write(yaml.safe_dump(job_yaml))
+                fd.write(yaml.dump(job_yaml, Dumper=YDumper))
 
         with open(zuul_file, 'r') as fd:
             zuul_yaml = yaml.load(fd)
@@ -69,7 +73,7 @@ class SFGerritReviewManager(base.CodeReviewManager):
                            'check': [unit_test, ],
                            'gate': [unit_test, ]}
                 zuul_yaml['projects'].append(project)
-                fd.write(yaml.safe_dump(zuul_yaml))
+                fd.write(yaml.dump(zuul_yaml, Dumper=YDumper))
         config_git.review_changes(
             '%s proposes initial test definition for project %s' %
             (requester, project_name))

@@ -16,6 +16,10 @@
 
 import os
 import yaml
+try:
+    from yaml import CSafeLoader as YLoader
+except ImportError:
+    from yaml import SafeLoader as YLoader
 import shutil
 
 from unittest import TestCase
@@ -177,7 +181,8 @@ projects: {}
         repo_hash = db._get_repo_hash()
         cache_hash = db._get_cache_hash()
         self.assertEqual(repo_hash, cache_hash)
-        cached_data = yaml.load(file(db.cache_path))
+        cached_data = yaml.load(file(db.cache_path),
+                                Loader=YLoader)
         self.assertIn('projects', cached_data['resources'])
         # Add more data in the db
         data = {'resources': {'groups': {'group2': {}}}}
@@ -190,7 +195,8 @@ projects: {}
         cache_hash2 = db._get_cache_hash()
         self.assertEqual(repo_hash2, cache_hash2)
         self.assertNotEqual(cache_hash, cache_hash2)
-        cached_data2 = yaml.load(file(db.cache_path))
+        cached_data2 = yaml.load(file(db.cache_path),
+                                 Loader=YLoader)
         self.assertIn('projects', cached_data2['resources'])
         self.assertIn('groups', cached_data2['resources'])
         # Re-create the YAMLBackend instance whithout changed
