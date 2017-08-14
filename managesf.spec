@@ -29,6 +29,8 @@ BuildRequires:  python2-paramiko
 BuildRequires:  python-crypto
 BuildRequires:  python2-htpasswd
 BuildRequires:  python2-redmine
+BuildRequires:  libyaml-devel
+BuildRequires:  yaml-cpp
 BuildRequires:  PyYAML
 BuildRequires:  python2-stevedore
 BuildRequires:  MySQL-python
@@ -54,6 +56,7 @@ Requires:       python2-paramiko
 Requires:       python-crypto
 Requires:       python2-htpasswd
 Requires:       python2-redmine
+Requires:       yaml-cpp
 Requires:       PyYAML
 Requires:       python2-stevedore
 Requires:       MySQL-python
