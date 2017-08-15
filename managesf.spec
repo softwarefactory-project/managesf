@@ -38,6 +38,7 @@ BuildRequires:  python2-deepdiff
 BuildRequires:  GitPython
 BuildRequires:  python-requests
 BuildRequires:  python-jenkins
+BuildRequires:  python-sphinx_rtd_theme
 
 Requires:       python2-pysflib
 Requires:       python-pecan
