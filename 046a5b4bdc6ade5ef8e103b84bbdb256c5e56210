@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ab451fb_308d107c",
+        "filename": "managesf.spec",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-08-16T02:03:31Z",
+      "side": 1,
+      "message": "I think we need to bump version to 0.12.1 and keep release at 1 because we\u0027ll have to tag 0.12.1 after this change is merged",
+      "revId": "046a5b4bdc6ade5ef8e103b84bbdb256c5e56210",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
