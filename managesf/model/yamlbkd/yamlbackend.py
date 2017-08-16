@@ -69,6 +69,7 @@ class YAMLBackend(object):
 
     def _update_cache(self):
         repo_hash = self._get_repo_hash()
+        self.hash = repo_hash
         yaml.dump(self.data, file(self.cache_path, 'w'))
         file(self.cache_path_hash, 'w').write(repo_hash)
         logger.info("Cache file has been updated.")
@@ -81,6 +82,7 @@ class YAMLBackend(object):
             cached_repo_hash = self._get_cache_hash()
             if cached_repo_hash == repo_hash:
                 self.data = yaml.safe_load(file(self.cache_path))
+                self.hash = repo_hash
                 logger.info("Load data from the cache.")
             else:
                 logger.info("DB cache is outdated.")
@@ -213,4 +215,6 @@ class YAMLBackend(object):
     def get_data(self):
         """ Return the full data structure.
         """
-        return self.data
+        data = self.data
+        data['hash'] = self.hash
+        return data
