@@ -1,0 +1,10 @@
+Code-Review+1: Matthieu Huin <mhuin@redhat.com>
+Code-Review+1: Fabien Boucher <fboucher@redhat.com>
+Code-Review+2: Tristan de Cacqueray <tdecacqu@redhat.com>
+Workflow+1: Matthieu Huin <mhuin@redhat.com>
+Verified+2: Jenkins CI <jenkins@softwarefactory-project.io>
+Submitted-by: Jenkins CI <jenkins@softwarefactory-project.io>
+Submitted-at: Thu, 17 Aug 2017 22:12:18 +0000
+Reviewed-on: https://softwarefactory-project.io/r/9051
+Project: software-factory/managesf
+Branch: refs/heads/master
