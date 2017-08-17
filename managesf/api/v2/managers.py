@@ -37,7 +37,6 @@ except AttributeError as e:
 except IndexError:
     msg = 'No build service defined, skipping.'
     logger.error(msg)
-    raise Exception(conf)
 except:
     msg = 'Cannot load build service "%s"' % conf.api['v2']['builds'][0]
     logger.error(msg)
@@ -56,7 +55,6 @@ except AttributeError as e:
 except IndexError:
     msg = 'No job service defined, skipping.'
     logger.error(msg)
-    raise Exception(conf)
 except:
     msg = 'Cannot load job service "%s"' % conf.api['v2']['jobs'][0]
     logger.error(msg)
