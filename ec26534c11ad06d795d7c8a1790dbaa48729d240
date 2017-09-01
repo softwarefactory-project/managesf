@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "dac4157f_b93a3fe6",
+        "filename": "managesf/api/v2/managers.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-09-01T07:55:17Z",
+      "side": 1,
+      "message": "Good catch",
+      "parentUuid": "dac4157f_1955ab1c",
+      "revId": "ec26534c11ad06d795d7c8a1790dbaa48729d240",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dac4157f_f930b709",
         "filename": "managesf/api/v2/managers.py",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2017-09-01T07:51:08Z",
       "side": 1,
       "message": "ditto",
+      "revId": "ec26534c11ad06d795d7c8a1790dbaa48729d240",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dac4157f_7925c7c0",
+        "filename": "managesf/api/v2/managers.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2017-09-01T07:55:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dac4157f_f930b709",
       "revId": "ec26534c11ad06d795d7c8a1790dbaa48729d240",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
