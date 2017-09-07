@@ -28,7 +28,7 @@ class JobController(base.APIv2RestController):
     @expose('json')
     def get(self, **kwargs):
         # TODO change this when group lookup is fixed
-        _policy = 'any'
+        _policy = 'managesf.job:get'
         if not kwargs:
             kwargs = request.json if request.content_length else {}
         target = dict((k, v) for k, v in kwargs.items()
@@ -53,7 +53,7 @@ class JobController(base.APIv2RestController):
 
     @expose('json')
     def post(self, **kwargs):
-        _policy = 'any'
+        _policy = 'managesf.job:run'
         if not kwargs:
             kwargs = request.json if request.content_length else {}
         if not base.authorize(_policy,
@@ -71,7 +71,7 @@ class JobController(base.APIv2RestController):
 
     @expose('json')
     def delete(self, **kwargs):
-        _policy = 'any'
+        _policy = 'managesf.job:stop'
         if not kwargs:
             kwargs = request.json if request.content_length else {}
         if not base.authorize(_policy,
