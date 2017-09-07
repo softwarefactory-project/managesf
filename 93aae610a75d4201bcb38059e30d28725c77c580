@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dac4157f_cef2bf06",
+        "filename": "managesf.spec",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-09-07T12:34:35Z",
+      "side": 1,
+      "message": "Requires: libyaml was fine instead. It seems thats the deps needed to have C* parser like explain in the first section here (http://pyyaml.org/wiki/PyYAMLDocumentation). Could you add that requirement ?",
+      "revId": "93aae610a75d4201bcb38059e30d28725c77c580",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
