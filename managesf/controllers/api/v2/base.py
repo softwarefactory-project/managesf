@@ -23,15 +23,17 @@ from pecan.rest import RestController
 
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 from managesf import policy
+# TODO do it with v2
+from managesf.model import SFUserCRUD
 
 
 logger = logging.getLogger(__name__)
 
 
 # TODO move to managesf.api once users API is started
-def get_user_groups(user_id):
-    # TODO convert user_ids into emails
-    user_email = user_id
+def get_user_groups(username):
+    user_email = SFUserCRUD().get(username=username).get('email')
+    logger.info('Found email %s for username %s' % (username, user_email))
     resources_engine = SFResourceBackendEngine(
         os.path.join(conf.resources['workdir'], 'read'),
         conf.resources['subdir'])
