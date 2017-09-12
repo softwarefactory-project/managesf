@@ -15,10 +15,12 @@
 
 
 import abc
+import re
 import six
 import json
 import logging
 
+import paramiko
 import sqlalchemy as sa
 from stevedore import driver
 
@@ -204,3 +206,27 @@ class SQLConnection(object):
 
     def get_tables(self):
         raise NotImplementedError
+
+
+class SSHConnection(object):
+    """Generic connector for remote commands run through SSH"""
+
+    INPUT_FORMAT = re.compile("^[a-zA-Z0-9_-]+$", re.U)
+
+    def __init__(self, connection_config):
+        self.key = connection_config.get('ssh_key')
+        self.hostname = connection_config.get('ssh_host')
+        self.username = connection_config.get('ssh_user')
+
+    def get_connection(self):
+        k = paramiko.RSAKey.from_private_key_file(self.key)
+        c = paramiko.SSHClient()
+        c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        c.connect(hostname=self.hostname,
+                  username=self.username,
+                  pkey=k)
+        return c
+
+    def validate_input(self, input, format=None):
+        f = format or self.INPUT_FORMAT
+        return f.match(input)
