@@ -438,6 +438,93 @@ class TestHelperFunctions(TestCase):
             self.assertEqual(0, len(buildsets))
 
 
+class TestZuulSSHConnection(TestCase):
+    def test_enqueue_errors(self):
+        ssh = sfzuul.ZuulSSHConnection({'ssh_host': 'xxx',
+                                        'ssh_user': 'yyy',
+                                        'ssh_key': 'zzz'})
+        with patch.object(ssh, 'get_connection'):
+            self.assertRaisesRegexp(
+                ValueError, "mandatory arguments",
+                ssh.enqueue, 'check', None, 243, 4)
+            self.assertRaisesRegexp(
+                ValueError, "mandatory arguments",
+                ssh.enqueue, None, 'testrepo', 243, 4)
+            self.assertRaisesRegexp(
+                ValueError, "must be integers",
+                ssh.enqueue, 'check', 'testrepo', 'aaa', 4)
+            self.assertRaisesRegexp(
+                ValueError, "must be integers",
+                ssh.enqueue, 'check', 'testrepo', 176, 'aaa')
+            self.assertRaisesRegexp(
+                ValueError, "enqueueing requires either a patch or a ref",
+                ssh.enqueue, 'check', 'testrepo')
+            self.assertRaisesRegexp(
+                ValueError, "enqueueing requires either a patch or a ref",
+                ssh.enqueue, 'check', 'testrepo', change=34, ref='master')
+            self.assertRaisesRegexp(
+                ValueError, "Invalid argument",
+                ssh.enqueue, '&& sudo shutdown ||', 'testrepo', change=23,
+                patchset=3)
+            self.assertRaisesRegexp(
+                ValueError, "Invalid argument",
+                ssh.enqueue, 'check', '&& sudo shutdown ||', change=23,
+                patchset=3)
+            self.assertRaisesRegexp(
+                ValueError, "Invalid argument",
+                ssh.enqueue, 'check', 'testrepo', ref='&& sudo shutdown ||',
+                newrev='HEAD')
+            self.assertRaisesRegexp(
+                ValueError, "Invalid argument",
+                ssh.enqueue, 'check', 'testrepo', ref='master',
+                newrev='&& sudo shutdown ||')
+            self.assertRaisesRegexp(
+                ValueError, "Invalid argument",
+                ssh.enqueue, 'check', 'testrepo', ref='master',
+                newrev='HEAD', oldrev='&& sudo ./hack_the_planet.sh ||')
+
+    def test_enqueue(self):
+        ssh = sfzuul.ZuulSSHConnection({'ssh_host': 'xxx',
+                                        'ssh_user': 'yyy',
+                                        'ssh_key': 'zzz'})
+        with patch.object(ssh, 'get_connection') as gc:
+            mock_client = Mock()
+            gc.return_value = mock_client
+            mock_stdout = Mock()
+            mock_stderr = Mock()
+            mock_stdout.channel.recv_exit_status.return_value = 0
+            mock_client.exec_command.return_value = (0, mock_stdout,
+                                                     mock_stderr)
+            ssh.enqueue('check', 'myproject', change='345', patchset='1')
+            mock_client.exec_command.assert_called_with(
+                'zuul enqueue --trigger gerrit --pipeline check '
+                '--project myproject --change 345,1')
+            ssh.enqueue('check', 'myproject', ref='master', newrev='abcd')
+            mock_client.exec_command.assert_called_with(
+                'zuul enqueue-ref --trigger gerrit --pipeline check '
+                '--project myproject --ref master --newrev abcd')
+            ssh.enqueue('check', 'myproject', ref='master', oldrev='abcd')
+            mock_client.exec_command.assert_called_with(
+                'zuul enqueue-ref --trigger gerrit --pipeline check '
+                '--project myproject --ref master --oldrev abcd')
+            ssh.enqueue('check', 'myproject', ref='master', newrev='abcd',
+                        oldrev='dcba')
+            mock_client.exec_command.assert_called_with(
+                'zuul enqueue-ref --trigger gerrit --pipeline check '
+                '--project myproject --ref master --oldrev dcba '
+                '--newrev abcd')
+            ssh.enqueue('check', 'myproject', ref='master')
+            mock_client.exec_command.assert_called_with(
+                'zuul enqueue-ref --trigger gerrit --pipeline check '
+                '--project myproject --ref master --newrev HEAD')
+            # error
+            mock_stdout.channel.recv_exit_status.return_value = 17
+            mock_stderr.read.return_value = "beep boop"
+            self.assertRaisesRegexp(
+                Exception, '17: beep boop', ssh.enqueue,
+                'check', 'myproject', 345, 12)
+
+
 class TestInProgressSwitch(TestCase):
     @classmethod
     def setupClass(cls):
