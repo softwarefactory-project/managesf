@@ -117,6 +117,40 @@ class TestManageSFV2BuildController(V2FunctionalTest):
             self.assertEqual('yo yo', response.json['results'][0])
 
     @patch('managesf.controllers.api.v2.builds.manager')
+    def test_start_buildset(self, bm):
+        with patch('managesf.controllers.api.v2.base.authorize'):
+            environ = {'REMOTE_USER': 'user'}
+            buildinfo = {'pipeline': 'check',
+                         'repository': 'myrepo',
+                         'change': 1234,
+                         'patchset': 3}
+            bm.buildsets.create.return_value = None
+            response = self.app.post_json('/v2/buildsets/', buildinfo,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 201, response.text)
+            bm.buildsets.create.assert_called_with(**buildinfo)
+
+            def oops(*args, **kwargs):
+                raise Exception('oops')
+
+            bm.buildsets.create.side_effect = oops
+            response = self.app.post_json('/v2/buildsets/', buildinfo,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 500)
+            self.assertEqual('oops', response.json.get('error_description'),
+                             response.json)
+
+            def oops(*args, **kwargs):
+                raise ValueError('oops')
+
+            bm.buildsets.create.side_effect = oops
+            response = self.app.post_json('/v2/buildsets/', buildinfo,
+                                          extra_environ=environ, status="*")
+            self.assertEqual(response.status_int, 400)
+            self.assertEqual('oops', response.json.get('error_description'),
+                             response.json)
+
+    @patch('managesf.controllers.api.v2.builds.manager')
     def test_get_buildset_errors(self, bm):
         with patch('managesf.controllers.api.v2.base.authorize'):
             environ = {'REMOTE_USER': 'user'}

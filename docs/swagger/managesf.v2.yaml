@@ -274,6 +274,33 @@ paths:
           description: forbidden action
         404:
           description: No result found
+    post:
+      tags:
+        - Buildsets
+      summary: start buildset
+      operationId: startBuildset
+      description: |
+        start a new buildset on a given project, in a given pipeline
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: BuildsetParameters
+          description: |
+            arguments passed to trigger the buildset.
+          schema:
+            $ref: '#/definitions/BuildStartParameters'
+      responses:
+        201:
+          description: Builds enqueued successfully
+          schema:
+            $ref: '#/definitions/BuildsetGet'
+        400:
+          description: bad input parameter
+        401:
+          description: forbidden action
 # builds
   /builds:
     get:
@@ -2816,6 +2843,36 @@ definitions:
           type: array
           items:
             $ref: '#/definitions/BuildItem'
+  BuildStartParameters:
+    properties:
+      repository:
+        type: string
+        description: the repository on which to build jobs
+        example: my_project
+      pipeline:
+        type: string
+        description: the pipeline on which to build jobs
+        example: check
+      change:
+        type: integer
+        description: the change id on which to build jobs
+        example: 4567
+      patchset:
+        type: integer
+        description: the patchset version of the change on which to build jobs
+        example: 3
+      ref:
+        type: string
+        description: the git reference on which to build the jobs. Not compatible with change + patchset
+        example: master
+      oldrev:
+        type: string
+        description: the old revision. Not compatible with change + patchset
+        example: abcd1234
+      newrev:
+        type: string
+        description: the new revision. Not compatible with change + patchset
+        example: 4321dcba
   BuildItem:
     properties:
       id:
