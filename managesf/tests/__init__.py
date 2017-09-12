@@ -43,6 +43,9 @@ class dummy_conf():
     zuul = {
         'status_url': 'http://sftests.com:8082/status.json',
         'dburi': 'aaaa',
+        'ssh_host': 'eeee',
+        'ssh_user': 'ffff',
+        'ssh_key': 'jjjjj',
     }
     storyboard = {
         'base_url': 'http://sftests.com/r/',
