@@ -150,6 +150,57 @@ class ZuulSQLConnection(base.SQLConnection):
                 "%s: unable to establish tables" % self.connection_name)
 
 
+class ZuulSSHConnection(base.SSHConnection):
+    def enqueue(self, pipeline, repository, change=None, patchset=None,
+                ref=None, oldrev=None, newrev=None):
+        """Enqueue a buildset for <repository> on <pipeline>."""
+        if change and not patchset:
+            patchset = 1
+        if change and patchset:
+            try:
+                xxx = int(change), int(patchset)  # noqa
+            except:
+                raise ValueError("change, patchset must be integers")
+        if (change and ref) or (not change and not ref):
+            raise ValueError("enqueueing requires either a patch or a ref")
+        if ref and not newrev and not oldrev:
+            # use HEAD by default
+            newrev = 'HEAD'
+        for k in (pipeline, repository, change, patchset, ref, oldrev, newrev):
+            if k and not self.validate_input(str(k)):
+                raise ValueError("Invalid argument '%s'" % k)
+        if not pipeline or not repository:
+            raise ValueError(
+                "pipeline, repository are mandatory arguments")
+        client = self.get_connection()
+        CMD = "zuul enqueue"
+        if ref:
+            CMD += "-ref"
+        # TODO uncomment when switching to zuul3 for good
+        # Default tenant for SF zuul3 deployment
+        # CMD += ' --tenant ""'
+        CMD += " --trigger managesf"
+        CMD += " --pipeline %s --project %s" % (pipeline, repository)
+        if change:
+            CMD += " --change %s,%s" % (change, patchset)
+        if ref:
+            CMD += " --ref %s" % ref
+            if oldrev:
+                CMD += " --oldrev %s" % oldrev
+            if newrev:
+                CMD += " --newrev %s" % newrev
+        logger.debug("Manual build invoked: %s" % CMD)
+        stdin, stdout, stderr = client.exec_command(CMD)
+        return_code = int(stdout.channel.recv_exit_status())
+        client.close()
+        if return_code > 0:
+            e = stderr.read()
+            m = "Build enqueueing failed with exit code %i: %s"
+            m = m % (return_code, e)
+            logger.error(m)
+            raise Exception(m)
+
+
 class ZuulBuildsManager(builds.BuildServiceManager):
 
     _config_section = "zuul"
@@ -158,8 +209,14 @@ class ZuulBuildsManager(builds.BuildServiceManager):
     def __init__(self, conf):
         super(builds.BuildServiceManager, self).__init__(conf)
         dburi = self.conf.get('dburi')
+        ssh_host = self.conf.get('ssh_host')
+        ssh_key = self.conf.get('ssh_key')
+        ssh_user = self.conf.get('ssh_user')
         self.connection = ZuulSQLConnection('managesf-zuul-builds',
                                             {'dburi': dburi})
+        self.ssh = ZuulSSHConnection({'ssh_key': ssh_key,
+                                      'ssh_host': ssh_host,
+                                      'ssh_user': ssh_user, })
         self.status_url = self.conf.get('status_url')
         self.builds = ZuulBuildManager(self)
         self.buildsets = ZuulBuildSetManager(self)
@@ -439,3 +496,6 @@ class ZuulBuildSetManager(builds.BuildSetManager):
             if all(f(bs) for f in prd):
                 results.append(bs)
         return results
+
+    def create(self, **kwargs):
+        self.manager.ssh.enqueue(**kwargs)
