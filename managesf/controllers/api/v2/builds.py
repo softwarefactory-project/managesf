@@ -162,6 +162,10 @@ class BuildSetController(base.APIv2RestController):
             results = manager.buildsets.create(**kwargs)
             response.status = 201
             return results
+        except ValueError as e:
+            response.status = 400
+            self._logger.exception(e)
+            return {'error_description': str(e)}
         except Exception as e:
             response.status = 500
             self._logger.exception(e)
