@@ -221,7 +221,7 @@ paths:
         - pipeline
         - repository
         - change
-        - score
+        - result
       - in: query
         name: desc
         description: order results in descending order
@@ -255,8 +255,8 @@ paths:
         description: find buildsets belonging to this specific pipeline
         type: string
       - in: query
-        name: score
-        description: find buildsets with this score
+        name: result
+        description: find buildsets with this result
         type: string
       - in: query
         name: in_progress_only
@@ -2922,10 +2922,10 @@ definitions:
         type: string
         description: the git reference used on the repository
         example: refs/changes/42/342/3
-      score:
-        type: integer
-        description: the global score of the buildset
-        example: 2
+      result:
+        type: string
+        description: the global result of the buildset
+        example: N/A
       message:
         type: string
         description: the result of the buildset

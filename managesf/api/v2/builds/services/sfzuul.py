@@ -106,7 +106,7 @@ def get_buildsets_from_status_page(url):
                                    change=change,
                                    patchset=patchset,
                                    ref=compute_ref(change, patchset),
-                                   score=None,
+                                   result=None,
                                    message=None,
                                    builds=_builds)
             _buildsets.append(bset)
@@ -127,8 +127,9 @@ class ZuulSQLConnection(base.SQLConnection):
                 sa.Column('change', sa.Integer, nullable=True),
                 sa.Column('patchset', sa.Integer, nullable=True),
                 sa.Column('ref', sa.String(255)),
-                sa.Column('score', sa.Integer),
+                sa.Column('result', sa.String(255), nullable=True),
                 sa.Column('message', sa.TEXT()),
+                sa.Column('tenant', sa.String(255), nullable=True),
             )
 
             self.zuul_build_table = sa.Table(
@@ -217,8 +218,6 @@ class ZuulBuildManager(builds.BuildManager):
         if 'started_after' in kwargs:
             cmp = kwargs['started_after'].strftime('%Y-%m-%d %H:%M:%S')
             query = query.where(bt.c.start_time >= cmp)
-        if 'result' in kwargs:
-            query = query.where(bt.c.result == kwargs['result'])
         if 'voting' in kwargs:
             query = query.where(bt.c.voting == kwargs['voting'])
         if 'node_name' in kwargs:
@@ -232,8 +231,6 @@ class ZuulBuildManager(builds.BuildManager):
             query = query.where(bst.c.change == kwargs['change'])
         if 'patchset' in kwargs:
             query = query.where(bst.c.patchset == kwargs['patchset'])
-        if 'score' in kwargs:
-            query = query.where(bst.c.score == kwargs['score'])
         if 'pipeline' in kwargs:
             query = query.where(bst.c.pipeline == kwargs['pipeline'])
         self._logger.debug(str(query.compile(
@@ -294,7 +291,8 @@ class ZuulBuildManager(builds.BuildManager):
         url = self.manager.status_url
         status_buildsets = get_buildsets_from_status_page(url)
         # cannot filter on the following fields because they're not there:
-        if any(k in kwargs for k in ['buildset_id', 'id', 'score', 'message']):
+        if any(k in kwargs
+               for k in ['buildset_id', 'id', 'result', 'message']):
             return []
         prd = []
         # Handle no kwargs
@@ -362,8 +360,8 @@ class ZuulBuildSetManager(builds.BuildSetManager):
             query = query.where(bst.c.change == kwargs['change'])
         if 'patchset' in kwargs:
             query = query.where(bst.c.patchset == kwargs['patchset'])
-        if 'score' in kwargs:
-            query = query.where(bst.c.score == kwargs['score'])
+        if 'result' in kwargs:
+            query = query.where(bst.c.result == kwargs['result'])
         if 'pipeline' in kwargs:
             query = query.where(bst.c.pipeline == kwargs['pipeline'])
         if 'zuul_ref' in kwargs:
@@ -380,7 +378,7 @@ class ZuulBuildSetManager(builds.BuildSetManager):
                      'pipeline': bst.c.pipeline,
                      'change': bst.c.change,
                      'repository': bst.c.project,
-                     'score': bst.c.score}
+                     'result': bst.c.result}
             if kwargs.get('desc'):
                 query = query.order_by(sa.desc(order[kwargs['order_by']]))
             else:
@@ -411,7 +409,7 @@ class ZuulBuildSetManager(builds.BuildSetManager):
                 buildset = builds.BuildSet(buildset_id=bs[0], zuul_ref=bs[1],
                                            pipeline=bs[2], repository=bs[3],
                                            change=bs[4], patchset=bs[5],
-                                           ref=bs[6], score=bs[7],
+                                           ref=bs[6], result=bs[7],
                                            message=bs[8], builds=_builds)
                 results.append(buildset)
         return results, total
@@ -420,7 +418,7 @@ class ZuulBuildSetManager(builds.BuildSetManager):
         url = self.manager.status_url
         status_buildsets = get_buildsets_from_status_page(url)
         # cannot filter on the following fields because they're not there:
-        if any(k in kwargs for k in ['id', 'score', 'message']):
+        if any(k in kwargs for k in ['id', 'result', 'message']):
             return []
         prd = []
         # Handle no kwargs

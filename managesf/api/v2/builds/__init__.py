@@ -23,7 +23,7 @@ class BuildSetManager(base.BaseCRUDManager):
     def __init__(self):
         super(BuildSetManager, self).__init__()
         self.ordering_options = ['id', 'pipeline', 'repository', 'change',
-                                 'score']
+                                 'result']
 
     def create(self, **kwargs):
         """Not relevant here"""
@@ -48,7 +48,7 @@ class BuildSetManager(base.BaseCRUDManager):
         zuul_ref: an internal zuul reference
         id: the buildset id (ie its number in chronological order)
         pipeline: the pipeline in which the buildset was triggered
-        score: the score of the buildset
+        result: the result of the buildset
         in_progress_only: (boolean, defaults to False) if set to True, results
                      will only include builds that have yet to start or are in
                      progress
@@ -58,7 +58,7 @@ class BuildSetManager(base.BaseCRUDManager):
 
 class BuildSet(base.Data):
     def __init__(self, buildset_id, zuul_ref, pipeline, repository, change,
-                 patchset, ref, score, message, builds=[], **kwargs):
+                 patchset, ref, result, message, builds=[], **kwargs):
         self.id = buildset_id
         self.zuul_ref = zuul_ref
         self.pipeline = pipeline
@@ -66,7 +66,7 @@ class BuildSet(base.Data):
         self.change = change
         self.patchset = patchset
         self.ref = ref
-        self.score = score
+        self.result = result
         self.message = message
         self._builds = builds
 
@@ -78,7 +78,7 @@ class BuildSet(base.Data):
              'change': self.change,
              'patchset': self.patchset,
              'ref': self.ref,
-             'score': self.score,
+             'result': self.result,
              'message': self.message, }
         return d
 
