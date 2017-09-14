@@ -466,7 +466,7 @@ class TestInProgressSwitch(TestCase):
             g.return_value = [BuildSet(buildset_id=9999, zuul_ref=None,
                                        pipeline=None, repository=None,
                                        change=None, patchset=None,
-                                       ref=None, score=None,
+                                       ref=None, result=None,
                                        message='eh eh', builds=[])]
             r = self.manager.buildsets.get(id=9999,
                                            in_progress_only=False)
@@ -495,7 +495,7 @@ class TestZuulBuildManagerFromStatusURL(TestCase):
             results = self.ZuulBuildManager._get_from_status_url()
             self.assertEqual(8, len(results))
             # non applicable fields
-            for k in ['buildset_id', 'id', 'score', 'message']:
+            for k in ['buildset_id', 'id', 'result', 'message']:
                 r = self.ZuulBuildManager._get_from_status_url(**{k: 'bleh'})
                 self.assertEqual([], r)
             kwargs = {k: 'bleh', 'change': '8536'}
@@ -548,7 +548,7 @@ class TestZuulBuildManagerFromStatusURL(TestCase):
             results = self.ZuulBuildSetManager._get_from_status_url()
             self.assertEqual(3, len(results))
             # non applicable fields
-            for k in ['id', 'score', 'message']:
+            for k in ['id', 'result', 'message']:
                 r = self.ZuulBuildSetManager._get_from_status_url(
                     **{k: 'bleh'})
                 self.assertEqual([], r)
@@ -752,13 +752,13 @@ class TestZuulBuildManagerFromDB(TestCase):
             self.assertEqual('check',
                              r.pipeline,
                              r.to_dict())
-        # score
-        b = self.manager.buildsets.get(score=-2,
+        # result
+        b = self.manager.buildsets.get(result='FAILURE',
                                        in_progress_only=False,)
         self.assertEqual(1, b['total'], b)
         for r in b['results']:
-            self.assertEqual(-2,
-                             int(r.score),
+            self.assertEqual('FAILURE',
+                             r.result,
                              r.to_dict())
 
     def test_get_build_ordering(self):
@@ -907,14 +907,14 @@ class TestZuulBuildManagerFromDB(TestCase):
                                        desc=True)
         self.assertEqual('zuul-demo', b['results'][0].repository,
                          b['results'][0].to_dict())
-        # score
-        b = self.manager.buildsets.get(order_by='score',
+        # result
+        b = self.manager.buildsets.get(order_by='result',
                                        in_progress_only=False)
         self.assertEqual(40, b['total'], b)
-        self.assertEqual(-4, b['results'][0].score,
+        self.assertEqual(None, b['results'][0].result,
                          b['results'][0].to_dict())
-        b = self.manager.buildsets.get(order_by='score',
+        b = self.manager.buildsets.get(order_by='result',
                                        in_progress_only=False,
                                        desc=True)
-        self.assertEqual(2, b['results'][0].score,
+        self.assertEqual('FAILURE', b['results'][0].result,
                          b['results'][0].to_dict())
