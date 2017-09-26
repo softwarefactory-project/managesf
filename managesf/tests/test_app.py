@@ -13,6 +13,7 @@
 # under the License.
 
 import os
+import yaml
 import json
 import shutil
 import tempfile
@@ -1390,9 +1391,15 @@ class TestResourcesController(FunctionalTest):
 
         data = {'resources': {'dummies': {}}}
         repo_path = self.prepare_repo(data)
-        proposed_data = {'resources': {'dummies': {
-                         'id1': {'namespace': 'awesome',
-                                 'name': 'p1'}}}}
+        proposed_data = {
+            'resources': {
+                'dummies': {
+                    'id1': {
+                        'namespace': 'awesome',
+                        'name': 'p1'}
+                }
+            }
+        }
         repo_path_zuul = self.prepare_repo(proposed_data)
         # This patch.object for the policy engine
         with patch.object(SFGerritProjectManager, 'get_user_groups'):
@@ -1413,16 +1420,58 @@ class TestResourcesController(FunctionalTest):
                     'to be created.',
                     resp.json)
                 self.assertEqual(resp.status_code, 200)
+                # Same test but by passing the YAML content directly
+                kwargs = {
+                    'data': {
+                        'fakepath': yaml.dump(proposed_data,
+                                              default_flow_style=False)
+                    }
+                }
+                with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                                {'dummies': Dummy}):
+                    resp = self.app.post_json('/resources/',
+                                              kwargs,
+                                              extra_environ=environ,
+                                              status="*")
+                self.assertIn(
+                    'Resource [type: dummies, ID: id1] is going '
+                    'to be created.',
+                    resp.json)
+                self.assertEqual(resp.status_code, 200)
 
-                proposed_data = {'resources': {'dummies': {
-                                 'idbogus': {'namespace': 'awesome',
-                                             'n4me': 'p3'},
-                                 'id2': {'namespace': 'awesome',
-                                         'name': 'p2'}
-                                 }}}
+                proposed_data = {
+                    'resources': {
+                        'dummies': {
+                            'idbogus': {
+                                'namespace': 'awesome',
+                                'n4me': 'p3'},
+                            'id2': {
+                                'namespace': 'awesome',
+                                'name': 'p2'}
+                        }
+                    }
+                }
                 repo_path_zuul = self.prepare_repo(proposed_data)
                 kwargs = {'zuul_url': repo_path_zuul,
                           'zuul_ref': 'master'}
+                with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                                {'dummies': Dummy}):
+                    resp = self.app.post_json('/resources/',
+                                              kwargs,
+                                              extra_environ=environ,
+                                              status="*")
+                self.assertIn(
+                    "Resource [type: dummy, ID: idbogus] contains extra keys. "
+                    "Please check the model.",
+                    resp.json)
+                self.assertEqual(resp.status_code, 409)
+                # Same test but by passing the YAML content directly
+                kwargs = {
+                    'data': {
+                        'fakepath': yaml.dump(proposed_data,
+                                              default_flow_style=False)
+                    }
+                }
                 with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
                                 {'dummies': Dummy}):
                     resp = self.app.post_json('/resources/',

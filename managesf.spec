@@ -2,7 +2,7 @@
 
 Name:           managesf
 Version:        0.12.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -24,7 +24,7 @@ BuildRequires:  python-ecdsa
 BuildRequires:  python2-passlib
 BuildRequires:  python2-basicauth
 BuildRequires:  python-sqlalchemy
-BuildRequires:  python2-urllib3
+BuildRequires:  python-urllib3
 BuildRequires:  python2-paramiko
 BuildRequires:  python-crypto
 BuildRequires:  python2-htpasswd
@@ -52,7 +52,7 @@ Requires:       python-ecdsa
 Requires:       python2-passlib
 Requires:       python2-basicauth
 Requires:       python-sqlalchemy
-Requires:       python2-urllib3
+Requires:       python-urllib3
 Requires:       python2-paramiko
 Requires:       python-crypto
 Requires:       python2-htpasswd
@@ -138,6 +138,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Sat Sep 30 2017 Fabien Boucher <fboucher@redhat.com> - 0.12.0-3
+- Fix urllib3 requirement to be pulled from base instead of RDO
+
 * Thu Aug 03 2017 Fabien Boucher <fboucher@redhat.com> - 0.12.0-2
 - Set a worker timeout to avoid the 30 seconds default timeout
 
