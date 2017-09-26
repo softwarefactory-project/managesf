@@ -552,13 +552,26 @@ class ResourcesController(RestController):
         infos = request.json if request.content_length else {}
         zuul_url = infos.get('zuul_url', None)
         zuul_ref = infos.get('zuul_ref', None)
-        if not all([zuul_url, zuul_ref]):
-            abort(400, detail="Request content invalid")
+        data = infos.get('data', None)
+        data_buf = False
+        if data:
+            data_buf = True
+            if not isinstance(data, dict):
+                abort(400, detail="Request content invalid")
+        if not data_buf:
+            if not all([zuul_url, zuul_ref]):
+                abort(400, detail="Request content invalid")
         eng = SFResourceBackendEngine(
             os.path.join(conf.resources['workdir'], 'validate'),
             conf.resources['subdir'])
-        status, logs = eng.validate(conf.resources['master_repo'],
-                                    'master', zuul_url, zuul_ref)
+        if data_buf:
+            status, logs = eng.validate_from_structured_data(
+                conf.resources['master_repo'],
+                'master', data)
+        else:
+            status, logs = eng.validate(
+                conf.resources['master_repo'],
+                'master', zuul_url, zuul_ref)
         if not status:
             response.status = 409
         else:
