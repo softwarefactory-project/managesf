@@ -22,7 +22,9 @@ import logging
 from StringIO import StringIO
 from pecan import conf
 
-from managesf.model.yamlbkd.yamlbackend import YAMLBackend, YAMLtoSQLBackend
+from managesf.model.yamlbkd.yamlbackend import YAMLBackend
+from managesf.model.yamlbkd.yamlbackend import YAMLtoSQLBackend
+from managesf.model.yamlbkd.yamlbackend import MemoryYAMLBackend
 from managesf.model.yamlbkd.yamlbackend import YAMLDBException
 from managesf.model.yamlbkd.resource import ModelInvalidException
 from managesf.model.yamlbkd.resource import ResourceInvalidException
@@ -327,6 +329,14 @@ class SFResourceBackendEngine(object):
             scan(logs)
         return logs
 
+    def _append_missing_rtype(self, data):
+        # If a tree leaf is missing for rtype then add
+        # it by default. More convenient to avoid more
+        # check later in the code.
+        data.setdefault('resources', {})
+        for rtype in MAPPING:
+            data['resources'].setdefault(rtype, {})
+
     def _load_resource_data(self, repo_uri, ref, mark):
         """ Read the tree from YAML files stored in
         a GIT repository at a specific ref.
@@ -340,12 +350,7 @@ class SFResourceBackendEngine(object):
                           "%s_cache" % cpath)
 
         data = bkd.get_data()
-        # If a tree leaf is missing for rtype then add
-        # it by default. More convenient to avoid more
-        # check later in the code.
-        for rtype in MAPPING:
-            data.setdefault('resources', {})
-            data['resources'].setdefault(rtype, {})
+        self._append_missing_rtype(data)
         return data
 
     def _load_resources_data(self, repo_prev_uri, prev_ref,
@@ -451,6 +456,38 @@ class SFResourceBackendEngine(object):
         try:
             prev, new = self._load_resources_data(
                 repo_prev_uri, prev_ref, repo_new_uri, new_ref)
+            self._check_deps_constraints(new)
+            self._check_unicity_constraints(new)
+            changes = self._get_data_diff(prev, new)
+            self._validate_changes(changes, validation_logs, new)
+            validation_logs.extend(
+                self._resolv_resources_need_refresh(changes, new))
+        except (YAMLDBException,
+                ModelInvalidException,
+                ResourceInvalidException,
+                ResourceUnicityException,
+                ResourceDepsException), e:
+            validation_logs.append(unicode(e))
+            for l in validation_logs:
+                logger.info(l)
+            return False, validation_logs
+        for l in validation_logs:
+            logger.info(l)
+        return True, validation_logs
+
+    def validate_from_structured_data(self, repo_prev_uri, prev_ref, data):
+        """ Top level validate_from_structured_data function
+        """
+        logger.info("Resources engine: validate_from_structured_data resources"
+                    " requested (old ref: %s, structured_data)" % prev_ref)
+        if not os.path.isdir(self.workdir):
+            os.mkdir(self.workdir)
+        validation_logs = []
+        try:
+            prev = self._load_resource_data(
+                repo_prev_uri, prev_ref, 'prev')
+            new = MemoryYAMLBackend(data).get_data()
+            self._append_missing_rtype(new)
             self._check_deps_constraints(new)
             self._check_unicity_constraints(new)
             changes = self._get_data_diff(prev, new)

@@ -212,6 +212,140 @@ projects: {}
         self.assertFalse(l.called or u.called)
 
 
+class MemoryYAMLBackendTest(TestCase):
+    def setUp(self):
+        self.db_path = []
+
+    def tearDown(self):
+        for db_path in self.db_path:
+            if os.path.isdir(db_path):
+                shutil.rmtree(db_path)
+            else:
+                os.unlink(db_path)
+
+    def test_load_valid_db_data(self):
+        f1 = {
+            'resources': {
+                'repos': {
+                    'repo1': {},
+                },
+                'projects': {
+                    'project1': {},
+                },
+                'groups': {
+                    'group1': {}
+                },
+                'acls': {
+                    'acl1': {}
+                },
+            }
+        }
+        f2 = {
+            'resources': {
+                'repos': {
+                    'repo2': {},
+                },
+                'projects': {
+                    'project2': {},
+                },
+                'groups': {
+                    'group2': {}
+                },
+                'acls': {
+                    'acl2': {}
+                },
+            }
+        }
+        f3 = {
+            'resources': {
+                'groups': {
+                    'id': {
+                        'name': 'resource_a'}
+                }
+            }
+        }
+        data = {
+            'f1': f1,
+            'f2': f2,
+            'f3': f3}
+        db = yamlbackend.MemoryYAMLBackend(data)
+        project_ids = db.get_data()['resources']['projects'].keys()
+        self.assertIn('project1', project_ids)
+        self.assertIn('project2', project_ids)
+        self.assertEqual(len(project_ids), 2)
+        group_ids = db.get_data()['resources']['groups'].keys()
+        self.assertIn('id', group_ids)
+
+    def test_load_invalid_db_data(self):
+        f1 = {
+            'resources': {
+                'projects': {
+                    'id1': {
+                        'name': 'resource_a'
+                    },
+                }
+            }
+        }
+        f2 = {
+            'resources': {
+                'projects': {
+                    'id1': {
+                        'name': 'resource_b'
+                    },
+                 }
+            }
+        }
+        data = {
+            'f1': f1,
+            'f2': f2,
+        }
+        with self.assertRaises(yamlbackend.YAMLDBException):
+            yamlbackend.MemoryYAMLBackend(data)
+
+    def test_db_data_struct(self):
+        data = {
+            'resources': {
+                'repos': {
+                    'repo1': {},
+                },
+                'projects': {
+                    'project1': {},
+                },
+                'groups': {
+                    'group1': {}
+                },
+                'acls': {
+                    'acl1': {}
+                },
+            }
+        }
+        db = yamlbackend.MemoryYAMLBackend({'data': data})
+        # Try to validate a bunch a invalid data
+        rids = {}
+        for data in [
+            42,
+            [],
+            {'wrong': {}},
+            {'resources': {4: []}},
+            {'resources': {'projects': [None]}},
+            {'resources': {'projects': {None: []}}},
+            {'resources': {'projects': {'id': []}}},
+            {'resources': {'projects': {'id': []}, 'groups': {'id': []}}},
+        ]:
+            self.assertRaises(yamlbackend.YAMLDBException,
+                              db.validate, data, rids)
+
+    def test_db_data_struct_extra(self):
+        data = """
+'
+   resources:
+projects: {}
+"""
+        self.assertRaises(yamlbackend.YAMLDBException,
+                          yamlbackend.MemoryYAMLBackend,
+                          {'data': data})
+
+
 class YAMLtoSQLBackendTest(YAMLBackendTest):
     def setUp(self):
         self.db_path = []

@@ -16,6 +16,7 @@
 import os
 import git
 import logging
+import StringIO
 import yaml
 
 try:
@@ -235,6 +236,53 @@ class YAMLBackend(object):
         data = self.data
         data['hash'] = self.hash
         return data
+
+
+class MemoryYAMLBackend(YAMLBackend):
+    def __init__(self, buffer_d):
+        """ Class to read and validate resources from a dict
+        of buffers. Buffers should each be a YAML content.
+        keys are files name, and values YAML content.
+
+        :param data: a dict of buffer
+        """
+        super(MemoryYAMLBackend, self)
+        self.data = None
+        self.buffer_d = buffer_d
+        self.refresh()
+
+    def _load_db(self):
+        logger.info("Load data from the YAMLs buffer.")
+        self.rids = {}
+        for k, v in self.buffer_d.items():
+            logger.info("Reading buffer %s ..." % k)
+            try:
+                yaml_data = yaml.load(
+                    StringIO.StringIO(v),
+                    Loader=YLoader)
+            except:
+                raise YAMLDBException(
+                    "YAML format corrupted in buffer %s" % k)
+            if not self.data:
+                self.data = self.validate(yaml_data, self.rids)
+            else:
+                data_to_append = self.validate(yaml_data, self.rids)
+                for rtype, resources in data_to_append['resources'].items():
+                    if rtype not in self.data['resources']:
+                        self.data['resources'][rtype] = {}
+                    self.data['resources'][rtype].update(resources)
+
+    def refresh(self):
+        """ Reload of the YAML buffers.
+        """
+        self.data = None
+        if not self.data:
+            self._load_db()
+
+    def get_data(self):
+        """ Return the full data structure.
+        """
+        return self.data
 
 
 class YAMLtoSQLBackend(YAMLBackend):
