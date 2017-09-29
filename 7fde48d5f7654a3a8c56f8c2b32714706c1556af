@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9abe1de1_54175ded",
+        "filename": "managesf/controllers/root.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 555,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2017-09-29T08:48:31Z",
+      "side": 1,
+      "message": "This modification must be ported to managesf/api/v2/resources/services/manageSF.py:359 as well to be supported in v2\n\nDo you want to do it in this patch or a follow-up?",
+      "revId": "7fde48d5f7654a3a8c56f8c2b32714706c1556af",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
