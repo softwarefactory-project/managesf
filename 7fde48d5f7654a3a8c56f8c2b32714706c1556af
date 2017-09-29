@@ -16,6 +16,24 @@
       "revId": "7fde48d5f7654a3a8c56f8c2b32714706c1556af",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9abe1de1_74f141cd",
+        "filename": "managesf/controllers/root.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 555,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2017-09-29T08:53:48Z",
+      "side": 1,
+      "message": "Yes let\u0027s do that in another patch because it will also require a change in resources.sh anc config-check job.",
+      "parentUuid": "9abe1de1_54175ded",
+      "revId": "7fde48d5f7654a3a8c56f8c2b32714706c1556af",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
