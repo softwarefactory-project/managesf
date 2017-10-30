@@ -779,7 +779,7 @@ class NodesController(RestController):
             def post(self, node_id, public_key=None, user=None):
                 try:
                     node_id = int(node_id)
-                except:
+                except Exception:
                     response.status = 400
                     return {'error_description': 'Node id must be an integer'}
                 _policy = 'managesf.node:add_authorized_key'
@@ -816,7 +816,7 @@ class NodesController(RestController):
         def get(self, node_id):
             try:
                 node_id = int(node_id)
-            except:
+            except Exception:
                 response.status = 400
                 return {'error_description': 'Node id must be an integer'}
             _policy = 'managesf.node:get'
@@ -842,7 +842,7 @@ class NodesController(RestController):
         def put(self, node_id):
             try:
                 node_id = int(node_id)
-            except:
+            except Exception:
                 response.status = 400
                 return {'error_description': 'Node id must be an integer'}
             _policy = 'managesf.node:hold'
@@ -868,7 +868,7 @@ class NodesController(RestController):
         def delete(self, node_id):
             try:
                 node_id = int(node_id)
-            except:
+            except Exception:
                 response.status = 400
                 return {'error_description': 'Node id must be an integer'}
             _policy = 'managesf.node:delete'
