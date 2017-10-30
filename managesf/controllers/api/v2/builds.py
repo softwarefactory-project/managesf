@@ -38,7 +38,7 @@ class BuildController(base.APIv2RestController):
                 kwargs['started_before'] = datetime.strptime(
                     kwargs['started_before'],
                     isotime)
-            except:
+            except Exception:
                 response.status = 400
                 msg = "timestamp must be formatted as '%s'" % isotime
                 return {'error_description': msg,
@@ -48,7 +48,7 @@ class BuildController(base.APIv2RestController):
                 kwargs['started_after'] = datetime.strptime(
                     kwargs['started_after'],
                     isotime)
-            except:
+            except Exception:
                 response.status = 400
                 msg = "timestamp must be formatted as '%s'" % isotime
                 return {'error_description': msg,

@@ -201,15 +201,15 @@ projects: {}
         self.assertIn('groups', cached_data2['resources'])
         # Re-create the YAMLBackend instance whithout changed
         # in the upstream GIT repo
-        with patch.object(yamlbackend.YAMLBackend, '_load_db') as l:
-            with patch.object(yamlbackend.YAMLBackend, '_update_cache') as u:
+        with patch.object(yamlbackend.YAMLBackend, '_load_db') as ldb:
+            with patch.object(yamlbackend.YAMLBackend, '_update_cache') as uc:
                 db = yamlbackend.YAMLBackend("file://%s" % repo_path,
                                              "master", "resources",
                                              clone_path,
                                              cache_path)
         cache_hash3 = db._get_cache_hash()
         self.assertEqual(cache_hash3, cache_hash2)
-        self.assertFalse(l.called or u.called)
+        self.assertFalse(ldb.called or uc.called)
 
 
 class MemoryYAMLBackendTest(TestCase):
