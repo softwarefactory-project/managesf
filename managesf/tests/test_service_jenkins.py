@@ -164,8 +164,8 @@ class TestSFJenkinsManager(BaseSFJenkinsService):
                              job['status'])
 
     def test_get_job_logs(self):
-        l = ('https://sftests.com/jenkins/sample-unit-tests/'
-             '3700/timestamps/?time=MMM+dd+HH:mm:ss.SSS&appendLog')
+        logs_url = ('https://sftests.com/jenkins/sample-unit-tests/'
+                    '3700/timestamps/?time=MMM+dd+HH:mm:ss.SSS&appendLog')
         with patch.object(SFJenkins, 'jenkins_open') as jenkins_open:
             jenkins_open.return_value = SAMPLE_JENKINS_JOB_DESC
             job = self.jenkins.job.get_job_logs('myjob', 1234)
@@ -173,7 +173,7 @@ class TestSFJenkinsManager(BaseSFJenkinsService):
                              job['job_name'])
             self.assertEqual(1234,
                              job['job_id'])
-            self.assertEqual(l,
+            self.assertEqual(logs_url,
                              job['logs_url'])
 
     def test_run(self):

@@ -94,102 +94,102 @@ class EngineTest(TestCase):
 
     def test_load_resources_data(self):
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resource_data') as l:
-            l.return_value = {}
+                   'SFResourceBackendEngine._load_resource_data') as lrd:
+            lrd.return_value = {}
             en = SFResourceBackendEngine(None, None)
             en._load_resources_data(
                 'http://sftests.com/r/config.git',
                 'heads/master',
                 'http://sftests.com/r/config.git',
                 'changes/99/899/1')
-        self.assertEqual(len(l.mock_calls), 2)
+        self.assertEqual(len(lrd.mock_calls), 2)
 
     def test_validate(self):
         path = tempfile.mkdtemp()
         self.to_delete.append(path)
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_get_data_diff') as g, \
+                      '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_check_deps_constraints') as c, \
+                      '_check_deps_constraints') as cdc, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
-            l.return_value = (None, None)
+                      '_validate_changes') as vc:
+            lrd.return_value = (None, None)
             eng = SFResourceBackendEngine(path, None)
             status, _ = eng.validate(None, None, None, None)
-            self.assertTrue(l.called)
-            self.assertTrue(g.called)
-            self.assertTrue(c.called)
+            self.assertTrue(lrd.called)
+            self.assertTrue(gdd.called)
+            self.assertTrue(cdc.called)
             self.assertTrue(cu.called)
-            self.assertTrue(v.called)
+            self.assertTrue(vc.called)
             self.assertTrue(status)
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_get_data_diff') as g, \
+                      '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_check_deps_constraints') as c, \
+                      '_check_deps_constraints') as cdc, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
-            l.side_effect = YAMLDBException('')
+                      '_validate_changes') as vc:
+            lrd.side_effect = YAMLDBException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate(None, None, None, None)
             self.assertEqual(len(logs), 1)
             self.assertFalse(status)
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_get_data_diff') as g, \
+                      '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_check_deps_constraints') as c, \
+                      '_check_deps_constraints') as cdc, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
-            l.return_value = (None, None)
-            v.side_effect = ResourceInvalidException('')
+                      '_validate_changes') as vc:
+            lrd.return_value = (None, None)
+            vc.side_effect = ResourceInvalidException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate(None, None, None, None)
             self.assertEqual(len(logs), 1)
             self.assertFalse(status)
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_get_data_diff') as g, \
+                      '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_check_deps_constraints') as c, \
+                      '_check_deps_constraints') as cdc, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
-            l.return_value = (None, None)
-            c.side_effect = ResourceDepsException('')
+                      '_validate_changes') as vc:
+            lrd.return_value = (None, None)
+            cdc.side_effect = ResourceDepsException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate(None, None, None, None)
             self.assertEqual(len(logs), 1)
             self.assertFalse(status)
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_get_data_diff') as g, \
+                      '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_check_deps_constraints') as c, \
+                      '_check_deps_constraints') as cdc, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
+                      '_validate_changes') as vc:
 
-            l.return_value = (None, None)
+            lrd.return_value = (None, None)
             cu.side_effect = ResourceUnicityException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate(None, None, None, None)
@@ -201,42 +201,42 @@ class EngineTest(TestCase):
         self.to_delete.append(path)
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resource_data') as l, \
+                   'SFResourceBackendEngine._load_resource_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_check_deps_constraints') as c, \
+                      '_check_deps_constraints') as cdc, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_load_resource_data_from_memory') as lm, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_get_data_diff') as g, \
+                      '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
-            l.return_value = (None, None)
+                      '_validate_changes') as vc:
+            lrd.return_value = (None, None)
             eng = SFResourceBackendEngine(path, None)
             status, _ = eng.validate_from_structured_data(
                 None, None, None)
-            self.assertTrue(l.called)
-            self.assertTrue(c.called)
+            self.assertTrue(lrd.called)
+            self.assertTrue(cdc.called)
             self.assertTrue(cu.called)
             self.assertTrue(lm.called)
-            self.assertTrue(g.called)
-            self.assertTrue(v.called)
+            self.assertTrue(gdd.called)
+            self.assertTrue(vc.called)
             self.assertTrue(status)
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resource_data') as l, \
+                   'SFResourceBackendEngine._load_resource_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_check_deps_constraints') as c, \
+                      '_check_deps_constraints') as cdc, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_load_resource_data_from_memory') as lm, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_get_data_diff') as g, \
+                      '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
-            l.side_effect = YAMLDBException('')
+                      '_validate_changes') as vc:
+            lrd.side_effect = YAMLDBException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate_from_structured_data(
                 None, None, None)
@@ -244,19 +244,19 @@ class EngineTest(TestCase):
             self.assertFalse(status)
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resource_data') as l, \
+                   'SFResourceBackendEngine._load_resource_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_check_deps_constraints') as c, \
+                      '_check_deps_constraints') as cdc, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_load_resource_data_from_memory') as lm, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_get_data_diff') as g, \
+                      '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
-            l.return_value = (None, None)
-            v.side_effect = ResourceInvalidException('')
+                      '_validate_changes') as vc:
+            lrd.return_value = (None, None)
+            vc.side_effect = ResourceInvalidException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate_from_structured_data(
                 None, None, None)
@@ -267,32 +267,32 @@ class EngineTest(TestCase):
         path = tempfile.mkdtemp()
         self.to_delete.append(path)
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.'
-                      'SFResourceBackendEngine._get_data_diff') as g, \
+                      'SFResourceBackendEngine._get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_resolv_resources_need_refresh') as r, \
+                      '_resolv_resources_need_refresh') as rnr, \
                 patch('managesf.model.yamlbkd.engine.'
-                      'SFResourceBackendEngine._apply_changes') as a:
-            l.return_value = (None, None)
-            a.return_value = False
-            r.return_value = []
+                      'SFResourceBackendEngine._apply_changes') as ac:
+            lrd.return_value = (None, None)
+            ac.return_value = False
+            rnr.return_value = []
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.apply(None, None, None, None)
-            self.assertTrue(l.called)
-            self.assertTrue(g.called)
-            self.assertTrue(r.called)
-            self.assertTrue(a.called)
+            self.assertTrue(lrd.called)
+            self.assertTrue(gdd.called)
+            self.assertTrue(rnr.called)
+            self.assertTrue(ac.called)
             self.assertTrue(status)
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('managesf.model.yamlbkd.engine.'
-                      'SFResourceBackendEngine._get_data_diff') as g, \
+                      'SFResourceBackendEngine._get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_resolv_resources_need_refresh') as r, \
+                      '_resolv_resources_need_refresh'), \
                 patch('managesf.model.yamlbkd.engine.'
-                      'SFResourceBackendEngine._apply_changes') as a:
-            l.side_effect = YAMLDBException('')
+                      'SFResourceBackendEngine._apply_changes'):
+            lrd.side_effect = YAMLDBException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.apply(None, None, None, None)
             self.assertEqual(len(logs), 1)

@@ -120,7 +120,7 @@ class SFGerritUserManager(base.UserManager):
                 return account.get('_account_id')
             else:
                 return account
-        except:
+        except Exception:
             return None
         return None
 

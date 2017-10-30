@@ -93,7 +93,7 @@ class BaseResource(object):
             for key in self.__class__.MODEL:
                 assert re.match("^" + KEY_RE_CONSTRAINT + "$", key)
             assert 'name' in self.__class__.MODEL
-        except:
+        except Exception:
             raise ModelInvalidException(
                 "Model %s is invalid and not usable" % (
                     self.__class__.MODEL_TYPE))
@@ -147,7 +147,7 @@ class BaseResource(object):
                     if constraints[0] is list:
                         assert all([re.match(constraints[1], c) for
                                     c in constraints[3]]) is True
-        except:
+        except Exception:
             raise ModelInvalidException(
                 "Model %s is invalid and not usable "
                 "(Wrong default value according to the type "
@@ -164,7 +164,7 @@ class BaseResource(object):
                 if (not callable(callback)
                         and callback is not NotImplementedError):
                     raise Exception
-        except:
+        except Exception:
             raise ModelInvalidException(
                 "Model %s callbacks are invalid, model is not usable" % (
                     self.__class__.MODEL_TYPE))
@@ -225,7 +225,7 @@ class BaseResource(object):
                     for k, v in value.items():
                         assert isinstance(k, str)
                         assert isinstance(v, str)
-                except:
+                except Exception:
                     raise ResourceInvalidException(
                         "Resource [type: %s, ID: %s] has an invalid "
                         "key (%s) dict keys and values must by str" % (

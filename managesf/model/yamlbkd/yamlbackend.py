@@ -145,7 +145,7 @@ class YAMLBackend(object):
                 yaml_data = yaml.load(
                     file(os.path.join(self.db_path, f)),
                     Loader=YLoader)
-            except:
+            except Exception:
                 raise YAMLDBException(
                     "YAML format corrupted in file %s" % (
                         os.path.join(self.db_path, f)))
@@ -260,7 +260,7 @@ class MemoryYAMLBackend(YAMLBackend):
                 yaml_data = yaml.load(
                     StringIO.StringIO(v),
                     Loader=YLoader)
-            except:
+            except Exception:
                 raise YAMLDBException(
                     "YAML format corrupted in buffer %s" % k)
             if not self.data:
