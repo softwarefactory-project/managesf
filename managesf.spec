@@ -68,6 +68,7 @@ Requires:       GitPython
 Requires:       python-requests
 Requires:       python-jenkins
 Requires:       python-gunicorn
+Requires:       python2-PyMySQL
 
 %description
 python API used to centralize management of services deployed under Software Factory
