@@ -2,7 +2,7 @@
 
 Name:           managesf
 Version:        0.12.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -138,6 +138,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Mon Nov 13 2017 Fabien Boucher <fboucher@redhat.com> - 0.12.0-3
+- Increase worker timeout to 30 minutes waiting for better solution
+
 * Thu Aug 03 2017 Fabien Boucher <fboucher@redhat.com> - 0.12.0-2
 - Set a worker timeout to avoid the 30 seconds default timeout
 

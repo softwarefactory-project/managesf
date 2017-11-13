@@ -51,12 +51,12 @@ class EngineRealResourcesTest(TestCase):
             }
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -86,12 +86,12 @@ class EngineRealResourcesTest(TestCase):
             }
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -127,12 +127,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -168,12 +168,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -204,12 +204,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = ['Check group members [notfound@sftests.com '
                                'does not exists]: err API unable to find '
                                'the member']
@@ -246,12 +246,12 @@ class EngineRealResourcesTest(TestCase):
             }
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.GroupOps.'
                       'check_account_members') as cam:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             cam.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -281,12 +281,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -332,12 +332,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -381,12 +381,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -427,12 +427,12 @@ class EngineRealResourcesTest(TestCase):
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -491,12 +491,12 @@ class EngineRealResourcesTest(TestCase):
             }
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -543,12 +543,12 @@ wrong ! This string won't be accepted by Gerrit !
             }
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -606,12 +606,12 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -662,12 +662,12 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -717,12 +717,12 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -754,12 +754,12 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -801,12 +801,12 @@ wrong ! This string won't be accepted by Gerrit !
             }
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -846,12 +846,12 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             # GIT repository relie on an unknown ACL
@@ -890,12 +890,12 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -950,14 +950,14 @@ wrong ! This string won't be accepted by Gerrit !
             }
 
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv, \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv2:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -991,14 +991,14 @@ wrong ! This string won't be accepted by Gerrit !
                 }
             }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv, \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv2:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
@@ -1064,14 +1064,14 @@ wrong ! This string won't be accepted by Gerrit !
             }
         }
         with patch('managesf.model.yamlbkd.engine.'
-                   'SFResourceBackendEngine._load_resources_data') as l, \
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
                 patch('os.path.isdir'), \
                 patch('os.mkdir'), \
                 patch('managesf.model.yamlbkd.resources.gitacls.'
                       'ACLOps.extra_validations') as xv, \
                 patch('managesf.model.yamlbkd.resources.group.'
                       'GroupOps.extra_validations') as xv2:
-            l.return_value = (master, new)
+            lrd.return_value = (master, new)
             xv.return_value = []
             xv2.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
