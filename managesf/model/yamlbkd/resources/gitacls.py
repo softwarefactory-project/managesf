@@ -28,6 +28,8 @@ KEYS_EXP_GROUP_REGEXS = (
     'owner',
     'read',
     'submit',
+    'rebase',
+    'forgeAuthor',
     'create',
     'push',
     'label-[^ ]+'
