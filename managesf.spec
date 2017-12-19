@@ -2,7 +2,7 @@
 
 Name:           managesf
 Version:        0.12.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -25,7 +25,7 @@ BuildRequires:  python2-passlib
 BuildRequires:  python2-basicauth
 BuildRequires:  python-sqlalchemy
 BuildRequires:  python2-urllib3
-BuildRequires:  python2-paramiko
+BuildRequires:  python-paramiko
 BuildRequires:  python-crypto
 BuildRequires:  python2-htpasswd
 BuildRequires:  python2-redmine
@@ -49,7 +49,7 @@ Requires:       python2-passlib
 Requires:       python2-basicauth
 Requires:       python-sqlalchemy
 Requires:       python2-urllib3
-Requires:       python2-paramiko
+Requires:       python-paramiko
 Requires:       python-crypto
 Requires:       python2-htpasswd
 Requires:       python2-redmine
@@ -133,6 +133,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Tue Dec 19 2017 Javier Peña <jpena@redhat.com> - 0.12.1-2
+- Switch requirement to python-paramiko instead of python2-paramiko
+
 * Thu Aug 03 2017 Fabien Boucher <fboucher@redhat.com> - 0.12.1-1
 - Set a worker timeout to avoid the 30 seconds default timeout
 
