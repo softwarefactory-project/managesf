@@ -40,10 +40,11 @@ class dummy_conf():
         'db_user': 'gerrit_db_user',
         'db_password': 'gerrit_db_password',
     }
-    zuul = {
+    zuul = conf_from_dict({
         'status_url': 'http://sftests.com:8082/status.json',
         'dburi': 'aaaa',
-    }
+        'api_root_url': 'http://sftests.com:8082/',
+    })
     storyboard = {
         'base_url': 'http://sftests.com/r/',
         'host': 'storyboard',

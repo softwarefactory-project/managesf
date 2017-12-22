@@ -27,6 +27,7 @@ class V2FunctionalTest(TestCase):
         c = dummy_conf()
         self.config = {'services': c.services,
                        'gerrit': c.gerrit,
+                       'zuul': c.zuul,
                        'app': c.app,
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
@@ -271,3 +272,107 @@ class TestManageSFV2ProjectsController(V2FunctionalTest):
             response = self.app.get('/v2/projects/',
                                     extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 404, response.text)
+
+
+class TestManageSFV2ZuulController(V2FunctionalTest):
+    """Test the zuul REST proxy"""
+    @patch('requests.get')
+    def test_get_unknown_endpoint(self, get):
+        """Test that calls to unknown endpoints result in 401 unauthorized"""
+        environ = {'REMOTE_USER': 'user'}
+        x = self.app.get('/v2/zuul/I/am/a/little/teapot/',
+                         extra_environ=environ, status="*")
+        self.assertEqual(401, x.status_code, x.body)
+
+    @patch('requests.get')
+    def test_get_paramaters_are_forwarded(self, get):
+        """Make sure that passed parameters get forwarded to zuul"""
+        zuul_url = self.config['zuul']['api_root_url']
+        with patch('managesf.controllers.api.v2.base.authorize'):
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/XXX/jobs.json?job_name=my_cool_job',
+                         extra_environ=environ, status="*")
+            get.assert_called_with(zuul_url + 'XXX/jobs.json',
+                                   params={'job_name': 'my_cool_job'})
+
+    @patch('requests.get')
+    def test_get_is_redirected(self, get):
+        """Test that calls to zuul are correctly redirected, authorized"""
+        zuul_url = self.config['zuul']['api_root_url']
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/tenants.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenants:get',
+                                    target={})
+            get.assert_called_with(zuul_url + 'tenants.json')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/tenants',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenants:get',
+                                    target={})
+            get.assert_called_with(zuul_url + 'tenants')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/a_tenant/status.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenant.status:get',
+                                    target={'tenant': 'a_tenant'})
+            get.assert_called_with(zuul_url + 'a_tenant/status.json')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/a_tenant/status',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenant.status:get',
+                                    target={'tenant': 'a_tenant'})
+            get.assert_called_with(zuul_url + 'a_tenant/status')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/a_tenant/jobs.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenant.jobs:get',
+                                    target={'tenant': 'a_tenant'})
+            get.assert_called_with(zuul_url + 'a_tenant/jobs.json')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/a_tenant/jobs',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenant.jobs:get',
+                                    target={'tenant': 'a_tenant'})
+            get.assert_called_with(zuul_url + 'a_tenant/jobs')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/a_tenant/builds.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenant.builds:get',
+                                    target={'tenant': 'a_tenant'})
+            get.assert_called_with(zuul_url + 'a_tenant/builds.json')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/a_tenant/builds',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenant.builds:get',
+                                    target={'tenant': 'a_tenant'})
+            get.assert_called_with(zuul_url + 'a_tenant/builds')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/another_tenant/console-stream',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.tenant.console-stream:get',
+                                    target={'tenant': 'another_tenant'})
+            get.assert_called_with(zuul_url + 'another_tenant/console-stream')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/status',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.status:get',
+                                    target={})
+            get.assert_called_with(zuul_url + 'status')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/zuul/status.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('zuul.status:get',
+                                    target={})
+            get.assert_called_with(zuul_url + 'status.json')
