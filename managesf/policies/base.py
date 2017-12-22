@@ -114,6 +114,87 @@ class TargetGroupCheck(policy.Check):
         return False
 
 
+@policy.register('tenant')
+class TenantCheck(policy.Check):
+    """Check that there is a matching zuul tenant in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'tenant' in target:
+            return match.lower() == target['tenant'].lower()
+        return False
+
+
+@policy.register('change')
+class ChangeCheck(policy.Check):
+    """Check that there is a matching change id in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'change' in target:
+            return match.lower() == target['change'].lower()
+        return False
+
+
+# here for completion sake, will most likely never be used
+@policy.register('revision')
+class RevisionCheck(policy.Check):
+    """Check that there is a matching revision in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'revision' in target:
+            return match.lower() == target['revision'].lower()
+        return False
+
+
+@policy.register('source')
+class ZuulSourceCheck(policy.Check):
+    """Check that there is a matching zuul source in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'source' in target:
+            return match.lower() == target['source'].lower()
+        return False
+
+
+@policy.register('repository')
+class RepositoryCheck(policy.Check):
+    """Check that there is a matching repository in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'repository' in target:
+            return match.lower() == target['repository'].lower()
+        return False
+
+
 rules = [
     policy.RuleDefault('is_admin', 'username:%s' % admin_account),
     policy.RuleDefault('is_service',
