@@ -16,6 +16,8 @@
 import json
 from unittest import TestCase
 
+import mock
+
 from managesf.api.v2 import base
 from managesf.tests import dummy_conf
 
@@ -178,3 +180,18 @@ class TestAPIv2DataSerialization(TestCase):
                               'a list of stuff': ['f', 'g'],
                               'a dict of stuff': {'a': d.to_dict()}},
                              dict_e)
+
+
+class TestAPIv2RESTAPIProxy(TestCase):
+    def test_RESTAPIproxy(self):
+        """Test that a proxy object calls the correct distant URL"""
+        proxy = base.RESTAPIProxy('http://fakeapi/v2/endpoint/')
+        with mock.patch('requests.get') as get, \
+                mock.patch('requests.post') as post:
+            proxy.get('a', 'b', 'c')
+            get.assert_called_with('http://fakeapi/v2/endpoint/a/b/c')
+            proxy.post('d', 'e', 'f', json={'x': 'y'})
+            post.assert_called_with(
+                'http://fakeapi/v2/endpoint/d/e/f',
+                json={'x': 'y'}
+            )
