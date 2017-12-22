@@ -16,9 +16,10 @@
 
 import logging
 import os.path
+import re
 
 from pecan import conf
-from pecan import request
+from pecan import request, response, abort
 from pecan.rest import RestController
 
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
@@ -57,3 +58,56 @@ class APIv2RestController(RestController):
         super(APIv2RestController, self).__init__(*args, **kwargs)
         self._logger = logging.getLogger(
             'managesf.v2.controllers.%s' % self.__class__.__name__)
+
+
+class APIv2RestProxyController(APIv2RestController):
+    manager = None
+    policies_map = {'get .+/path/to/(?P<x>.+)/command': 'managesf.policy.name'}
+
+    def _find_policy(self):
+        """Find policy according to REST path."""
+        verb = request.method.lower()
+        path = request.path
+        lookup = "%s %s" % (verb, path)
+        for expr in self.policies_map:
+            regex = re.compile(expr)
+            if regex.search(lookup):
+                target_elements = regex.search(lookup).groupdict()
+                return {'policy': self.policies_map[expr],
+                        'target_elements': target_elements}
+        return {}
+
+    def _policy_target(verb, target_elements, *args, **kwargs):
+        # override me
+        target = {}
+        return target
+
+    def __getattr__(self, verb):
+
+        def action(*args, **kwargs):
+            pol_scan = self._find_policy()
+            pol, target_elements = None, {}
+            if pol_scan:
+                pol = pol_scan['policy']
+                target_elements = pol_scan['target_elements']
+            if not kwargs:
+                kwargs = request.json if request.content_length else {}
+            target = self._policy_target(verb, target_elements,
+                                         *args, **kwargs)
+            if not authorize(policy,
+                             target=target):
+                return abort(401,
+                             detail='Failure to comply with policy %s' % pol)
+
+            if request.content_length:
+                proxied_response = getattr(self.manager, verb)(
+                    *args, json=kwargs)
+            elif kwargs:
+                proxied_response = getattr(self.manager, verb)(
+                    *args, data=kwargs)
+            else:
+                proxied_response = getattr(self.manager, verb)(*args)
+            response.status = proxied_response.status_code
+            return proxied_response.json()
+
+        return action

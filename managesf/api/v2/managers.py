@@ -69,3 +69,9 @@ except Exception as e:
     msg = 'Cannot load resource service: %s' % e
     logger.error(msg)
     raise
+
+
+zuul_proxy = None
+logger.info('Configuring zuul API proxy...')
+
+zuul_proxy = base.RESTAPIProxy('https://zuul3.openstack.org/')
