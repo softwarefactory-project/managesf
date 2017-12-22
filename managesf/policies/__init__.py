@@ -31,6 +31,9 @@ from managesf.policies import resources
 from managesf.policies import job
 from managesf.policies import node
 
+# API proxies
+from managesf.policies import zuul
+
 
 def list_rules():
     return itertools.chain(
@@ -44,5 +47,6 @@ def list_rules():
         config.list_rules(),
         resources.list_rules(),
         job.list_rules(),
-        node.list_rules(), )
+        node.list_rules(),
+        zuul.list_rules(), )
 # introspection.list_rules(),
