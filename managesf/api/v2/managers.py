@@ -69,3 +69,21 @@ except Exception as e:
     msg = 'Cannot load resource service: %s' % e
     logger.error(msg)
     raise
+
+
+zuul_proxy = None
+zuul_api_root_url = None
+try:
+    zuul_api_root_url = conf['zuul']['api_root_url']
+except Exception:
+    logger.info('Cannot find zuul API root URL in configuration, '
+                'skipping endpoint...')
+if not zuul_api_root_url:
+    logger.info('No zuul API root URL specified in configuration, '
+                'skipping endpoint...')
+else:
+    logger.info('Configuring zuul API proxy...')
+    try:
+        zuul_proxy = base.RESTAPIProxy(zuul_api_root_url)
+    except Exception as e:
+        logger.error('Could not configure zuul API proxy: %s' % e)

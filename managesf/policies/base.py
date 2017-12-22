@@ -114,6 +114,22 @@ class TargetGroupCheck(policy.Check):
         return False
 
 
+@policy.register('tenant')
+class TenantCheck(policy.Check):
+    """Check that there is a matching zuul tenant in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'tenant' in target:
+            return match.lower() == target['tenant'].lower()
+        return False
+
+
 rules = [
     policy.RuleDefault('is_admin', 'username:%s' % admin_account),
     policy.RuleDefault('is_service',
