@@ -16,9 +16,10 @@
 
 import logging
 import os.path
+import re
 
 from pecan import conf
-from pecan import request
+from pecan import request, response, abort, expose
 from pecan.rest import RestController
 
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
@@ -57,3 +58,78 @@ class APIv2RestController(RestController):
         super(APIv2RestController, self).__init__(*args, **kwargs)
         self._logger = logging.getLogger(
             'managesf.v2.controllers.%s' % self.__class__.__name__)
+
+
+class APIv2RestProxyController(APIv2RestController):
+    manager = None
+    policies_map = {'get .+/path/to/(?P<x>.+)/command': 'managesf.policy.name'}
+
+    def _find_policy(self, verb):
+        """Find policy according to REST path."""
+        path = request.path
+        lookup = "%s %s" % (verb, path)
+        self._logger.info(lookup)
+        for expr in self.policies_map:
+            regex = re.compile(expr)
+            if regex.search(lookup):
+                target_elements = regex.search(lookup).groupdict()
+                return {'policy': self.policies_map[expr],
+                        'target_elements': target_elements}
+        return {}
+
+    def _policy_target(self, verb, target_elements, *args, **kwargs):
+        # override me
+        target = {}
+        return target
+
+    def _do(self, verb):
+
+        def action(*args, **kwargs):
+            pol_scan = self._find_policy(verb)
+            pol, target_elements = None, {}
+            if pol_scan:
+                pol = pol_scan['policy']
+                target_elements = pol_scan['target_elements']
+            if not kwargs and request.content_length:
+                if 'json' in request.content_type:
+                    kwargs = request.json
+                else:
+                    kwargs = request.params
+            target = self._policy_target(verb, target_elements,
+                                         *args, **kwargs)
+            if not authorize(pol, target=target):
+                return abort(401,
+                             detail='Failure to comply with policy %s' % pol)
+
+            if request.content_length and 'json' in request.content_type:
+                proxied_response = getattr(self.manager, verb)(
+                    *args, json=kwargs)
+            elif kwargs:
+                proxied_response = getattr(self.manager, verb)(
+                    *args, params=kwargs)
+            else:
+                proxied_response = getattr(self.manager, verb)(*args)
+            response.status = proxied_response.status_code
+            if int(proxied_response.status_code) > 399:
+                response.text = proxied_response.text
+                return abort(proxied_response.status_code)
+            else:
+                return proxied_response.json()
+
+        return action
+
+    @expose('json')
+    def get(self, *args, **kwargs):
+        return self._do('get')(*args, **kwargs)
+
+    @expose('json')
+    def post(self, *args, **kwargs):
+        return self._do('post')(*args, **kwargs)
+
+    @expose('json')
+    def put(self, *args, **kwargs):
+        return self._do('put')(*args, **kwargs)
+
+    @expose('json')
+    def delete(self, *args, **kwargs):
+        return self._do('delete')(*args, **kwargs)
