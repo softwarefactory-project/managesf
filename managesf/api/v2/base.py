@@ -16,11 +16,13 @@
 
 import abc
 import six
+from six.moves.urllib.parse import urljoin
 import json
 import logging
 
 import sqlalchemy as sa
 from stevedore import driver
+import requests
 
 from pecan import conf
 
@@ -204,3 +206,20 @@ class SQLConnection(object):
 
     def get_tables(self):
         raise NotImplementedError
+
+
+class RESTAPIProxy(object):
+    """Generic REST API proxy for when manageSF acts as an ACL enforcer,
+    and simply forwards requests to the real service."""
+
+    def __init__(self, base_url):
+        self.base_url = base_url
+
+    def __getattr__(self, verb):
+        action = getattr(requests, verb)
+
+        def f(*args, **kwargs):
+            url = urljoin(self.base_url, '/'.join(args))
+            logger.debug("calling url %s" % url)
+            return action(url, **kwargs)
+        return f
