@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da1255d7_ac430b6c",
+        "filename": "managesf/policies/__init__.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2018-01-03T15:27:05Z",
+      "side": 1,
+      "message": "lol",
+      "revId": "cd4c92fd24b560ce9a8c4b7f3c5ade8e4d0922aa",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
