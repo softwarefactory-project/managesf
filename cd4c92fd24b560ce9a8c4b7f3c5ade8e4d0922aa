@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "ba076199_ab98956b",
+        "filename": "managesf/api/v2/managers.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-01-08T14:40:44Z",
+      "side": 1,
+      "message": "zuul3 ?",
+      "range": {
+        "startLine": 77,
+        "startChar": 30,
+        "endLine": 77,
+        "endChar": 34
+      },
+      "revId": "cd4c92fd24b560ce9a8c4b7f3c5ade8e4d0922aa",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba076199_0baa0171",
+        "filename": "managesf/controllers/api/v2/zuul.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-01-08T14:40:44Z",
+      "side": 1,
+      "message": "I think you need zuul3/ here. On my test node only with zuul3 in the path it works.",
+      "range": {
+        "startLine": 21,
+        "startChar": 18,
+        "endLine": 21,
+        "endChar": 23
+      },
+      "revId": "cd4c92fd24b560ce9a8c4b7f3c5ade8e4d0922aa",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba076199_ebb56dd0",
+        "filename": "managesf/controllers/api/v2/zuul.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-01-08T14:40:44Z",
+      "side": 1,
+      "message": "I don\u0027t think that exist anymore.",
+      "range": {
+        "startLine": 33,
+        "startChar": 9,
+        "endLine": 33,
+        "endChar": 35
+      },
+      "revId": "cd4c92fd24b560ce9a8c4b7f3c5ade8e4d0922aa",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da1255d7_ac430b6c",
         "filename": "managesf/policies/__init__.py",
         "patchSetId": 6
