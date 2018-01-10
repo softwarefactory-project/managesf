@@ -195,6 +195,22 @@ class RepositoryCheck(policy.Check):
         return False
 
 
+@policy.register('node_id')
+class NodeIdCheck(policy.Check):
+    """Check that there is a matching node id in the ``target`` dict."""
+
+    def __call__(self, target, creds, enforcer):
+        try:
+            match = self.match % target
+        except KeyError:
+            # While doing RoleCheck if key not
+            # present in Target return false
+            return False
+        if 'node_id' in target:
+            return match.lower() == target['node_id'].lower()
+        return False
+
+
 rules = [
     policy.RuleDefault('is_admin', 'username:%s' % admin_account),
     policy.RuleDefault('is_service',

@@ -395,3 +395,71 @@ class TestManageSFV2ZuulController(V2FunctionalTest):
                                     target={'source': 'gerrit',
                                             'repository': 'sex-bobomb'})
             get.assert_called_with(zuul_url + 'keys/gerrit/sex-bobomb.pub')
+
+
+class TestManageSFV2NodepoolController(V2FunctionalTest):
+    """Test the nodepool REST proxy"""
+
+    @patch('requests.get')
+    def test_get_is_redirected(self, get):
+        """Test that calls to nodepool are correctly redirected, authorized"""
+        nodepool_url = self.config['nodepool']['api_root_url']
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/nodepool/image-list.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('nodepool.image:list',
+                                    target={})
+            get.assert_called_with(nodepool_url + 'image-list.json')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/nodepool/dib-image-list.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('nodepool.dib-image:list',
+                                    target={})
+            get.assert_called_with(nodepool_url + 'dib-image-list.json')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/nodepool/node-list.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('nodepool.node:list',
+                                    target={})
+            get.assert_called_with(nodepool_url + 'node-list.json')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/nodepool/label-list.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('nodepool.label:list',
+                                    target={})
+            get.assert_called_with(nodepool_url + 'label-list.json')
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.get('/v2/nodepool/request-list.json',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('nodepool.request:list',
+                                    target={})
+            get.assert_called_with(nodepool_url + 'request-list.json')
+
+    @patch('requests.put')
+    def test_put_is_redirected(self, put):
+        """Test that calls to nodepool are correctly redirected, authorized"""
+        nodepool_admin_url = self.config['nodepool']['admin_api_root_url']
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.put('/v2/nodepool/admin/node/1234',
+                         extra_environ=environ, status="*")
+            auth.assert_called_with('nodepool.node:hold',
+                                    target={'node_id': '1234'})
+            put.assert_called_with(nodepool_admin_url + 'node/1234')
+
+    @patch('requests.delete')
+    def test_delete_is_redirected(self, delete):
+        """Test that calls to nodepool are correctly redirected, authorized"""
+        nodepool_admin_url = self.config['nodepool']['admin_api_root_url']
+        with patch('managesf.controllers.api.v2.base.authorize') as auth:
+            environ = {'REMOTE_USER': 'user'}
+            self.app.delete('/v2/nodepool/admin/node/1234',
+                            extra_environ=environ, status="*")
+            auth.assert_called_with('nodepool.node:delete',
+                                    target={'node_id': '1234'})
+            delete.assert_called_with(nodepool_admin_url + 'node/1234')
