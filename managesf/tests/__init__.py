@@ -64,6 +64,8 @@ class dummy_conf():
         'host': 'nodepool.tests.dom',
         'user': 'nodepool',
         'key': '/path/to/key',
+        'api_root_url': 'http://sftests.com:8083/',
+        'admin_api_root_url': 'http://sftests.com:8084/',
     }
     managesf = {
         'host': 'managesf.tests.dom',

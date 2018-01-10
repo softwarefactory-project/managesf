@@ -87,3 +87,39 @@ else:
         zuul_proxy = base.RESTAPIProxy(zuul_api_root_url)
     except Exception as e:
         logger.error('Could not configure zuul API proxy: %s' % e)
+
+
+nodepool_proxy = None
+nodepool_api_root_url = None
+try:
+    nodepool_api_root_url = conf['nodepool']['api_root_url']
+except Exception:
+    logger.info('Cannot find nodepool API root URL in configuration, '
+                'skipping endpoint...')
+if not nodepool_api_root_url:
+    logger.info('No nodepool API root URL specified in configuration, '
+                'skipping endpoint...')
+else:
+    logger.info('Configuring nodepool API proxy...')
+    try:
+        nodepool_proxy = base.RESTAPIProxy(nodepool_api_root_url)
+    except Exception as e:
+        logger.error('Could not configure nodepool API proxy: %s' % e)
+
+
+nodepool_admin_proxy = None
+nodepool_admin_api_root_url = None
+try:
+    nodepool_admin_api_root_url = conf['nodepool']['admin_api_root_url']
+except Exception:
+    logger.info('Cannot find nodepool admin API root URL in configuration, '
+                'skipping endpoint...')
+if not nodepool_admin_api_root_url:
+    logger.info('No nodepool admin API root URL specified in configuration, '
+                'skipping endpoint...')
+else:
+    logger.info('Configuring nodepool admin API proxy...')
+    try:
+        nodepool_admin_proxy = base.RESTAPIProxy(nodepool_admin_api_root_url)
+    except Exception as e:
+        logger.error('Could not configure nodepool admin API proxy: %s' % e)
