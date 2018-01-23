@@ -310,6 +310,13 @@ class SFResourceBackendEngine(object):
             for rtype, resources in tree['resources'].items():
                 for rid, data in resources.items():
                     r = MAPPING[rtype](rid, data)
+                    if not r.should_be_updated():
+                        # This resource does not need to be refreshed
+                        # as it depends on a resource type that an update on it
+                        # has no impact on this resource.
+                        # eg. An ACL type depends on group type but a group
+                        # update does not need to trigger an ACL update.
+                        continue
                     deps = r.get_deps()
                     for deps_type, deps_ids in deps.items():
                         if (deps_type in u_resources and
