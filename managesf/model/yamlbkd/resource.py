@@ -272,3 +272,10 @@ class BaseResource(object):
 
     def get_resource(self):
         return self.resource
+
+    def should_be_updated(self):
+        """ Is the resource should be updated by inheritance
+        if one of the resources it depends on (only one
+        rtype possible) has been updated.
+        """
+        return True

@@ -264,6 +264,153 @@ class EngineRealResourcesTest(TestCase):
                 'validations failed', logs)
             self.assertEqual(len(logs), 2)
 
+    def test_deps_inheritage(self):
+        # Verifiy a group update does not trigger a full chain update
+        master = {
+            'resources': {
+                'groups': {
+                    'sf/g1': {
+                        'description': 'This is a group',
+                        'members': [
+                            'user1@sftests.com',
+                            ]
+                        }
+                    },
+                'acls': {
+                    'a1': {
+                        'file': "this is a\nfake acls",
+                        'groups': ['sf/g1'],
+                        }
+                    },
+                'repos': {
+                    'r1': {
+                        'name': 'sf/r1',
+                        'description': 'This is a GIT repo',
+                        'acl': 'a1'
+                        }
+                    },
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'source-repositories': ['r1'],
+                    },
+                }
+            }
+        }
+        new = {
+            'resources': {
+                'groups': {
+                    'sf/g1': {
+                        'description': 'This is a group',
+                        'members': [
+                            'user1@sftests.com',
+                            'user2@sftests.com',
+                            ]
+                        }
+                    },
+                'acls': {
+                    'a1': {
+                        'file': "this is a\nfake acls",
+                        'groups': ['sf/g1'],
+                        }
+                    },
+                'repos': {
+                    'r1': {
+                        'name': 'sf/r1',
+                        'description': 'This is a GIT repo',
+                        'acl': 'a1'
+                        }
+                    },
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'source-repositories': ['r1'],
+                    },
+                }
+            }
+        }
+
+        # Verify the ACL update trigger the dependency chain update
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv2:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            xv2.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertIn(
+                'Resource [type: groups, ID: sf/g1] is going to be updated.',
+                logs)
+            self.assertEqual(len(logs), 1)
+
+        new = {
+            'resources': {
+                'groups': {
+                    'sf/g1': {
+                        'description': 'This is a group',
+                        'members': [
+                            'user1@sftests.com',
+                            ]
+                        }
+                    },
+                'acls': {
+                    'a1': {
+                        'file': "this is a modified\nfake acls",
+                        'groups': ['sf/g1'],
+                        }
+                    },
+                'repos': {
+                    'r1': {
+                        'name': 'sf/r1',
+                        'description': 'This is a GIT repo',
+                        'acl': 'a1'
+                        }
+                    },
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'source-repositories': ['r1'],
+                    },
+                }
+            }
+        }
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv2:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            xv2.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertIn(
+                'Resource [type: acls, ID: a1] is going to be updated.',
+                logs)
+            self.assertIn(
+                'Resource [type: repos, ID: r1] need a refresh as at least '
+                'one of its dependencies has been updated',
+                logs)
+            self.assertIn(
+                'Resource [type: projects, ID: p1] need a refresh as at least '
+                'one of its dependencies has been updated',
+                logs)
+            self.assertEqual(len(logs), 3)
+
     def test_acls_validation(self):
         master = {
             'resources': {
