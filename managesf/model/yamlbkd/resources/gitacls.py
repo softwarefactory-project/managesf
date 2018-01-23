@@ -176,3 +176,10 @@ class ACL(BaseResource):
         if keyname:
             return 'groups'
         return {'groups': set(self.resource['groups'])}
+
+    def should_be_updated(self):
+        """ An ACL depends on one or more groups
+        but a group update does not need to force
+        the engine to call the ACL update callback.
+        """
+        return False
