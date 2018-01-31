@@ -357,15 +357,13 @@ class ResourcesManager(resources.ResourcesManager):
         return status, logs
 
     def create(self, **kwargs):
-        if kwargs.get('zuul_url') is None:
-            raise ValueError('Invalid request: missing "zuul_url"')
-        zuul_url = kwargs['zuul_url']
-        if kwargs.get('zuul_ref') is None:
-            raise ValueError('Invalid request: missing "zuul_ref"')
-        zuul_ref = kwargs['zuul_ref']
+        if kwargs.get('data') is None:
+            raise ValueError('Invalid request: missing "data"')
+        data = kwargs['data']
         engine = self.manager.get_engine('validate')
-        status, logs = engine.validate(self.manager.master_repo,
-                                       'master', zuul_url, zuul_ref)
+        status, logs = engine.validate_from_structured_data(
+            self.manager.master_repo,
+            'master', data)
         return status, logs
 
 

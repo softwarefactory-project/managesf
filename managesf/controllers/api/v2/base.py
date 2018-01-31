@@ -25,6 +25,7 @@ from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 from managesf import policy
 # TODO do it with v2
 from managesf.model import SFUserCRUD
+from git.exc import GitCommandError
 
 
 logger = logging.getLogger(__name__)
@@ -33,12 +34,17 @@ logger = logging.getLogger(__name__)
 # TODO move to managesf.api once users API is started
 def get_user_groups(username):
     user_email = SFUserCRUD().get(username=username).get('email')
-    logger.info('Found email %s for username %s' % (username, user_email))
+    logger.info('Found email %s for username %s' % (user_email, username))
     resources_engine = SFResourceBackendEngine(
         os.path.join(conf.resources['workdir'], 'read'),
         conf.resources['subdir'])
-    resources = resources_engine.get(conf.resources['master_repo'],
-                                     'master')
+    try:
+        resources = resources_engine.get(
+            conf.resources['master_repo'], 'master')
+    except GitCommandError:
+        logger.info("Unable to read groups from the resources engine.")
+        logger.info("It is probably because we are boostrapping SF.")
+        return []
     groups = resources['resources']['groups']
     return [g for g in groups if user_email in groups[g]['members']]
 
