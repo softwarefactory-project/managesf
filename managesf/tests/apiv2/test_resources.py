@@ -23,7 +23,9 @@ from managesf.tests import resources_test_utils as rtu
 from webtest import TestApp
 from pecan import load_app
 import sqlalchemy as sqla
+from mock import patch
 
+from managesf.model.yamlbkd.resources.dummy import Dummy
 
 c = dummy_conf()
 config = {'services': c.services,
@@ -68,6 +70,116 @@ class BaseTestResourceEndpoint(TestCase):
                 shutil.rmtree(db_path)
             else:
                 os.unlink(db_path)
+
+
+class TestResourcesManager(BaseTestResourceEndpoint):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.db_path = []
+
+    def prepare_repo(self, data):
+        repo_path = rtu.prepare_git_repo(self.db_path)
+        rtu.add_yaml_data(repo_path, data)
+        # Init the YAML DB
+        clone_path, cache_path = rtu.prepare_db_env(self.db_path)
+        return repo_path
+
+    def test_get(self):
+        """test raw resources get on resources manager"""
+        data = {'resources': {'dummies': {
+                'id1': {'name': 'resource_a'}
+                }}}
+        repo_path = self.prepare_repo(data)
+        c.resources['master_repo'] = 'file://%s' % repo_path
+        manager = manageSF.SFResourcesManager(c)
+        ret = manager.resources.get()
+        self.assertIn("resources", ret)
+
+    def test_create(self):
+        """test validate resources on the resources manager"""
+        data = {'resources': {'dummies': {}}}
+        repo_path = self.prepare_repo(data)
+        proposed_data = {
+            'resources': {
+                'dummies': {
+                    'id1': {
+                        'namespace': 'awesome',
+                        'name': 'p1'}
+                }
+            }
+        }
+        repo_path_zuul = self.prepare_repo(proposed_data)
+        c.resources['master_repo'] = 'file://%s' % repo_path
+        manager = manageSF.SFResourcesManager(c)
+        kwargs = {'zuul_url': repo_path_zuul,
+                  'zuul_ref': 'master'}
+        with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                        {'dummies': Dummy}):
+            status, log = manager.resources.create(**kwargs)
+        self.assertTrue(status)
+        self.assertIn(
+            'Resource [type: dummies, ID: id1] is going '
+            'to be created.', log)
+        proposed_data = {
+            'resources': {
+                'dummies': {
+                    'idbogus': {
+                        'namespace': 'awesome',
+                        'n4me': 'p3'},
+                    'id2': {
+                        'namespace': 'awesome',
+                        'name': 'p2'}
+                }
+            }
+        }
+        repo_path_zuul = self.prepare_repo(proposed_data)
+        kwargs['zuul_url'] = repo_path_zuul
+        with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                        {'dummies': Dummy}):
+            status, log = manager.resources.create(**kwargs)
+        self.assertFalse(status)
+        self.assertIn(
+            "Resource [type: dummy, ID: idbogus] contains extra keys. "
+            "Please check the model.", log)
+
+    def test_update(self):
+        """test apply resources on the resources manager"""
+        data = {'resources': {'dummies': {}}}
+        repo_path = self.prepare_repo(data)
+        new_data = {'resources': {'dummies': {
+                    'id1': {'namespace': 'awesome',
+                            'name': 'p1'}}}}
+        rtu.add_yaml_data(repo_path, new_data)
+        c.resources['master_repo'] = 'file://%s' % repo_path
+        manager = manageSF.SFResourcesManager(c)
+        with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                        {'dummies': Dummy}):
+            status, log = manager.resources.update()
+        self.assertIn("Resource [type: dummies, ID: id1] will be "
+                      "created.", log)
+        self.assertIn("Resource [type: dummies, ID: id1] has been "
+                      "created.", log)
+        self.assertEqual(len(log), 2)
+        self.assertTrue(status)
+        # Direct apply
+        prev = "resources: {}"
+        new = """resources:
+  dummies:
+    id1:
+      name: dum
+      namespace: a
+"""
+        kwargs = {'prev': prev, 'new': new}
+        with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                        {'dummies': Dummy}):
+            status, log = manager.resources.update(**kwargs)
+        self.assertListEqual(
+            log,
+            ["Resource [type: dummies, ID: id1] is going to be created.",
+             "Resource [type: dummies, ID: id1] will be created.",
+             "Resource [type: dummies, ID: id1] has been created."])
+        self.assertTrue(status)
 
 
 class TestSQLiteResources(BaseTestResourceEndpoint):
