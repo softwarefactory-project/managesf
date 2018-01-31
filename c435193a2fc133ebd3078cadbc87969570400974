@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba076199_6e03b9b9",
+        "filename": "managesf/controllers/root.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1108,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-01-31T05:40:59Z",
+      "side": 1,
+      "message": "Why is there a difference here?",
+      "revId": "c435193a2fc133ebd3078cadbc87969570400974",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba076199_4e00f5aa",
+        "filename": "managesf/policies/base.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-01-31T05:40:59Z",
+      "side": 1,
+      "message": "Shouldn\u0027t the policy match a image_name instead?",
+      "revId": "c435193a2fc133ebd3078cadbc87969570400974",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
