@@ -253,8 +253,7 @@ class ImageUpdatesCRUD():
         with session_scope() as session:
             if provider and image:
                 img_update = NodepoolImageUpdate(
-                              provider=provider,
-                              image=image)
+                    provider=provider, image=image)
                 session.add(img_update)
                 session.commit()
                 return img_update.id
@@ -363,4 +362,67 @@ def update_user(username, infos):
     with session_scope() as session:
         user = session.query(User)
         ret = user.filter_by(username=username).update(infos)
+        return bool(ret)
+
+
+class ResourcesApply(Base):
+    __tablename__ = 'RESOURCES_APPLIES'
+    id = Column(Integer(), primary_key=True)
+    type = Column(String(255), default="apply")
+    prev = Column(UnicodeText(4294967295), default=u"")
+    prev_uri = Column(String(65535), default="")
+    new = Column(UnicodeText(4294967295), default=u"")
+    new_uri = Column(String(65535), default="")
+    status = Column(String(255), default="PENDING")
+    output = Column(UnicodeText(4294967295), default=u"")
+
+
+def add_resources_task(task):
+    """ Add a task in the database
+        return Boolean
+    """
+    try:
+        with session_scope() as session:
+            ra = ResourcesApply(**task)
+            session.add(ra)
+            session.commit()
+            return ra.id
+    except exc.IntegrityError as e:
+        return False, unicode(e)
+
+
+def get_resources_task(tid):
+    """ Fetch a task by its id
+        return task dict or False if not found
+    """
+    try:
+        with session_scope() as session:
+            ret = session.query(ResourcesApply).filter_by(id=tid).one()
+            return row2dict(ret)
+    except NoResultFound:
+        return False
+
+
+def get_resources_tasks_pending():
+    """ Fetch pending tasks
+        return pending tasks dicts
+    """
+    try:
+        with session_scope() as session:
+            ret = session.query(ResourcesApply).filter_by(status='PENDING')
+            # session.commit()
+            return [row2dict(r) for r in ret]
+    except NoResultFound:
+        return False
+
+
+def update_resources_task(tid, ra):
+    """ Update a resources task by its task id
+        arg ra: Dict
+        return True if deleted or False if not found
+    """
+    with session_scope() as session:
+        query = session.query(ResourcesApply)
+        ret = query.filter_by(id=tid).update(ra)
+        session.commit()
         return bool(ret)
