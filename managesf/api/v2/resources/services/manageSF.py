@@ -21,6 +21,9 @@ import sqlalchemy as sqla
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import alias
 
+from managesf.model import get_resources_task
+from managesf.model import add_resources_task
+
 from managesf.api.v2 import base
 from managesf.api.v2 import resources
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
@@ -339,22 +342,63 @@ class ResourcesManager(resources.ResourcesManager):
 
     def update(self, **kwargs):
         engine = self.manager.get_engine('apply')
-        if kwargs.get('COMMIT') or\
-           all(kwargs.get(c) is None for c in ['COMMIT', 'prev', 'new']):
+        background = kwargs.get('background', False)
+        task_id = kwargs.get('task_id')
+        if task_id:
+            rtask = get_resources_task(task_id)
+            if rtask:
+                status = rtask['status']
+                logs = rtask['output']
+                tid = rtask['id']
+            else:
+                raise NotImplementedError(
+                    "Resources backgroud task not found")
+        elif kwargs.get('COMMIT') or\
+                all(kwargs.get(c) is None for c in ['COMMIT', 'prev', 'new']):
             commit = kwargs.get('COMMIT', 'master')
-            status, logs = engine.apply(self.manager.master_repo,
-                                        '%s^1' % commit,
-                                        self.manager.master_repo,
-                                        commit)
+            if not background:
+                tid = None
+                status, logs = engine.apply(self.manager.master_repo,
+                                            '%s^1' % commit,
+                                            self.manager.master_repo,
+                                            commit)
+            else:
+                rtask = {
+                    'prev_uri': self.manager.master_repo,
+                    'prev': '%s^1' % commit,
+                    'new_uri': self.manager.master_repo,
+                    'new': commit,
+                    'type': 'apply'}
+                tid = add_resources_task(rtask)
+                rtask = get_resources_task(tid)
+                status = rtask['status']
+                logs = rtask['output']
+                tid = rtask['id']
         elif (kwargs.get('COMMIT') is None and
               kwargs.get('prev') is not None and
               kwargs.get('new') is not None):
-            status, logs = engine.direct_apply(kwargs['prev'], kwargs['new'])
+            if not background:
+                tid = None
+                status, logs = engine.direct_apply(
+                    kwargs['prev'], kwargs['new'])
+            else:
+                rtask = {
+                    'prev': kwargs['prev'],
+                    'new': kwargs['new'],
+                    'type': 'direct_apply'}
+                tid = add_resources_task(rtask)
+                rtask = get_resources_task(tid)
+                status = rtask['status']
+                logs = rtask['output']
+                tid = rtask['id']
         else:
             raise ValueError(
                 'Invalid arguments: either provide a "COMMIT" or the '
                 '"new" and "prev" arguments')
-        return status, logs
+        if task_id or background:
+            return status, logs, tid
+        else:
+            return status, logs
 
     def create(self, **kwargs):
         if kwargs.get('data') is None:
