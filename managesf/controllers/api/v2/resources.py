@@ -189,12 +189,16 @@ class ResourcesRootController(base.APIv2RestController):
             return abort(401,
                          detail='Failure to comply with policy %s' % _policy)
         try:
-            status, logs = manager.resources.update(**kwargs)
-            if not status:
+            ret = manager.resources.update(**kwargs)
+            if not ret[0]:
                 response.status = 409
             else:
                 response.status = 201
-            return logs
+            if len(ret) == 2:
+                # Keep compat
+                return ret[1]
+            else:
+                return ret
         except ValueError as e:
             response.status = 400
             return {'error_description': str(e)}

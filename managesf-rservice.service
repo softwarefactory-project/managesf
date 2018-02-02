@@ -1,0 +1,14 @@
+[Unit]
+Description=ManageSF Resources apply Service
+After=syslog.target network.target mariadb.service
+
+[Service]
+Type=simple
+User=managesf
+Group=managesf
+SyslogIdentifier=managesf-rservice
+ExecStart=/usr/bin/managesf-rservice
+Environment=PECAN_CONFIG=/etc/managesf/config.py
+
+[Install]
+WantedBy=multi-user.target

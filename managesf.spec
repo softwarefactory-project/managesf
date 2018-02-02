@@ -10,6 +10,7 @@ URL:            https://softwarefactory-project.io/r/p/%{name}
 Source0:        https://github.com/redhat-cip/managesf/archive/%{version}.tar.gz
 
 Source1:        %{name}.service
+Source2:        %{name}-rservice.service
 
 BuildArch:      noarch
 
@@ -100,6 +101,7 @@ mkdir -p %{buildroot}/%{_var}/log/managesf
 install -p -D -m 644 %{buildroot}/usr/etc/managesf/sf-policy.yaml %{buildroot}/%{_sysconfdir}/managesf/sf-policy.yaml
 rm %{buildroot}/usr/etc/managesf/sf-policy.yaml
 install -p -D -m 644 %{SOURCE1} %{buildroot}/%{_unitdir}/%{name}.service
+install -p -D -m 644 %{SOURCE2} %{buildroot}/%{_unitdir}/%{name}-rservice.service
 mkdir -p %{buildroot}/usr/share/doc/managesf
 mv docs/build/html/* %{buildroot}/usr/share/doc/managesf/
 
@@ -126,6 +128,15 @@ exit 0
 %postun
 %systemd_postun %{name}.service
 
+%post
+%systemd_post %{name}-rservice.service
+
+%preun
+%systemd_preun %{name}-rservice.service
+
+%postun
+%systemd_postun %{name}-rservice.service
+
 %files
 %{python2_sitelib}/*
 %{_bindir}/*
@@ -138,6 +149,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Fri Feb 2 2018 Fabien Boucher <fboucher@redhat.com> - 0.12.0-5
+- Add service file for managesf-rservice
+
 * Mon Dec 18 2017 Tristan Cacqueray <tdecacqu@redhat.com> - 0.12.0-4
 - Switch requirement to python-paramiko instead of python2-paramiko
 
