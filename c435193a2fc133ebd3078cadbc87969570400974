@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7a016987_e0d7be21",
+        "filename": "managesf/controllers/root.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1108,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2018-02-14T13:45:19Z",
+      "side": 1,
+      "message": "there are 2 distinct endpoints for nodepool, on different ports. So there\u0027s a controller for each",
+      "parentUuid": "ba076199_6e03b9b9",
+      "revId": "c435193a2fc133ebd3078cadbc87969570400974",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba076199_4e00f5aa",
         "filename": "managesf/policies/base.py",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2018-01-31T05:40:59Z",
       "side": 1,
       "message": "Shouldn\u0027t the policy match a image_name instead?",
+      "revId": "c435193a2fc133ebd3078cadbc87969570400974",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7a016987_80e7ea11",
+        "filename": "managesf/policies/base.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2018-02-14T13:45:19Z",
+      "side": 1,
+      "message": "At this time the admin endpoint only exposed node related commands (hold and delete). Now that it also supports image based operations this kind of check can be added, I\u0027ll do it in a future revision",
+      "parentUuid": "ba076199_4e00f5aa",
       "revId": "c435193a2fc133ebd3078cadbc87969570400974",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
