@@ -89,6 +89,24 @@ else:
         logger.error('Could not configure zuul API proxy: %s' % e)
 
 
+zuul_admin_proxy = None
+zuul_admin_api_root_url = None
+try:
+    zuul_admin_api_root_url = conf['zuul']['admin_api_root_url']
+except Exception:
+    logger.info('Cannot find zuul admin API root URL in configuration, '
+                'skipping endpoint...')
+if not zuul_admin_api_root_url:
+    logger.info('No zuul admin API root URL specified in configuration, '
+                'skipping endpoint...')
+else:
+    logger.info('Configuring zuul admin API proxy...')
+    try:
+        zuul_admin_proxy = base.RESTAPIProxy(zuul_admin_api_root_url)
+    except Exception as e:
+        logger.error('Could not configure zuul admin API proxy: %s' % e)
+
+
 nodepool_proxy = None
 nodepool_api_root_url = None
 try:
