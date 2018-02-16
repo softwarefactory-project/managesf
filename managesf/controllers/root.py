@@ -1104,6 +1104,7 @@ class V2Controller(object):
     groups = v2_resources.GroupsController()
     repositories = v2_resources.RepositoriesController()
     zuul = v2_zuul.ZuulController()
+    zuul.admin = v2_zuul.ZuulAdminController()
     nodepool = v2_np.NodepoolController()
     nodepool.admin = v2_np.NodepoolAdminController()
 
