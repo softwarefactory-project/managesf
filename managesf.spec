@@ -27,7 +27,6 @@ BuildRequires:  python-sqlalchemy
 BuildRequires:  python2-urllib3
 BuildRequires:  python-paramiko
 BuildRequires:  python-crypto
-BuildRequires:  python2-htpasswd
 BuildRequires:  python2-redmine
 BuildRequires:  libyaml-devel
 BuildRequires:  yaml-cpp
@@ -55,7 +54,6 @@ Requires:       python-sqlalchemy
 Requires:       python2-urllib3
 Requires:       python-paramiko
 Requires:       python-crypto
-Requires:       python2-htpasswd
 Requires:       python2-redmine
 Requires:       yaml-cpp
 Requires:       PyYAML
