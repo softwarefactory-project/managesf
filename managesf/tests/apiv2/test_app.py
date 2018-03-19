@@ -32,7 +32,6 @@ class V2FunctionalTest(TestCase):
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
                        'auth': c.auth,
-                       'htpasswd': c.htpasswd,
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'mysql': c.mysql,

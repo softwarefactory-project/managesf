@@ -39,7 +39,6 @@ class TestPolicyEngine(TestCase):
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
                        'auth': c.auth,
-                       'htpasswd': c.htpasswd,
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'mysql': c.mysql,
@@ -75,24 +74,6 @@ class TestPolicyEngine(TestCase):
                                          target, credentials))
         credentials = {'username': 'SF_SERVICE_USER'}
         self.assertTrue(policy.authorize('managesf.hooks:trigger',
-                                         target, credentials))
-
-    def test_htpasswd_policies(self):
-        """Test the default htpasswd endpoint policies"""
-        credentials = {}
-        target = {}
-        self.assertFalse(policy.authorize('managesf.htpasswd:get',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.htpasswd:create_update',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.htpasswd:delete',
-                                          target, credentials))
-        credentials = {'username': 'RickSanchez'}
-        self.assertTrue(policy.authorize('managesf.htpasswd:get',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.htpasswd:create_update',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.htpasswd:delete',
                                          target, credentials))
 
     def test_localuser_policies(self):
@@ -397,7 +378,6 @@ class TestPolicyEngineFromFile(TestCase):
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
                        'auth': c.auth,
-                       'htpasswd': c.htpasswd,
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'policy': c.policy,

@@ -112,9 +112,6 @@ class dummy_conf():
                 'format': ('%(asctime)s %(levelname)-5.5s [%(name)s]'
                            '[%(threadName)s] %(message)s')}}
     }
-    htpasswd = {
-        'filename': tempfile.mkstemp()[1]
-    }
     policy = {}
     DummyService = {
         'dummy_opt1': 'value1',

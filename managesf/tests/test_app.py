@@ -58,7 +58,6 @@ class FunctionalTest(TestCase):
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
                        'auth': c.auth,
-                       'htpasswd': c.htpasswd,
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
                        'mysql': c.mysql,
@@ -309,77 +308,6 @@ class TestManageSFAppBackupController(FunctionalTest):
                                      status="*")
             self.assertEqual(response.status_int, 204)
             self.assertTrue(backup_start.called)
-
-
-class TestManageSFHtpasswdController(FunctionalTest):
-    def test_unauthenticated(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            resp = self.app.put_json('/htpasswd/', {}, status="*")
-            self.assertEqual(resp.status_int, 401)
-
-            resp = self.app.get('/htpasswd/', {}, status="*")
-            self.assertEqual(resp.status_int, 401)
-
-            resp = self.app.delete('/htpasswd/', {}, status="*")
-            self.assertEqual(resp.status_int, 401)
-
-    def test_authenticated(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            env = {'REMOTE_USER': 'admin'}
-
-            resp = self.app.get('/htpasswd/', extra_environ=env, status="*")
-            self.assertEqual(404, resp.status_int)
-
-            resp = self.app.put_json('/htpasswd/', {}, extra_environ=env)
-            self.assertEqual(resp.status_int, 201)
-            self.assertTrue(len(resp.body) >= 12)
-
-            # Create new password
-            old_password = resp.body
-            resp = self.app.put_json('/htpasswd/', {}, extra_environ=env)
-            self.assertEqual(resp.status_int, 201)
-            self.assertTrue(len(resp.body) >= 12)
-
-            self.assertTrue(old_password != resp.body)
-
-            # Create password for a different user
-            newenv = {'REMOTE_USER': 'random'}
-            resp = self.app.put_json('/htpasswd/', {}, extra_environ=newenv)
-            self.assertEqual(resp.status_int, 201)
-            self.assertTrue(len(resp.body) >= 12)
-
-            # Ensure there are password entries for both users
-            resp = self.app.get('/htpasswd/', extra_environ=env)
-            self.assertEqual(204, resp.status_int)
-            self.assertEqual(resp.body, 'null')
-
-            resp = self.app.get('/htpasswd/', extra_environ=newenv)
-            self.assertEqual(204, resp.status_int)
-            self.assertEqual(resp.body, 'null')
-
-            # Delete passwords
-            resp = self.app.delete('/htpasswd/', extra_environ=env)
-            self.assertEqual(204, resp.status_int)
-
-            resp = self.app.delete('/htpasswd/', extra_environ=newenv)
-            self.assertEqual(204, resp.status_int)
-
-            resp = self.app.get('/htpasswd/', extra_environ=env, status="*")
-            self.assertEqual(404, resp.status_int)
-
-    def test_missing_htpasswd_file(self):
-        with patch.object(SFGerritProjectManager, 'get_user_groups'):
-            os.remove(self.config['htpasswd']['filename'])
-            env = {'REMOTE_USER': 'admin'}
-
-            resp = self.app.put('/htpasswd/', extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 406)
-
-            resp = self.app.get('/htpasswd/', extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 406)
-
-            resp = self.app.delete('/htpasswd/', extra_environ=env, status="*")
-            self.assertEqual(resp.status_int, 406)
 
 
 class TestManageSFServicesUserController(FunctionalTest):

@@ -27,7 +27,6 @@ BuildRequires:  python-sqlalchemy
 BuildRequires:  python2-urllib3
 BuildRequires:  python-paramiko
 BuildRequires:  python-crypto
-BuildRequires:  python2-htpasswd
 BuildRequires:  python2-redmine
 BuildRequires:  libyaml-devel
 BuildRequires:  yaml-cpp
@@ -55,7 +54,6 @@ Requires:       python-sqlalchemy
 Requires:       python2-urllib3
 Requires:       python-paramiko
 Requires:       python-crypto
-Requires:       python2-htpasswd
 Requires:       python2-redmine
 Requires:       yaml-cpp
 Requires:       PyYAML
@@ -105,10 +103,7 @@ mv docs/build/html/* %{buildroot}/usr/share/doc/managesf/
 
 
 %check
-# Deactivate tests here as one is failing and I cannot find the reason
-# test_missing_htpasswd_file (managesf.tests.test_app.TestManageSFHtpasswdController)
-# /usr/lib/python2.7/site-packages/pecan/middleware/debug.pyc: ERROR: 'HTTP_ACCEPT'
-# PYTHONPATH=%{buildroot}/%{python2_sitelib} PBR_VERSION=%{version} nosetests -v
+PYTHONPATH=%{buildroot}/%{python2_sitelib} PBR_VERSION=%{version} nosetests -v
 
 %pre
 getent group managesf >/dev/null || groupadd -r managesf
