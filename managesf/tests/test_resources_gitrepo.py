@@ -31,13 +31,7 @@ from managesf.model.yamlbkd.resources.gitrepository import GitRepositoryOps
 class GitRepositoryOpsTest(TestCase):
     @classmethod
     def setupClass(cls):
-        cls.auth_patch = patch('managesf.services.gerrit.get_cookie')
-        cls.auth_patch.start()
         cls.conf = dummy_conf()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.auth_patch.stop()
 
     def test_create(self):
         o = GitRepositoryOps(self.conf, None)
@@ -89,7 +83,7 @@ class GitRepositoryOpsTest(TestCase):
         self.assertEqual(
             MGR.push_branch.call_args,
             call('br1',
-                 {'.gitreview': '[gerrit]\nhost=tests.dom\nport=2929'
+                 {'.gitreview': '[gerrit]\nhost=gerrit.test.dom\nport=2929'
                   '\nproject=space/g1\ndefaultbranch=br1\n'})
         )
         self.assertEqual(len(logs), 0)

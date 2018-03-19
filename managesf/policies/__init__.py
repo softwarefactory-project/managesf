@@ -22,7 +22,6 @@ from managesf.policies import base
 from managesf.policies import backup
 from managesf.policies import config
 from managesf.policies import hooks
-from managesf.policies import htpasswd
 # from managesf.policies import introspection
 from managesf.policies import localuser
 from managesf.policies import pages
@@ -42,7 +41,6 @@ def list_rules():
         pages.list_rules(),
         localuser.list_rules(),
         services_users.list_rules(),
-        htpasswd.list_rules(),
         hooks.list_rules(),
         config.list_rules(),
         resources.list_rules(),

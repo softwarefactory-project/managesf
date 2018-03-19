@@ -1,0 +1,3 @@
+---
+upgrade:
+  - HTTP password controller is removed, this is now managed by Cauth API-KEY.
