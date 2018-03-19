@@ -23,7 +23,7 @@ from pecan.rest import RestController
 from pecan import request, response
 from stevedore import driver
 
-from managesf.controllers import backup, localuser, introspection, htp
+from managesf.controllers import backup, localuser, introspection
 from managesf.controllers import SFuser
 from managesf.services import base
 from managesf.services import exceptions
@@ -443,52 +443,6 @@ class ServicesUsersController(RestController):
         except Exception as e:
             return report_unhandled_error(e)
         response.status = 204
-
-
-class HtpasswdController(RestController):
-    def __init__(self):
-        self.htp = htp.Htpasswd(conf)
-
-    @expose('json')
-    def put(self):
-        _policy = 'managesf.htpasswd:create_update'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            password = self.htp.set_api_password(request.remote_user)
-        except IOError:
-            abort(406)
-        response.status = 201
-        return {"password": password}
-
-    @expose('json')
-    def get(self):
-        _policy = 'managesf.htpasswd:get'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        response.status = 404
-        try:
-            if self.htp.user_has_api_password(request.remote_user):
-                response.status = 204
-        except IOError:
-            abort(406)
-
-    @expose('json')
-    def delete(self):
-        _policy = 'managesf.htpasswd:delete'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            self.htp.delete(request.remote_user)
-            response.status = 204
-        except IOError:
-            abort(406)
 
 
 class HooksController(RestController):
@@ -1086,7 +1040,6 @@ class V2Controller(object):
     backup = BackupController()
     user = LocalUserController()
     bind = LocalUserBindController()
-    htpasswd = HtpasswdController()
     about = introspection.IntrospectionController()
     services_users = ServicesUsersController()
     hooks = HooksController()
@@ -1120,7 +1073,6 @@ class RootController(object):
         self.backup = BackupController()
         self.user = LocalUserController()
         self.bind = LocalUserBindController()
-        self.htpasswd = HtpasswdController()
         self.about = introspection.IntrospectionController()
         self.services_users = ServicesUsersController()
         self.hooks = HooksController()

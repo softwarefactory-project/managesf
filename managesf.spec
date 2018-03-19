@@ -27,8 +27,6 @@ BuildRequires:  python-sqlalchemy
 BuildRequires:  python2-urllib3
 BuildRequires:  python-paramiko
 BuildRequires:  python-crypto
-BuildRequires:  python2-htpasswd
-BuildRequires:  python2-redmine
 BuildRequires:  libyaml-devel
 BuildRequires:  yaml-cpp
 BuildRequires:  PyYAML
@@ -41,6 +39,7 @@ BuildRequires:  GitPython
 BuildRequires:  python-requests
 BuildRequires:  python-jenkins
 BuildRequires:  python-sphinx_rtd_theme
+BuildRequires:  python-future
 
 Requires:       python2-pysflib
 Requires:       python-pecan
@@ -55,8 +54,6 @@ Requires:       python-sqlalchemy
 Requires:       python2-urllib3
 Requires:       python-paramiko
 Requires:       python-crypto
-Requires:       python2-htpasswd
-Requires:       python2-redmine
 Requires:       yaml-cpp
 Requires:       PyYAML
 Requires:       python2-stevedore
@@ -68,6 +65,7 @@ Requires:       GitPython
 Requires:       python-requests
 Requires:       python-jenkins
 Requires:       python-gunicorn
+Requires:       python-future
 
 %description
 python API used to centralize management of services deployed under Software Factory
