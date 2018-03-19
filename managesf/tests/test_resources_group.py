@@ -25,13 +25,7 @@ from managesf.model.yamlbkd.resources.group import GroupOps
 class GroupOpsTest(TestCase):
     @classmethod
     def setupClass(cls):
-        cls.auth_patch = patch('managesf.services.gerrit.get_cookie')
-        cls.auth_patch.start()
         cls.conf = dummy_conf()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.auth_patch.stop()
 
     def test_create(self):
         o = GroupOps(self.conf, None)

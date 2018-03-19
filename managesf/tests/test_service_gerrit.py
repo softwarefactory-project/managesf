@@ -27,12 +27,6 @@ class BaseSFGerritService(TestCase):
     def setupClass(cls):
         cls.conf = dummy_conf()
         cls.gerrit = gerrit.SoftwareFactoryGerrit(cls.conf)
-        cls.auth_patch = patch('managesf.services.gerrit.get_cookie')
-        cls.auth_patch.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.auth_patch.stop()
 
 
 class TestSFGerritUserManager(BaseSFGerritService):
