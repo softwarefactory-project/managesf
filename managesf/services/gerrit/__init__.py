@@ -64,6 +64,13 @@ class SoftwareFactoryGerrit(Gerrit):
         self.group = group.SFGerritGroupManager(self)
 
     def get_client(self, cookie=None):
+        try:
+            return GerritUtils(
+                self.conf['url'],
+                auth=HTTPBasicAuth("admin", self.conf['password']))
+        except KeyError:
+            # Remove this except and the code after the switch to API-KEY
+            pass
         if not cookie:
             try:
                 basic = HTTPBasicAuth(self.conf['admin_user'],
