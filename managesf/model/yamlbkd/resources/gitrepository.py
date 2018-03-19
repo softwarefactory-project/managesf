@@ -199,7 +199,7 @@ defaultbranch=%(branch)s
 
         paths = {}
         content = gitreview_template % (
-            {'gerrit-host': self.conf.gerrit['top_domain'],
+            {'gerrit-host': self.conf.gerrit['host'],
              'gerrit-host-port': self.conf.gerrit['ssh_port'],
              'name': name,
              'branch': branch})

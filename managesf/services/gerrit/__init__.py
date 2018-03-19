@@ -16,10 +16,8 @@
 
 
 import logging
-import time
 
 from pysflib.sfgerrit import GerritUtils
-from pysflib.sfauth import get_cookie
 from requests.auth import HTTPBasicAuth
 
 from managesf.services import base
@@ -64,41 +62,6 @@ class SoftwareFactoryGerrit(Gerrit):
         self.group = group.SFGerritGroupManager(self)
 
     def get_client(self, cookie=None):
-        try:
-            return GerritUtils(
-                self.conf['url'],
-                auth=HTTPBasicAuth("admin", self.conf['password']))
-        except KeyError:
-            # Remove this except and the code after the switch to API-KEY
-            pass
-        if not cookie:
-            try:
-                basic = HTTPBasicAuth(self.conf['admin_user'],
-                                      'password')
-                msg = '[%s] using direct basic auth to connect to gerrit'
-                logger.debug(msg % self.service_name)
-                if self.conf['url'].endswith("/r/"):
-                    url = self.conf['url']
-                else:
-                    # 2.5.0 url format, using gateway_url
-                    url = self.conf['url'] + 'api'
-                g = GerritUtils(url, auth=basic)
-                return g
-            except Exception as e:
-                # if we can't get the admin credentials from the config,
-                # let's not panic
-                msg = ('[%s] simple auth raised error: %s, '
-                       'going with SF cauth-based authentication')
-                logger.debug(msg % (self.service_name, e))
-            # Use an admin cookie
-            if int(time.time()) - globals()['ADMIN_COOKIE_DATE'] > \
-                    globals()['COOKIE_VALIDITY']:
-                cookie = get_cookie(self._full_conf.auth['host'],
-                                    self._full_conf.admin['name'],
-                                    self._full_conf.admin['http_password'])
-                globals()['ADMIN_COOKIE'] = cookie
-                globals()['ADMIN_COOKIE_DATE'] = int(time.time())
-            else:
-                cookie = globals()['ADMIN_COOKIE']
-        return GerritUtils(self.conf['url'],
-                           auth_cookie=cookie)
+        return GerritUtils(
+            self.conf['url'],
+            auth=HTTPBasicAuth("admin", self.conf['password']))

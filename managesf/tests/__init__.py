@@ -28,10 +28,10 @@ class dummy_conf():
                 'SFNodepool',
                 ]
     gerrit = {
+        'url': 'http://gerrit.tests.dom',
+        'password': 'admin_password',
         'user': 'gerrit',
         'host': 'gerrit.test.dom',
-        'url': 'http://gerrit.tests.dom',
-        'top_domain': 'tests.dom',
         'ssh_port': 2929,
         'sshkey_priv_path': tempfile.mkstemp()[1],
         'replication_config_path': tempfile.mkstemp()[1],
@@ -111,9 +111,6 @@ class dummy_conf():
             'simple': {
                 'format': ('%(asctime)s %(levelname)-5.5s [%(name)s]'
                            '[%(threadName)s] %(message)s')}}
-    }
-    htpasswd = {
-        'filename': tempfile.mkstemp()[1]
     }
     policy = {}
     DummyService = {

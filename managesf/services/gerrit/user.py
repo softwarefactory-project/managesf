@@ -47,7 +47,11 @@ class SFGerritUserManager(base.UserManager):
     def _add_sshkeys(self, username, keys):
         """add keys for username."""
         g_client = self.plugin.get_client()
+        existing_keys = g_client.get_pubkeys(username)
         for key in keys:
+            if [True for existing_key in existing_keys
+                    if existing_key["encoded_key"].split()[0] in key]:
+                continue
             msg = u"[%s] Adding key %s for user %s"
             logger.debug(msg % (self.plugin.service_name,
                                 key.get('key'),
