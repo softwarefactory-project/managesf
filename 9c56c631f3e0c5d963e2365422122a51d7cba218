@@ -22,6 +22,24 @@
       "revId": "9c56c631f3e0c5d963e2365422122a51d7cba218",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3cc151_0f521114",
+        "filename": "managesf/model/yamlbkd/resources/gitrepository.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-03-21T11:21:42Z",
+      "side": 1,
+      "message": "what do you mean, managesf.sftests.com should resolve, that\u0027s the hostname of gerrit. why is there a top domain setting here?",
+      "parentUuid": "ba3cc151_f4178052",
+      "revId": "9c56c631f3e0c5d963e2365422122a51d7cba218",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
