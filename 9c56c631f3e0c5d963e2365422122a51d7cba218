@@ -40,6 +40,24 @@
       "revId": "9c56c631f3e0c5d963e2365422122a51d7cba218",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3cc151_2f4b555b",
+        "filename": "managesf/model/yamlbkd/resources/gitrepository.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-03-21T11:34:42Z",
+      "side": 1,
+      "message": "ok it will resolve but it will generate a managesf commit on existing repo when this repo resource will need an update (for instance when an acl is updated or a description update). I prefer we keep the fdqn here.",
+      "parentUuid": "ba3cc151_0f521114",
+      "revId": "9c56c631f3e0c5d963e2365422122a51d7cba218",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
