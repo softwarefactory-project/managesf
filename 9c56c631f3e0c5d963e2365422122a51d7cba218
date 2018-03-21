@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba3cc151_f4178052",
+        "filename": "managesf/model/yamlbkd/resources/gitrepository.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-03-21T10:48:29Z",
+      "side": 1,
+      "message": "host is {{ gerrit_host }} that is on my sftests: managesf.sftests.com so that\u0027s won\u0027t resolv for git review user. We must keep the fqdn.",
+      "range": {
+        "startLine": 202,
+        "startChar": 45,
+        "endLine": 202,
+        "endChar": 51
+      },
+      "revId": "9c56c631f3e0c5d963e2365422122a51d7cba218",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}

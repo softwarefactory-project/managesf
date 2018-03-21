@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba3cc151_d416fc54",
+        "filename": "requirements.txt",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-03-21T10:48:29Z",
+      "side": 0,
+      "message": "could be removed from the spec file too.",
+      "revId": "007eb6b373fd498c4c62942018f724093cadd7f6",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
