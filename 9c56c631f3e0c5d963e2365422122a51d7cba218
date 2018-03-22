@@ -58,6 +58,24 @@
       "revId": "9c56c631f3e0c5d963e2365422122a51d7cba218",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3cc151_af11a55f",
+        "filename": "managesf/model/yamlbkd/resources/gitrepository.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-03-22T02:31:40Z",
+      "side": 1,
+      "message": "hum, that doesn\u0027t make sense to me. If it\u0027s the fqdn, then let\u0027s call the variable fqdn. And if it\u0027s actually the domain, then let\u0027s make the template use a \"domain\" variable instead of \"gerrit-host\".\n\nAnyway, this is not needed by this patch, i\u0027ll revert that change.",
+      "parentUuid": "ba3cc151_2f4b555b",
+      "revId": "9c56c631f3e0c5d963e2365422122a51d7cba218",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
