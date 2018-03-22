@@ -34,6 +34,24 @@
       "revId": "007eb6b373fd498c4c62942018f724093cadd7f6",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba3cc151_14654444",
+        "filename": "managesf/services/gerrit/__init__.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-03-22T02:28:12Z",
+      "side": 1,
+      "message": "Turns out the conf object didn\u0027t played well with the in check.\nPlease have a look at the next managesf patch, the get_client becomes a one-liner.",
+      "parentUuid": "ba3cc151_d4027c6f",
+      "revId": "007eb6b373fd498c4c62942018f724093cadd7f6",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
