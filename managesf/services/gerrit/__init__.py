@@ -25,6 +25,7 @@ from managesf.services.gerrit import project
 from managesf.services.gerrit import user
 from managesf.services.gerrit import review
 from managesf.services.gerrit import group
+from managesf.services.gerrit.utils import GerritClient
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,7 @@ class SoftwareFactoryGerrit(Gerrit):
         self.group = group.SFGerritGroupManager(self)
 
     def get_client(self, cookie=None):
-        return GerritUtils(
-            self.conf['url'],
-            auth=HTTPBasicAuth("admin", self.conf['password']))
+        auth = HTTPBasicAuth("admin", self.conf['password'])
+        if self.conf.get("new_gerrit_client"):
+            return GerritClient(self.conf['url'], auth)
+        return GerritUtils(self.conf['url'], auth)
