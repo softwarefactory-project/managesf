@@ -20,16 +20,12 @@ import logging
 import sqlalchemy
 
 from managesf.services import base
-from managesf.services import exceptions as exc
 from managesf.services.gerrit import utils
-
-
-logger = logging.getLogger(__name__)
 
 
 class SFGerritUserManager(base.UserManager):
 
-    _immutable_fields_ = ['username', ]
+    log = logging.getLogger("managesf.GerritUserManager")
 
     def __init__(self, plugin):
         super(SFGerritUserManager, self).__init__(plugin)
@@ -44,109 +40,147 @@ class SFGerritUserManager(base.UserManager):
         Session = sqlalchemy.orm.sessionmaker(bind=engine)
         self.session = Session()
 
-    def _add_sshkeys(self, username, keys):
-        """add keys for username."""
-        g_client = self.plugin.get_client()
-        existing_keys = g_client.get_pubkeys(username)
-        for key in keys:
-            if [True for existing_key in existing_keys
-                    if existing_key["encoded_key"].split()[0] in key]:
-                continue
-            msg = u"[%s] Adding key %s for user %s"
-            logger.debug(msg % (self.plugin.service_name,
-                                key.get('key'),
-                                username))
-            try:
-                g_client.add_pubkey(key.get('key'), user=username)
-            except Exception as e:
-                logger.debug('Could not add key: %s' % e)
-
     def _add_account_as_external(self, account_id, username):
+        """Inject username as external_ids.
+           This will be replaced by All-Users ref update with gerrit-2.15
+        """
         sql = (u"INSERT IGNORE INTO account_external_ids VALUES"
                u"(%d, NULL, NULL, 'gerrit:%s');" %
                (account_id, username))
         try:
             self.session.execute(sql)
             self.session.commit()
-            return True
-        except Exception as e:
-            msg = u"[%s] Could not insert user %s in account_external_ids: %s"
-            logger.debug(msg % (self.plugin.service_name,
-                                username, unicode(e)))
-            return False
+        except Exception:
+            self.log.exception("Couldn't insert user %s external_ids %s",
+                               account_id, username)
+            raise
 
-    def create(self, username, email, full_name, ssh_keys=None, **kwargs):
-        _user = {"name": unicode(full_name), "email": str(email)}
-        g_client = self.plugin.get_client()
-        if username is None:
-            if "cauth_id" in kwargs and int(kwargs["cauth_id"]) == 1:
-                # Special case for admin user already created
-                msg = u"[%s] requested creation of admin, skipping"
-                logger.debug(msg % self.plugin.service_name)
-                return 1
-            msg = u"[%s] can't create user %s without username (%s)"
-            logger.error(msg % (self.plugin.service_name, email,
-                                str(kwargs)))
-            raise Exception(msg % (self.plugin.service_name, email,
-                                   str(kwargs)))
-        user = g_client.create_account(username, _user)
+    def create(self, username, email, full_name, ssh_keys, cauth_id):
+        self.log.debug(u"Creating account %s", username)
+        # Special case for the admin user
+        if cauth_id == 1:
+            self.log.warning("Attempt to create the admin user. Skip.")
+            return 1
+        ssh_keys_valid = []
+        # Need to clean ssh_keys as they start with incorrect data by default:
+        #   e.g.: [{u'key': u'None'}]  or [u'key']
+        if ssh_keys:
+            for key in ssh_keys:
+                if isinstance(key, unicode) and key != u"None":
+                    ssh_keys_valid.append(key)
+                elif key.get("key") and key.get('key') != u"None":
+                    ssh_keys_valid.append(key.get("key"))
+        client = self.plugin.get_client()
+        data = {"name": unicode(full_name), "email": email}
+        if ssh_keys_valid:
+            data["ssh_key"] = ssh_keys_valid[0]
+        try:
+            user = client.create_account(username, data)
+        except utils.GerritClientError as e:
+            if e.status_code == 409:
+                self.log.warning("Account %s already exists", username)
+                # Convert create to update parameters...
+                for o, n in (("name", "full_name"), ("ssh_key", "ssh_keys")):
+                    data[n] = data.get(o)
+                    try:
+                        del data[o]
+                    except Exception:
+                        pass
+                return self.update(id=username, **data).get('_account_id')
+            raise
+
         try:
             account_id = user.get('_account_id')
-        except Exception as e:
-            account_id = None
-            msg = u"[%s] could not create user %s, service returned: %s"
-            logger.error(msg % (self.plugin.service_name,
-                                username, e))
-            raise Exception(msg % (self.plugin.service_name,
-                                   username, e))
+        except Exception:
+            self.log.exception(u"Could not create user %s", user)
+            raise
 
-        fetch_ssh_keys = False
-        if account_id:
-            fetch_ssh_keys = self._add_account_as_external(account_id,
-                                                           username)
-        if ssh_keys and fetch_ssh_keys:
-            self._add_sshkeys(username, ssh_keys)
-        logger.debug(u'[%s] user %s created' % (self.plugin.service_name,
-                                                username))
+        self._add_account_as_external(account_id, username)
+        # Add extra ssh keys
+        if len(ssh_keys_valid) > 1:
+            for key in ssh_keys_valid[1:]:
+                client.add_pubkey(key, username)
+        self.log.info(u'User %s created', username)
         return account_id
 
-    def get(self, email=None, username=None):
-        if not (bool(email) != bool(username)):
-            raise TypeError('mail OR username needed')
-        if username:
-            query = username
-        else:
-            query = email
-        g_client = self.plugin.get_client()
-        try:
-            account = g_client.get_account(query)
-            if isinstance(account, dict):
-                return account.get('_account_id')
-            else:
-                return account
-        except Exception:
+    def get(self, username):
+        self.log.debug(u"Getting account %s", username)
+        if not self.plugin.conf.get("new_gerrit_client"):
+            g_client = self.plugin.get_client()
+            try:
+                account = g_client.get_account(username)
+                if isinstance(account, dict):
+                    return account.get('_account_id')
+                else:
+                    return account
+            except Exception:
+                pass
             return None
-        return None
+        try:
+            client = self.plugin.get_client()
+            return client.get_account(username).get('_account_id')
+        except utils.NotFound:
+            return None
 
-    def update(self, uid, **kwargs):
-        f = self.check_forbidden_fields(**kwargs)
-        if f:
-            msg = u'[%s] fields %s cannot be updated'
-            raise exc.UnavailableActionError(msg % (self.plugin.service_name,
-                                                    ', '.join(f)))
-        g_client = self.plugin.get_client()
-        return g_client.update_account(id=uid, no_email_confirmation=True,
-                                       **kwargs)
+    def update(self, uid, username=None, full_name=None, email=None,
+               ssh_keys=None, external_id=None):
+        self.log.debug(u"Updating account %s", uid)
+        if not self.plugin.conf.get("new_gerrit_client"):
+            g_client = self.plugin.get_client()
+            return g_client.update_account(
+                id=uid, no_email_confirmation=True, username=username,
+                full_name=full_name, email=email, ssh_keys=ssh_keys,
+                external_id=external_id)
+        client = self.plugin.get_client()
+        user = client.get_account(uid, details=True)
+        if full_name is not None and user.get("name") != full_name:
+            client.update_account_name(uid, full_name)
+        if email is not None and user.get("email") != email:
+            if user.get("email"):
+                client.delete_account_email(uid, user["email"])
+            if email in user.get("secondary_emails", []):
+                client.update_account_preferred_email(uid, email)
+            else:
+                client.add_account_email(uid, email)
+        if ssh_keys is not None and ssh_keys != u'None':
+            if not isinstance(ssh_keys, list):
+                ssh_keys = [{"key": ssh_keys}]
+            keys = []
+            for key in ssh_keys:
+                if key.get('key') and key.get('key') != u'None':
+                    keys.append(key['key'])
+            if keys:
+                existing_keys = client.get_pubkeys(uid)
+                for key in keys:
+                    if [True for existing_key in existing_keys
+                            if existing_key["encoded_key"].split()[0] in key]:
+                        continue
+                    client.add_pubkey(key, uid)
+        return user
 
-    def delete(self, email=None, username=None):
-        if not (bool(email) != bool(username)):
-            raise TypeError('mail OR username needed')
-        account_id = self.get(email, username)
-        if not account_id:
-            msg = u'[%s] %s not found, skip deletion'
-            logger.debug(msg % (self.plugin.service_name,
-                                email or username))
+    def delete(self, username):
+        self.log.debug("Deleting account %s", username)
+        client = self.plugin.get_client()
+        account_id = None
+        try:
+            account = client.get_account(username)
+            if account:
+                account_id = account.get('_account_id')
+        except utils.NotFound:
+            pass
+        except Exception:
+            self.log.exception(u"Account %s not found, skip deletion",
+                               username)
             return
+        if self.plugin.conf.get("new_gerrit_client"):
+            self.log.warning(
+                "Couldn't delete the user, need manual intervention")
+            return
+        if not account_id:
+            self.log.error(
+                u"Account %s not found, skip deletion", username)
+            return
+
         # remove project memberships
         sql = ("DELETE FROM account_group_members "
                "WHERE account_id=%s;\n" % account_id)
@@ -159,10 +193,8 @@ class SFGerritUserManager(base.UserManager):
         try:
             self.session.execute(sql)
             self.session.commit()
-        except Exception as e:
-            msg = u"[%s] Could not delete user %s in base: %s"
-            logger.debug(msg % (self.plugin.service_name,
-                                email or username, unicode(e)))
+        except Exception:
+            self.log.exception(u"Could not delete user %s", username)
         # flush gerrit caches
         for cache in ('accounts', 'accounts_byemail', 'accounts_byname',
                       'groups_members'):
@@ -172,6 +204,4 @@ class SFGerritUserManager(base.UserManager):
                     self.plugin._full_conf.admin['name'],
                     self.plugin.conf['host'],
                     cache))
-        logger.debug(u'[%s] %s (id %s) deleted' % (self.plugin.service_name,
-                                                   email or username,
-                                                   account_id))
+        self.log.info(u'Account %s (id %s) deleted', username, account_id)

@@ -21,6 +21,7 @@ import logging
 from requests.exceptions import HTTPError
 
 from managesf.services.gerrit import SoftwareFactoryGerrit
+from managesf.services.gerrit import utils
 from managesf.model.yamlbkd.resource import BaseResource
 
 # ## DEBUG statements to ease run that standalone ###
@@ -55,13 +56,13 @@ class GroupOps(object):
         self.client = gerrit.get_client()
 
     def group_update_description(self, name, description):
-        data = json.dumps({
-            "description": description,
-        })
+        data = {"description": description}
+        if self.conf.get("gerrit", {}).get("new_gerrit_client"):
+            return self.client.put("groups/%s/description" % name, data)
         try:
             name = urllib.quote_plus(name)
             self.client.g.put('groups/%s/description' % name,
-                              data=data)
+                              data=json.dumps(data))
         except HTTPError as e:
             return self.client._manage_errors(e)
 
@@ -129,11 +130,12 @@ class GroupOps(object):
                 logs.append("Group create [del member: %s]: "
                             "err API returned HTTP 404/409" % (
                                 self.conf.admin['email']))
+        except utils.NotFound:
+            pass
         except Exception, e:
             logger.exception("delete_group_member failed %s" % e)
             logs.append("Group create [del member: admin]: "
-                        "err API returned %s" % (
-                            self.conf.admin['email'], e))
+                        "err API returned %s" % e)
 
         if members:
             for member in members:
