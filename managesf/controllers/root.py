@@ -353,8 +353,7 @@ class ServicesUsersController(RestController):
     def _create_user_in_services(self, user_id, infos):
         for service in SF_SERVICES:
             try:
-                s_id = (service.user.get(username=infos.get('username')) or
-                        service.user.get(username=infos.get('email')))
+                s_id = service.user.get(username=infos.get('username'))
                 if s_id:
                     msg = u'[%s] user %s exists, skipping creation'
                     logger.debug(msg % (service.service_name,
@@ -434,7 +433,7 @@ class ServicesUsersController(RestController):
         try:
             for service in SF_SERVICES:
                 try:
-                    service.user.delete(email=email, username=username)
+                    service.user.delete(username=username)
                     sfmanager.user.mapping.delete(d_id,
                                                   service.service_name)
                 except exceptions.UnavailableActionError:

@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-#
-# Copyright (C) 2015 Red Hat <licensing@enovance.com>
+# Copyright (C) 2018 Red Hat
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -23,12 +21,20 @@ import stat
 import logging
 import tempfile
 import subprocess
+import json
+import urllib
+
+import requests
 
 
 logger = logging.getLogger(__name__)
 
 
 class LocalProcessError(Exception):
+    pass
+
+
+class NotFound(Exception):
     pass
 
 
@@ -279,3 +285,205 @@ class GerritRepo(object):
         self._exec(cmd)
         cmd = 'git review'
         self._exec(cmd)
+
+
+class GerritClientError(Exception):
+    def __init__(self, resp, action, url):
+        self.status_code = resp.status_code
+        self.resp = resp
+        self.action = action
+        self.url = url
+
+    def __str__(self):
+        return "%s %s -> %d: %s" % (
+            self.action, self.url, self.status_code, self.resp.text)
+
+
+class GerritClient:
+    log = logging.getLogger("managesf.GerritClient")
+
+    def __init__(self, url, auth):
+        if url.endswith("/r/"):
+            url = url + "a/"
+        self.url = url
+        self.auth = auth
+
+    # Raw REST API
+    def decode(self, resp):
+        if not resp.text:
+            return None
+        try:
+            return json.loads(resp.text[4:])
+        except ValueError:
+            self.log.error("Couldn't decode: [%s]" % resp.text)
+            return resp.text
+
+    def request(self, method, url, json_data=None, raw_data=None):
+        resp = requests.request(
+            method, url, json=json_data, data=raw_data, auth=self.auth)
+        self.log.debug("%6s | %s (%s) -> %s" % (method, url, json_data, resp))
+        if resp.status_code == 404:
+            raise NotFound()
+        if not resp.ok:
+            raise GerritClientError(resp, method, url)
+        return resp
+
+    def get(self, url):
+        resp = self.request("get", os.path.join(self.url, url))
+        return self.decode(resp)
+
+    def post(self, url, json_data=None, raw_data=None):
+        resp = self.request(
+            "post", os.path.join(self.url, url), json_data, raw_data)
+        return self.decode(resp)
+
+    def delete(self, url, json_data=None):
+        resp = self.request("delete", os.path.join(self.url, url), json_data)
+        return self.decode(resp)
+
+    def put(self, url, json_data):
+        resp = self.request("put", os.path.join(self.url, url), json_data)
+        return self.decode(resp)
+
+    # Changes API
+    def get_open_changes(self):
+        return self.get("changes/")
+
+    # Accounts API
+    def create_account(self, user, data):
+        self.log.info(u"%s: creating account with %s", user, data)
+        user = urllib.quote_plus(user)
+        return self.put("accounts/%s" % user, data)
+
+    def get_account(self, user, details=False):
+        user = urllib.quote_plus(user)
+        if details:
+            user = user + "/detail"
+        return self.get('accounts/%s' % user)
+
+    def update_account_name(self, user, full_name):
+        self.log.debug(u"%s: updating name to %s", user, full_name)
+        user = urllib.quote_plus(user)
+        self.put("accounts/%s/name" % user, {"name": full_name})
+
+    def delete_account_email(self, user, email):
+        self.log.info(u"%s: deleting email %s", user, email)
+        user = urllib.quote_plus(user)
+        email = urllib.quote_plus(email)
+        self.delete("accounts/%s/emails/%s" % (user, email))
+
+    def update_account_preferred_email(self, user, email):
+        self.log.info(u"%s: setting preffered email %s", user, email)
+        user = urllib.quote_plus(user)
+        email = urllib.quote_plus(email)
+        self.put("accounts/%s/emails/%s/preferred" % (user, email))
+
+    def add_account_email(self, user, email):
+        self.log.info(u"%s: adding email %s", user, email)
+        user = urllib.quote_plus(user)
+        email = urllib.quote_plus(email)
+        self.put("accounts/%s/emails/%s" % (user, email),
+                 {"preferred": True, "no_confirmation": True})
+
+    def is_account_active(self, user):
+        try:
+            user = urllib.quote_plus(user)
+            if self.get("accounts/%s/active" % user) == "ok":
+                return True
+        except NotFound:
+            pass
+        return False
+
+    # Pub keys
+    def get_pubkeys(self, user):
+        user = urllib.quote_plus(user)
+        return self.get("accounts/%s/sshkeys" % user)
+
+    def del_pubkey(self, index, user='self'):
+        self.log.debug("%s: removing pubkey %s", user, index)
+        user = urllib.quote_plus(user)
+        self.delete('accounts/%s/sshkeys/%s' % (user, index))
+
+    def add_pubkey(self, pubkey, user='self'):
+        self.log.debug("%s: adding pubkey %s", user, pubkey)
+        user = urllib.quote_plus(user)
+        response = self.post('accounts/%s/sshkeys' % user, raw_data=pubkey)
+        return response['seq']
+
+    # Groups
+    def get_user_groups(self, user):
+        user = urllib.quote_plus(user)
+        try:
+            return self.get("accounts/%s/groups/" % user)
+        except NotFound:
+            return []
+
+    def get_groups(self):
+        return self.get("groups/")
+
+    def get_group_id(self, name):
+        try:
+            name = urllib.quote_plus(name)
+            gid = self.get('groups/%s/detail' % name)['id']
+            return urllib.unquote_plus(gid)
+        except NotFound:
+            return False
+        except Exception:
+            self.log.exception("Couldn't get group id %s" % name)
+            raise
+
+    def get_group_members(self, name):
+        try:
+            name = urllib.quote_plus(name)
+            return self.get('groups/%s/members/' % name)
+        except Exception:
+            self.log.exception("Couldn't get group members %s" % name)
+            raise
+
+    def create_group(self, name, description):
+        self.log.info(u"%s: creating group (%s)", name, description)
+        name = urllib.quote_plus(name)
+        return self.put("groups/%s" % name, {"description": description})
+
+    def delete_group_member(self, name, member):
+        self.log.info(u"%s: deleting group member %s", name, member)
+        name = urllib.quote_plus(name)
+        member = urllib.quote_plus(member)
+        return self.delete("groups/%s/members/%s" % (name, member))
+
+    def add_group_member(self, members, name):
+        self.log.info(u"%s: adding group member %s", name, member)
+        if not isinstance(members, list):
+            members = [members]
+        name = urllib.quote_plus(name)
+        return self.post("groups/%s/members" % name, {"members": members})
+
+    # Projects
+    def get_projects(self):
+        return self.get("projects/")
+
+    def create_project(self, name, description, owners):
+        self.log.info(u"%s: creating project (%s)", name, description)
+        name = urllib.quote_plus(name)
+        return self.put("projects/%s" % name, {"description": description,
+                                               "owners": owners,
+                                               "create_empty_commit": True})
+
+    def delete_project(self, name, force=False):
+        self.log.info(u"%s: deleting project", name)
+        data = {}
+        if force:
+            data = {'force': True}
+        name = urllib.quote_plus(name)
+        return self.delete("projects/%s" % name, data)
+
+    def project_exists(self, name):
+        try:
+            name = urllib.quote_plus(name)
+            self.get("projects/%s" % name)
+            return True
+        except NotFound:
+            return False
+        except Exception:
+            self.log.exception("Couldn't check project %s" % name)
+            raise

@@ -276,6 +276,8 @@ global:Registered-Users\tRegistered Users"""
         endpoint = "projects/%s/HEAD" % urllib.quote_plus(name)
         headers = {'Content-Type': 'application/json'}
         data = json.dumps({"ref": "refs/heads/%s" % branch})
+        if self.conf.get("new_gerrit_client"):
+            return self.client.put(endpoint, data)
         try:
             self.client.g.put(endpoint, headers=headers, data=data)
         except HTTPError as e:
