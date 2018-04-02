@@ -37,59 +37,49 @@ class TestSFGerritUserManager(BaseSFGerritService):
                  "avatars": [{"url": "meh",
                               "height": 26}]}
 
+    def test_update(self):
+        # TODO: implement it
+        pass
+
     def test_create(self):
         with patch.object(self.gerrit.user,
                           '_add_account_as_external') as add_external, \
-                    patch.object(self.gerrit.user,
-                                 '_add_sshkeys') as add_sshkeys, \
                     patch('pysflib.sfgerrit.GerritUtils.'
                           'create_account') as create:
             create.return_value = self.user_data
             self.gerrit.user.create('jojo', 'jojo@starplatinum.dom',
-                                    'Jotaro Kujoh')
+                                    'Jotaro Kujoh', None, 10)
             _user = {'name': unicode('Jotaro Kujoh'),
                      'email': unicode('jojo@starplatinum.dom')}
-            create.assert_called_with('jojo',
-                                      _user)
+            create.assert_called_with('jojo', _user)
             add_external.assert_called_with(5, 'jojo')
+            create.reset_mock()
+            _user["ssh_key"] = 'bop'
             self.gerrit.user.create('jojo', 'jojo@starplatinum.dom',
-                                    'Jotaro Kujoh',
-                                    ssh_keys=[{'key': 'bop'}])
-            add_sshkeys.assert_called_with('jojo',
-                                           [{'key': 'bop'}])
+                                    'Jotaro Kujoh', [{'key': 'bop'}], 10)
+            create.assert_called_with('jojo', _user)
         # Test fringe case where we try to create the admin user
         self.assertEqual(1,
                          self.gerrit.user.create(None, 'dio@wryyyyy.org',
-                                                 'Dio Brando',
-                                                 cauth_id=1))
+                                                 'Dio Brando', None, 1))
+        # TODO: Add case where the user exists and update is called by create
 
     def test_get(self):
-        self.assertRaises(TypeError,
-                          self.gerrit.user.get)
-        self.assertRaises(TypeError,
-                          self.gerrit.user.get,
-                          'mail@address.com', 'extra_user_param')
         with patch('pysflib.sfgerrit.GerritUtils.get_account') as get:
             get.return_value = self.user_data
-            u = self.gerrit.user.get(email='jojo@starplatinum.dom')
-            get.assert_called_with('jojo@starplatinum.dom')
-            self.assertEqual(5,
-                             u)
+            u = self.gerrit.user.get('jojo')
+            get.assert_called_with('jojo')
+            self.assertEqual(5, u)
 
     def test_delete(self):
-        self.assertRaises(TypeError,
-                          self.gerrit.user.delete)
-        self.assertRaises(TypeError,
-                          self.gerrit.user.delete,
-                          'mail@address.com', 'username')
-        with patch.object(self.gerrit.user, 'get') as get, \
+        with patch('pysflib.sfgerrit.GerritUtils.get_account') as get, \
                 patch.object(self.gerrit.user, 'session') as session, \
                 patch('managesf.services.gerrit.utils._exec') as ssh:
-            get.return_value = self.user_data['_account_id']
+            get.return_value = self.user_data
             sql = """DELETE FROM account_group_members WHERE account_id=5;
 DELETE FROM accounts WHERE account_id=5;
 DELETE FROM account_external_ids WHERE account_id=5;"""
-            self.gerrit.user.delete(email='jojo@starplatinum.dom')
+            self.gerrit.user.delete('jojo')
             session.execute.assert_called_with(sql)
             base = "ssh -i %s -p 29418 %s@%s " \
                 "gerrit flush-caches --cache %%s" % (
@@ -102,7 +92,7 @@ DELETE FROM account_external_ids WHERE account_id=5;"""
             ssh.assert_has_calls(calls)
             session.reset_mock()
             ssh.reset_mock()
-            self.gerrit.user.delete(username='jojo@starplatinum.dom')
+            self.gerrit.user.delete('jojo')
             session.execute.assert_called_with(sql)
             calls = [call(base % c)
                      for c in ('accounts', 'accounts_byemail',
