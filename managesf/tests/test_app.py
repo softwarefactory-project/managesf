@@ -380,7 +380,7 @@ class TestManageSFServicesUserController(FunctionalTest):
             # TODO(mhu) test if mapping is set correctly
         # mock at a lower level
         with patch.object(StoryboardUserManager, 'create') as s_create, \
-                patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
+                patch('pysflib.sfgerrit.GerritUtils.add_pubkey'), \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
                 patch('pysflib.sfgerrit.GerritUtils.create_account') \
@@ -416,7 +416,6 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertEqual(response.status_int, 201)
 
         with patch.object(StoryboardUserManager, 'create') as s_create, \
-                patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
                 patch('pysflib.sfgerrit.GerritUtils.create_account') \
@@ -435,7 +434,6 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertEqual(response.status_int, 201)
 
         with patch.object(StoryboardUserManager, 'create') as s_create, \
-                patch.object(g_user.SFGerritUserManager, '_add_sshkeys'), \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
                 patch('pysflib.sfgerrit.GerritUtils.create_account') \
@@ -493,39 +491,8 @@ class TestManageSFServicesUserController(FunctionalTest):
             response = self.app.delete('/services_users/?username=iggy',
                                        extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 204)
-            sb_delete.assert_called_with(username='iggy', email=None)
-            gerrit_delete.assert_called_with(username='iggy', email=None)
-
-        with patch.object(StoryboardUserManager, 'delete') as sb_delete, \
-                patch.object(g_user.SFGerritUserManager,
-                             'delete') as gerrit_delete, \
-                patch.object(StoryboardUserManager,
-                             'create') as sb_create, \
-                patch.object(g_user.SFGerritUserManager,
-                             'create') as gerrit_create, \
-                patch.object(StoryboardUserManager, 'get') as sb_get, \
-                patch.object(g_user.SFGerritUserManager,
-                             'get') as gerrit_get, \
-                patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
-            gug.return_value = []
-            sb_create.return_value = 100
-            gerrit_create.return_value = 100
-            sb_get.return_value = None
-            gerrit_get.return_value = None
-            self.app.post_json('/services_users/', infos,
-                               extra_environ=environ, status="*")
-            response = self.app.delete(
-                '/services_users/?email=iggy@stooges.dom',
-                extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 204)
-            sb_delete.assert_called_with(username=None,
-                                         email='iggy@stooges.dom')
-            gerrit_delete.assert_called_with(username=None,
-                                             email='iggy@stooges.dom')
-            # deleted from SF backend too
-            iggy = self.app.get('/services_users/?username=iggy',
-                                extra_environ=environ, status="*")
-            self.assertEqual({}, iggy.json)
+            sb_delete.assert_called_with(username='iggy')
+            gerrit_delete.assert_called_with(username='iggy')
 
     def test_all(self):
         environ = {'REMOTE_USER': 'admin'}
@@ -708,28 +675,6 @@ class TestManageSFServicesUserController(FunctionalTest):
                 '/services_users/?id=%s' % jojo_id,
                 payload, extra_environ=environ, status="*")
             self.assertEqual(401, resp.status_int)
-            # try wrong payload
-            for i in ('admin', infos_jojo['username']):
-                environ = {'REMOTE_USER': i}
-                payload = {'username': 'dio'}
-                resp = self.app.put_json('/services_users/?username=jojo',
-                                         payload,
-                                         extra_environ=environ, status="*")
-                self.assertEqual(400, resp.status_int)
-                self.assertTrue('You tried to update immutable fields' in
-                                resp.body)
-                resp = self.app.put_json(
-                    '/services_users/?email=jojo@starplatinum.dom',
-                    payload, extra_environ=environ, status="*")
-                self.assertEqual(400, resp.status_int)
-                self.assertTrue('You tried to update immutable fields' in
-                                resp.body)
-                resp = self.app.put_json(
-                    '/services_users/?id=%s' % jojo_id,
-                    payload, extra_environ=environ, status="*")
-                self.assertEqual(400, resp.status_int)
-                self.assertTrue('You tried to update immutable fields' in
-                                resp.body)
             # try empty payload
             for i in ('admin', infos_jojo['username']):
                 environ = {'REMOTE_USER': i}
