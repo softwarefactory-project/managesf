@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a43c5e1_1d49f3d0",
+        "filename": "managesf/model/yamlbkd/resources/group.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-04-04T17:25:21Z",
+      "side": 1,
+      "message": "The previous gerrit client of pysflib returned false in case of 404/409. So after the gerrit bump patch pass we absolutely need to fix all of that in resources ops.",
+      "revId": "a349f120124b5f7bdbf040b2b4c44d30b77b17f9",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a43c5e1_7d3cb72f",
+        "filename": "managesf/services/gerrit/utils.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-04-04T17:25:21Z",
+      "side": 1,
+      "message": "Yes, agree to display data only via GerritClientError and remove this low level logging in that file.",
+      "revId": "a349f120124b5f7bdbf040b2b4c44d30b77b17f9",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
