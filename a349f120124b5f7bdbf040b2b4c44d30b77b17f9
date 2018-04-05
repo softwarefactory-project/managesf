@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "5a43c5e1_9d43c36c",
+        "filename": "managesf/services/gerrit/user.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-04-05T04:43:29Z",
+      "side": 1,
+      "message": "let\u0027s not use \"%\" formatting in log statement, like that they are not evaluated if log level is skipped.",
+      "revId": "a349f120124b5f7bdbf040b2b4c44d30b77b17f9",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a43c5e1_7d3cb72f",
         "filename": "managesf/services/gerrit/utils.py",
         "patchSetId": 3
