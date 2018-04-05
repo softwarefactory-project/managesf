@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "5a43c5e1_9d6c230a",
+        "filename": "managesf/services/gerrit/user.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-04-05T04:43:35Z",
+      "side": 1,
+      "message": "This method is attempted everytime the admin logs in, or when automated api calls, so we should silent this as it will report false-alarm.",
+      "parentUuid": "5a43c5e1_3d170fef",
+      "revId": "1e020431bf5ac47a45900c1f0ac1680dd4ded35b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a43c5e1_9ddc2348",
         "filename": "managesf/services/gerrit/user.py",
         "patchSetId": 2
@@ -53,6 +71,24 @@
       "writtenOn": "2018-04-04T13:07:39Z",
       "side": 1,
       "message": "Should be first line of the method imo",
+      "revId": "1e020431bf5ac47a45900c1f0ac1680dd4ded35b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a43c5e1_bd71dfe2",
+        "filename": "managesf/services/gerrit/user.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-04-05T04:43:35Z",
+      "side": 1,
+      "message": "We should do it after the cauth_id \u003d\u003d 1 check as per my above comment.",
+      "parentUuid": "5a43c5e1_9ddc2348",
       "revId": "1e020431bf5ac47a45900c1f0ac1680dd4ded35b",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
@@ -76,6 +112,24 @@
     },
     {
       "key": {
+        "uuid": "5a43c5e1_5d777bd4",
+        "filename": "managesf/services/gerrit/user.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-04-05T04:43:35Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "5a43c5e1_1d1a5318",
+      "revId": "1e020431bf5ac47a45900c1f0ac1680dd4ded35b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a43c5e1_fdd76721",
         "filename": "managesf/services/gerrit/user.py",
         "patchSetId": 2
@@ -87,6 +141,24 @@
       "writtenOn": "2018-04-04T13:07:39Z",
       "side": 1,
       "message": "We should probably raise in _add_account_as_external line 56 as if we fail define it in the table the account we be partially created.",
+      "revId": "1e020431bf5ac47a45900c1f0ac1680dd4ded35b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a43c5e1_7d74b7ce",
+        "filename": "managesf/services/gerrit/user.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-04-05T04:43:35Z",
+      "side": 1,
+      "message": "This won\u0027t work because the sf_users table won\u0027t be populated. Then further connection will not reach that part because the account creation will fail with 409. Perhaps the external id insertion should be attempted in the update method too?",
+      "parentUuid": "5a43c5e1_fdd76721",
       "revId": "1e020431bf5ac47a45900c1f0ac1680dd4ded35b",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
@@ -121,6 +193,24 @@
       "writtenOn": "2018-04-04T13:07:39Z",
       "side": 1,
       "message": "Format string to fix and should be first line of the method",
+      "revId": "1e020431bf5ac47a45900c1f0ac1680dd4ded35b",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a43c5e1_bd48ff88",
+        "filename": "managesf/services/gerrit/user.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-04-05T04:43:35Z",
+      "side": 1,
+      "message": "Let\u0027s investigate the method call flow, i worry this will cause too much un-necessary logging.",
+      "parentUuid": "5a43c5e1_5de77b12",
       "revId": "1e020431bf5ac47a45900c1f0ac1680dd4ded35b",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
