@@ -16,7 +16,6 @@ BuildArch:      noarch
 Buildrequires:  python2-devel
 Buildrequires:  python-setuptools
 Buildrequires:  python2-pbr
-BuildRequires:  python2-pysflib
 BuildRequires:  python-pecan
 BuildRequires:  python2-gerritlib
 BuildRequires:  python-ldap
@@ -41,7 +40,6 @@ BuildRequires:  python-jenkins
 BuildRequires:  python-sphinx_rtd_theme
 BuildRequires:  python-future
 
-Requires:       python2-pysflib
 Requires:       python-pecan
 Requires:       python2-pbr
 Requires:       python2-gerritlib
