@@ -14,14 +14,11 @@
 # under the License.
 
 import re
-import json
 import urllib
 import hashlib
 import logging
 
 from git.config import GitConfigParser
-
-from requests.exceptions import HTTPError
 
 from managesf.services.gerrit import SoftwareFactoryGerrit
 from managesf.model.yamlbkd.resource import BaseResource
@@ -274,14 +271,8 @@ global:Registered-Users\tRegistered Users"""
 
     def set_default_branch(self, name, branch):
         endpoint = "projects/%s/HEAD" % urllib.quote_plus(name)
-        headers = {'Content-Type': 'application/json'}
         data = {"ref": "refs/heads/%s" % branch}
-        if self.conf.get("gerrit", {}).get("new_gerrit_client"):
-            return self.client.put(endpoint, data)
-        try:
-            self.client.g.put(endpoint, headers=headers, data=json.dumps(data))
-        except HTTPError as e:
-            return self.client._manage_errors(e)
+        return self.client.put(endpoint, data)
 
     def create_branches(self, r, **kwargs):
         logs = []

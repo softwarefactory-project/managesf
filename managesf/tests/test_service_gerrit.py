@@ -72,7 +72,8 @@ class TestSFGerritUserManager(BaseSFGerritService):
             self.assertEqual(5, u)
 
     def test_delete(self):
-        with patch('pysflib.sfgerrit.GerritUtils.get_account') as get, \
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_account') as get, \
                 patch.object(self.gerrit.user, 'session') as session, \
                 patch('managesf.services.gerrit.utils._exec') as ssh:
             get.return_value = self.user_data

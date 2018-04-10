@@ -105,17 +105,6 @@ class SFGerritUserManager(base.UserManager):
 
     def get(self, username):
         self.log.debug(u"Getting account %s", username)
-        if not self.plugin.conf.get("new_gerrit_client"):
-            g_client = self.plugin.get_client()
-            try:
-                account = g_client.get_account(username)
-                if isinstance(account, dict):
-                    return account.get('_account_id')
-                else:
-                    return account
-            except Exception:
-                pass
-            return None
         try:
             client = self.plugin.get_client()
             return client.get_account(username).get('_account_id')
@@ -125,12 +114,6 @@ class SFGerritUserManager(base.UserManager):
     def update(self, uid, username=None, full_name=None, email=None,
                ssh_keys=None, external_id=None):
         self.log.debug(u"Updating account %s", uid)
-        if not self.plugin.conf.get("new_gerrit_client"):
-            g_client = self.plugin.get_client()
-            return g_client.update_account(
-                id=uid, no_email_confirmation=True,
-                full_name=full_name, email=email, ssh_keys=ssh_keys,
-                external_id=external_id)
         client = self.plugin.get_client()
         user = client.get_account(uid, details=True)
         if full_name is not None and user.get("name") != full_name:

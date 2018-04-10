@@ -33,14 +33,12 @@ class GroupOpsTest(TestCase):
         kwargs = {'name': 'space/g1',
                   'description': 'A description',
                   'members': ['body@sftests.com', 'body2@sftests.com']}
-        with patch('pysflib.sfgerrit.GerritUtils.create_group') as cg, \
-                patch('pysflib.sfgerrit.GerritUtils.'
-                      'add_group_member') as agm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
-                      'delete_group_member') as dgm:
-            cg.return_value = True
-            agm.return_value = True
-            dgm.return_value = True
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.create_group') as cg, \
+                patch('managesf.services.gerrit.utils.'
+                      'GerritClient.add_group_member') as agm, \
+                patch('managesf.services.gerrit.utils.'
+                      'GerritClient.delete_group_member') as dgm:
             logs = o.create(**kwargs)
             self.assertEqual(len(cg.call_args_list), 1)
             self.assertEqual(cg.call_args_list[0],
@@ -54,14 +52,15 @@ class GroupOpsTest(TestCase):
             self.assertEqual(dgm.call_args_list[0],
                              call('space/g1', self.conf.admin['email']))
             self.assertEqual(len(logs), 0)
-        with patch('pysflib.sfgerrit.GerritUtils.create_group') as cg, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.create_group') as cg, \
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'add_group_member') as agm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_member') as dgm:
             cg.side_effect = Exception('Random error')
-            agm.return_value = False
-            dgm.return_value = False
+            agm.side_effect = Exception("HTTP 404/409")
+            dgm.side_effect = Exception("HTTP 404/409")
             logs = o.create(**kwargs)
             self.assertIn('Group create: err API returned Random error',
                           logs)
@@ -69,9 +68,8 @@ class GroupOpsTest(TestCase):
                           'err API returned HTTP 404/409', logs)
             self.assertIn('Group create [add member: body2@sftests.com]: '
                           'err API returned HTTP 404/409', logs)
-            self.assertIn('Group create [del member: %s]: '
-                          'err API returned HTTP 404/409' % (
-                              self.conf.admin['email']), logs)
+            self.assertIn('Group create [del member: admin]: '
+                          'err API returned HTTP 404/409', logs)
             self.assertEqual(len(logs), 4)
 
     def test_delete(self):
@@ -79,14 +77,15 @@ class GroupOpsTest(TestCase):
 
         kwargs = {'name': 'space/g1'}
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_group_id') as ggi, \
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'get_group_members') as ggm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_member') as dgm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'get_group_group_members') as gggm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_group_member') as dggm, \
                 patch('sqlalchemy.orm.session.Session.execute') as exe:
             ggm.return_value = [{'email': 'body@sftests.com'},
@@ -110,14 +109,15 @@ class GroupOpsTest(TestCase):
                              exe.call_args_list[0])
             self.assertEqual(len(logs), 0)
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_group_id') as ggi, \
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'get_group_members') as ggm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_member') as dgm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'get_group_group_members') as gggm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_group_member') as dggm, \
                 patch('sqlalchemy.orm.session.Session.execute') as exe:
 
@@ -139,14 +139,15 @@ class GroupOpsTest(TestCase):
                              exe.call_args_list[0])
             self.assertEqual(len(logs), 0)
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_group_id') as ggi, \
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'get_group_members') as ggm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_member') as dgm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'get_group_group_members') as gggm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_group_member') as dggm, \
                 patch('sqlalchemy.orm.session.Session.execute') as exe:
 
@@ -172,16 +173,17 @@ class GroupOpsTest(TestCase):
                   'description': 'An awesome project',
                   'members': ['body@sftests.com', 'body2@sftests.com']}
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id'), \
-                patch('pysflib.sfgerrit.GerritUtils.'
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_group_id'), \
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'get_group_members') as ggm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'add_group_member') as agm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_member') as dgm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'get_group_group_members') as gggm, \
-                patch('pysflib.sfgerrit.GerritUtils.'
+                patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_group_member') as dggm, \
                 patch.object(GroupOps, 'group_update_description') as gup:
             ggm.return_value = [{'email': 'body3@sftests.com'},
@@ -207,12 +209,14 @@ class GroupOpsTest(TestCase):
         kwargs = {'name': 'space/g1',
                   'members': ['body@sftests.com', 'body2@sftests.com']}
         o = GroupOps(self.conf, None)
-        with patch('pysflib.sfgerrit.GerritUtils.get_account') as ga:
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_account') as ga:
             ga.return_value = {}
             logs = o.extra_validations(**kwargs)
             self.assertEqual(len(ga.call_args_list), 2)
             self.assertEqual(len(logs), 0)
-        with patch('pysflib.sfgerrit.GerritUtils.get_account') as ga:
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_account') as ga:
             ga.return_value = False
             logs = o.extra_validations(**kwargs)
             self.assertEqual(len(ga.call_args_list), 2)
@@ -266,9 +270,10 @@ class GroupOpsTest(TestCase):
             }
             return groups[group_id]
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_groups') as gg, \
-                patch('pysflib.sfgerrit.GerritUtils.'
-                      'get_group_members') as ggm:
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_groups') as gg, \
+                patch('managesf.services.gerrit.utils.'
+                      'GerritClient.get_group_members') as ggm:
             gg.side_effect = fake_get_groups
             ggm.side_effect = fake_get_group_members
             logs, g_tree = o.get_all()
