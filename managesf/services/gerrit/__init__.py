@@ -17,7 +17,6 @@
 
 import logging
 
-from pysflib.sfgerrit import GerritUtils
 from requests.auth import HTTPBasicAuth
 
 from managesf.services import base
@@ -64,6 +63,4 @@ class SoftwareFactoryGerrit(Gerrit):
 
     def get_client(self, cookie=None):
         auth = HTTPBasicAuth("admin", self.conf['password'])
-        if self.conf.get("new_gerrit_client"):
-            return GerritClient(self.conf['url'], auth)
-        return GerritUtils(self.conf['url'], auth)
+        return GerritClient(self.conf['url'], auth)
