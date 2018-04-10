@@ -14,14 +14,11 @@
 # under the License.
 
 import re
-import json
 import urllib
 import hashlib
 import logging
 
 from git.config import GitConfigParser
-
-from requests.exceptions import HTTPError
 
 from managesf.services.gerrit import SoftwareFactoryGerrit
 from managesf.model.yamlbkd.resource import BaseResource
@@ -69,10 +66,7 @@ class GitRepositoryOps(object):
 
         try:
             repos = self.client.get_projects()
-            if repos is False:
-                logs.append("Repo list: err API returned HTTP 404/409")
         except Exception, e:
-            logger.exception("get_projects failed %s" % e)
             logs.append("Repo list: err API returned %s" % e)
 
         for name in repos:
@@ -130,13 +124,8 @@ class GitRepositoryOps(object):
         self._set_client()
 
         try:
-            ret = self.client.create_project(name,
-                                             description,
-                                             ['Administrators'])
-            if ret is False:
-                logs.append("Repo create: err API returned HTTP 404/409")
+            self.client.create_project(name, description, ['Administrators'])
         except Exception, e:
-            logger.exception("create_project failed %s" % e)
             logs.append("Repo create: err API returned %s" % e)
 
         try:
@@ -160,11 +149,8 @@ class GitRepositoryOps(object):
         self._set_client()
 
         try:
-            ret = self.client.delete_project(name, True)
-            if ret is False:
-                logs.append("Repo delete: err API returned HTTP 404/409")
+            self.client.delete_project(name, True)
         except Exception, e:
-            logger.exception("delete_project failed %s" % e)
             logs.append("Repo delete: err API returned %s" % e)
 
         return logs
@@ -274,14 +260,8 @@ global:Registered-Users\tRegistered Users"""
 
     def set_default_branch(self, name, branch):
         endpoint = "projects/%s/HEAD" % urllib.quote_plus(name)
-        headers = {'Content-Type': 'application/json'}
         data = {"ref": "refs/heads/%s" % branch}
-        if self.conf.get("gerrit", {}).get("new_gerrit_client"):
-            return self.client.put(endpoint, data)
-        try:
-            self.client.g.put(endpoint, headers=headers, data=json.dumps(data))
-        except HTTPError as e:
-            return self.client._manage_errors(e)
+        return self.client.put(endpoint, data)
 
     def create_branches(self, r, **kwargs):
         logs = []
@@ -326,13 +306,8 @@ global:Registered-Users\tRegistered Users"""
         # Set default branch
         if refs['HEAD'] != dbranch and dbranch != "":
             try:
-                ret = self.set_default_branch(name, dbranch)
-                if ret is False:
-                    logs.append("Set default branch %s err API "
-                                "returned HTTP 404/409" % dbranch)
+                self.set_default_branch(name, dbranch)
             except Exception, e:
-                logger.exception("GerritRepo create_branch/set_default %s "
-                                 "failed %s" % (dbranch, e))
                 logs.append("Set default branch %s err API returned %s" % (
                             dbranch, e))
 

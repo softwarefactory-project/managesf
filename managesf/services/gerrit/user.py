@@ -105,17 +105,6 @@ class SFGerritUserManager(base.UserManager):
 
     def get(self, username):
         self.log.debug(u"Getting account %s", username)
-        if not self.plugin.conf.get("new_gerrit_client"):
-            g_client = self.plugin.get_client()
-            try:
-                account = g_client.get_account(username)
-                if isinstance(account, dict):
-                    return account.get('_account_id')
-                else:
-                    return account
-            except Exception:
-                pass
-            return None
         try:
             client = self.plugin.get_client()
             return client.get_account(username).get('_account_id')
@@ -125,12 +114,6 @@ class SFGerritUserManager(base.UserManager):
     def update(self, uid, username=None, full_name=None, email=None,
                ssh_keys=None, external_id=None):
         self.log.debug(u"Updating account %s", uid)
-        if not self.plugin.conf.get("new_gerrit_client"):
-            g_client = self.plugin.get_client()
-            return g_client.update_account(
-                id=uid, no_email_confirmation=True,
-                full_name=full_name, email=email, ssh_keys=ssh_keys,
-                external_id=external_id)
         client = self.plugin.get_client()
         user = client.get_account(uid, details=True)
         if full_name is not None and user.get("name") != full_name:
@@ -159,49 +142,6 @@ class SFGerritUserManager(base.UserManager):
         return user
 
     def delete(self, username):
-        self.log.debug("Deleting account %s", username)
-        client = self.plugin.get_client()
-        account_id = None
-        try:
-            account = client.get_account(username)
-            if account:
-                account_id = account.get('_account_id')
-        except utils.NotFound:
-            pass
-        except Exception:
-            self.log.exception(u"Account %s not found, skip deletion",
-                               username)
-            return
-        if self.plugin.conf.get("new_gerrit_client"):
-            self.log.warning(
-                "Couldn't delete the user, need manual intervention")
-            return
-        if not account_id:
-            self.log.error(
-                u"Account %s not found, skip deletion", username)
-            return
-
-        # remove project memberships
-        sql = ("DELETE FROM account_group_members "
-               "WHERE account_id=%s;\n" % account_id)
-        # remove from accounts table
-        sql += ("DELETE FROM accounts "
-                "WHERE account_id=%s;\n" % account_id)
-        # remove from external ids
-        sql += ("DELETE FROM account_external_ids "
-                "WHERE account_id=%s;" % account_id)
-        try:
-            self.session.execute(sql)
-            self.session.commit()
-        except Exception:
-            self.log.exception(u"Could not delete user %s", username)
-        # flush gerrit caches
-        for cache in ('accounts', 'accounts_byemail', 'accounts_byname',
-                      'groups_members'):
-            utils._exec(
-                "ssh -i %s -p 29418 %s@%s gerrit flush-caches --cache %s" % (
-                    self.plugin.conf['sshkey_priv_path'],
-                    self.plugin._full_conf.admin['name'],
-                    self.plugin.conf['host'],
-                    cache))
-        self.log.info(u'Account %s (id %s) deleted', username, account_id)
+        self.log.warning("Can't delete the user %s, need manual intervention",
+                         username)
+        return
