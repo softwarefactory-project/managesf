@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2015  Red Hat <licensing@enovance.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -15,11 +13,10 @@
 # under the License.
 
 from unittest import TestCase
-from mock import patch, call
+from mock import patch
 
 from managesf.tests import dummy_conf
 from managesf.services import gerrit
-from pysflib.sfgerrit import GerritUtils
 
 
 class BaseSFGerritService(TestCase):
@@ -44,7 +41,7 @@ class TestSFGerritUserManager(BaseSFGerritService):
     def test_create(self):
         with patch.object(self.gerrit.user,
                           '_add_account_as_external') as add_external, \
-                    patch('pysflib.sfgerrit.GerritUtils.'
+                    patch('managesf.services.gerrit.utils.GerritClient.'
                           'create_account') as create:
             create.return_value = self.user_data
             self.gerrit.user.create('jojo', 'jojo@starplatinum.dom',
@@ -65,57 +62,12 @@ class TestSFGerritUserManager(BaseSFGerritService):
         # TODO: Add case where the user exists and update is called by create
 
     def test_get(self):
-        with patch('pysflib.sfgerrit.GerritUtils.get_account') as get:
+        with patch('managesf.services.gerrit.utils.GerritClient.'
+                   'get_account') as get:
             get.return_value = self.user_data
             u = self.gerrit.user.get('jojo')
             get.assert_called_with('jojo')
             self.assertEqual(5, u)
 
     def test_delete(self):
-        with patch('pysflib.sfgerrit.GerritUtils.get_account') as get, \
-                patch.object(self.gerrit.user, 'session') as session, \
-                patch('managesf.services.gerrit.utils._exec') as ssh:
-            get.return_value = self.user_data
-            sql = """DELETE FROM account_group_members WHERE account_id=5;
-DELETE FROM accounts WHERE account_id=5;
-DELETE FROM account_external_ids WHERE account_id=5;"""
-            self.gerrit.user.delete('jojo')
-            session.execute.assert_called_with(sql)
-            base = "ssh -i %s -p 29418 %s@%s " \
-                "gerrit flush-caches --cache %%s" % (
-                    self.conf.gerrit['sshkey_priv_path'],
-                    self.conf.admin['name'],
-                    self.conf.gerrit['host'])
-            calls = [call(base % c)
-                     for c in ('accounts', 'accounts_byemail',
-                               'accounts_byname', 'groups_members')]
-            ssh.assert_has_calls(calls)
-            session.reset_mock()
-            ssh.reset_mock()
-            self.gerrit.user.delete('jojo')
-            session.execute.assert_called_with(sql)
-            calls = [call(base % c)
-                     for c in ('accounts', 'accounts_byemail',
-                               'accounts_byname', 'groups_members')]
-            ssh.assert_has_calls(calls)
-
-
-def ggi_side_effect(grp_name):
-    return {'testproject-ptl': 'ptl_gid',
-            'testproject-core': 'core_gid',
-            'testproject-dev': 'dev_gid', }[grp_name]
-
-
-class TestSFGerritGroupManager(BaseSFGerritService):
-    def test_get(self):
-        with patch.object(GerritUtils, 'get_project_groups_id') as a, \
-                patch.object(GerritUtils, 'get_projects'), \
-                patch.object(GerritUtils, 'get_group_id') as c, \
-                patch.object(GerritUtils, 'get_group_members') as d, \
-                patch.object(GerritUtils, 'get_groups'):
-            a.return_value = {'p1': {'owners': ['1'],
-                                     'others': ['2']}}
-            c.return_value = 3
-            d.return_value = ['user1@sftests.com']
-            ret = self.gerrit.group.get('grp1')
-            self.assertIn('user1@sftests.com', ret['grp1'])
+        self.assertEquals(self.gerrit.user.delete('jojo'), None)

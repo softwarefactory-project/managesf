@@ -41,7 +41,8 @@ class GitRepositoryOpsTest(TestCase):
                   'acl': 'a1'}
 
         patches = [
-            patch('pysflib.sfgerrit.GerritUtils.create_project'),
+            patch('managesf.services.gerrit.utils.'
+                  'GerritClient.create_project'),
             patch('managesf.services.gerrit.utils.GerritRepo.clone'),
             patch.object(GitRepositoryOps, 'install_acl'),
             patch.object(GitRepositoryOps, 'create_branches'),
@@ -58,7 +59,8 @@ class GitRepositoryOpsTest(TestCase):
             self.assertEqual(len(logs), 0)
 
         patches = [
-            patch('pysflib.sfgerrit.GerritUtils.create_project'),
+            patch('managesf.services.gerrit.utils.'
+                  'GerritClient.create_project'),
             patch('managesf.services.gerrit.utils.GerritRepo.clone'),
             patch.object(GitRepositoryOps, 'install_acl'),
             patch.object(GitRepositoryOps, 'create_branches'),
@@ -233,7 +235,8 @@ class GitRepositoryOpsTest(TestCase):
 
         MGR = Mock()
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi:
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_group_id') as ggi:
             ggi.side_effect = lambda x: db[x]
             logs = o.install_acl(MGR, **kwargs)
         self.assertIn(call('Administrators'), ggi.call_args_list)
@@ -265,7 +268,8 @@ class GitRepositoryOpsTest(TestCase):
 
         MGR.reset_mock()
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi:
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_group_id') as ggi:
             ggi.side_effect = lambda x: db[x]
             logs = o.install_acl(MGR, **kwargs)
         self.assertGreater(
@@ -287,7 +291,8 @@ class GitRepositoryOpsTest(TestCase):
 
         MGR.reset_mock()
 
-        with patch('pysflib.sfgerrit.GerritUtils.get_group_id') as ggi:
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_group_id') as ggi:
             ggi.side_effect = lambda x: db[x]
             MGR.push_config.side_effect = Exception('Random error')
             logs = o.install_acl(MGR, **kwargs)
@@ -309,7 +314,8 @@ class GitRepositoryOpsTest(TestCase):
         o = GitRepositoryOps(self.conf, None)
 
         kwargs = {'name': 'space/g1'}
-        with patch('pysflib.sfgerrit.GerritUtils.delete_project') as dp:
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.delete_project') as dp:
             logs = o.delete(**kwargs)
             self.assertEqual(len(dp.call_args_list), 1)
             self.assertEqual(dp.call_args_list[0],
@@ -392,7 +398,8 @@ class GitRepositoryOpsTest(TestCase):
             return FakeGerritRepo(name, conf)
 
         o = GitRepositoryOps(self.conf, None)
-        with patch('pysflib.sfgerrit.GerritUtils.get_projects') as gps, \
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.get_projects') as gps, \
                 patch('managesf.services.gerrit.utils.GerritRepo') as gr:
             gps.side_effect = fake_get_projects
             gr.side_effect = fake_repo_utils

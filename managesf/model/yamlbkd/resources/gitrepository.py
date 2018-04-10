@@ -1,4 +1,3 @@
-#
 # Copyright (c) 2016 Red Hat, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,14 +13,11 @@
 # under the License.
 
 import re
-import json
 import urllib
 import hashlib
 import logging
 
 from git.config import GitConfigParser
-
-from requests.exceptions import HTTPError
 
 from managesf.services.gerrit import SoftwareFactoryGerrit
 from managesf.model.yamlbkd.resource import BaseResource
@@ -69,10 +65,8 @@ class GitRepositoryOps(object):
 
         try:
             repos = self.client.get_projects()
-            if repos is False:
-                logs.append("Repo list: err API returned HTTP 404/409")
         except Exception, e:
-            logger.exception("get_projects failed %s" % e)
+            logger.exception("get_projects failed")
             logs.append("Repo list: err API returned %s" % e)
 
         for name in repos:
@@ -130,20 +124,16 @@ class GitRepositoryOps(object):
         self._set_client()
 
         try:
-            ret = self.client.create_project(name,
-                                             description,
-                                             ['Administrators'])
-            if ret is False:
-                logs.append("Repo create: err API returned HTTP 404/409")
+            self.client.create_project(name, description, ['Administrators'])
         except Exception, e:
-            logger.exception("create_project failed %s" % e)
+            logger.exception("create_project failed")
             logs.append("Repo create: err API returned %s" % e)
 
         try:
             r = utils.GerritRepo(name, self.conf)
             r.clone()
         except Exception, e:
-            logger.exception("GerritRepo create repo checkout failed %s" % e)
+            logger.exception("GerritRepo create repo checkout failed")
             logs.append("Repo create fails to checkout the repo %s" % e)
             return logs
 
@@ -160,11 +150,9 @@ class GitRepositoryOps(object):
         self._set_client()
 
         try:
-            ret = self.client.delete_project(name, True)
-            if ret is False:
-                logs.append("Repo delete: err API returned HTTP 404/409")
+            self.client.delete_project(name, True)
         except Exception, e:
-            logger.exception("delete_project failed %s" % e)
+            logger.exception("delete_project failed")
             logs.append("Repo delete: err API returned %s" % e)
 
         return logs
@@ -178,7 +166,7 @@ class GitRepositoryOps(object):
             r = utils.GerritRepo(kwargs['name'], self.conf)
             r.clone()
         except Exception, e:
-            logger.exception("GerritRepo update repo checkout failed %s" % e)
+            logger.exception("GerritRepo update repo checkout failed")
             logs.append("Repo update fails to checkout the repo %s" % e)
             return logs
 
@@ -209,7 +197,7 @@ defaultbranch=%(branch)s
         try:
             r.push_branch(branch, paths)
         except Exception, e:
-            logger.exception("GerritRepo push_branch failed %s" % e)
+            logger.exception("GerritRepo push_branch failed")
             logs.append(str(e))
 
         return logs
@@ -268,20 +256,14 @@ global:Registered-Users\tRegistered Users"""
             paths['groups'] = groups_file
             r.push_config(paths)
         except Exception, e:
-            logger.exception("GerritRepo push_config failed %s" % e)
+            logger.exception("GerritRepo push_config failed")
             logs.append(str(e))
         return logs
 
     def set_default_branch(self, name, branch):
         endpoint = "projects/%s/HEAD" % urllib.quote_plus(name)
-        headers = {'Content-Type': 'application/json'}
         data = {"ref": "refs/heads/%s" % branch}
-        if self.conf.get("gerrit", {}).get("new_gerrit_client"):
-            return self.client.put(endpoint, data)
-        try:
-            self.client.g.put(endpoint, headers=headers, data=json.dumps(data))
-        except HTTPError as e:
-            return self.client._manage_errors(e)
+        return self.client.put(endpoint, data)
 
     def create_branches(self, r, **kwargs):
         logs = []
@@ -292,7 +274,7 @@ global:Registered-Users\tRegistered Users"""
         try:
             refs = r.list_remote_branches()
         except Exception, e:
-            logger.exception("GerritRepo create_branches failed %s" % e)
+            logger.exception("GerritRepo create_branches failed")
             logs.append("Get repo branches failed %s" % e)
             return logs
 
@@ -319,20 +301,16 @@ global:Registered-Users\tRegistered Users"""
                     r, name, branch))
             except Exception, e:
                 logger.exception("GerritRepo create_branch/create %s "
-                                 "from sha %s failed %s" % (branch, sha, e))
+                                 "from sha %s failed" % (branch, sha))
                 logs.append("Create branch %s from sha %s failed %s" % (
                     branch, sha, e))
 
         # Set default branch
         if refs['HEAD'] != dbranch and dbranch != "":
             try:
-                ret = self.set_default_branch(name, dbranch)
-                if ret is False:
-                    logs.append("Set default branch %s err API "
-                                "returned HTTP 404/409" % dbranch)
+                self.set_default_branch(name, dbranch)
             except Exception, e:
-                logger.exception("GerritRepo create_branch/set_default %s "
-                                 "failed %s" % (dbranch, e))
+                logger.exception("set_default_branch failed")
                 logs.append("Set default branch %s err API returned %s" % (
                             dbranch, e))
 
@@ -342,7 +320,7 @@ global:Registered-Users\tRegistered Users"""
                 r.delete_remote_branch(branch)
             except Exception, e:
                 logger.exception("GerritRepo create_branch/delete %s "
-                                 "failed %s" % (branch, e))
+                                 "failed" % branch)
                 logs.append("Delete branch %s failed %s" % (branch, e))
 
         return logs

@@ -380,14 +380,15 @@ class TestManageSFServicesUserController(FunctionalTest):
             # TODO(mhu) test if mapping is set correctly
         # mock at a lower level
         with patch.object(StoryboardUserManager, 'create') as s_create, \
-                patch('pysflib.sfgerrit.GerritUtils.add_pubkey'), \
+                patch('managesf.services.gerrit.utils.'
+                      'GerritClient.add_pubkey'), \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
-                patch('pysflib.sfgerrit.GerritUtils.create_account') \
+                patch('managesf.services.gerrit.utils.'
+                      'GerritClient.create_account') \
                 as create_account, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
-                patch('pysflib.sfgerrit.GerritUtils.update_account'), \
                 patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
             s_create.return_value = sb_user2.id
@@ -418,11 +419,11 @@ class TestManageSFServicesUserController(FunctionalTest):
         with patch.object(StoryboardUserManager, 'create') as s_create, \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
-                patch('pysflib.sfgerrit.GerritUtils.create_account') \
+                patch('managesf.services.gerrit.utils.'
+                      'GerritClient.create_account') \
                 as create_account, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
-                patch('pysflib.sfgerrit.GerritUtils.update_account'), \
                 patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
 
@@ -436,11 +437,11 @@ class TestManageSFServicesUserController(FunctionalTest):
         with patch.object(StoryboardUserManager, 'create') as s_create, \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
-                patch('pysflib.sfgerrit.GerritUtils.create_account') \
+                patch('managesf.services.gerrit.utils.'
+                      'GerritClient.create_account') \
                 as create_account, \
                 patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
-                patch('pysflib.sfgerrit.GerritUtils.update_account'), \
                 patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
             # assert that user found in backend will skip gracefully
