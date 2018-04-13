@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a50d1a3_a2f21a05",
+        "filename": "managesf/model/yamlbkd/resources/gitrepository.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-04-13T09:59:28Z",
+      "side": 1,
+      "message": "Can be removed also.",
+      "range": {
+        "startLine": 323,
+        "startChar": 56,
+        "endLine": 323,
+        "endChar": 58
+      },
+      "revId": "e902319af3ca4d25afe5ae9ad4f8c79c1619bc85",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
