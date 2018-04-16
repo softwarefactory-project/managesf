@@ -615,6 +615,8 @@ class EngineRealResourcesTest(TestCase):
 [access "refs/*"]
     read = group sf/g1
     owner = group sf/g1
+[access "refs/for/*"]
+    addPatchSet = group sf/g1
 [access "refs/heads/*"]
     label-Code-Review = -2..+2 group sf/g1
     label-Verified = -2..+2 group sf/g1
