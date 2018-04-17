@@ -2,7 +2,7 @@
 
 Name:           managesf
 Version:        0.12.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -64,6 +64,7 @@ Requires:       python-requests
 Requires:       python-jenkins
 Requires:       python-gunicorn
 Requires:       python-future
+Requires:       python2-storyboardclient
 
 %description
 python API used to centralize management of services deployed under Software Factory
@@ -134,6 +135,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Tue Apr 18 2018 Tristan Cacqueray <tdecacqu@redhat.com> - 0.12.0-5
+- Add missing storyboardclient dependency
+
 * Mon Dec 18 2017 Tristan Cacqueray <tdecacqu@redhat.com> - 0.12.0-4
 - Switch requirement to python-paramiko instead of python2-paramiko
 
