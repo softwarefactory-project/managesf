@@ -1,0 +1,4 @@
+---
+features:
+  - The resources model got a new tenant object. That the root model
+    object for the Tenant capablity of Software Factory.

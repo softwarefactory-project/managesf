@@ -1236,6 +1236,41 @@ wrong ! This string won't be accepted by Gerrit !
                           'has been updated', logs)
             self.assertEqual(len(logs), 4)
 
+    def test_tenant_validation(self):
+        master = {
+            'resources': {
+                'tenants': {}
+            }
+        }
+        new = {
+            'resources': {
+                'tenants': {
+                    'kimchi': {
+                        'config-project': 'https://github.com/kimchi/config',
+                        'type': 'github'
+                        },
+                    'natto': {
+                        'config-project': 'https://sftests.com/natto/config',
+                        'type': 'github'
+                        },
+                    }
+                }
+            }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'):
+            lrd.return_value = (master, new)
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertIn('Resource [type: tenants, ID: kimchi] is going to '
+                          'be created.', logs)
+            self.assertIn('Resource [type: tenants, ID: natto] is going to '
+                          'be created.', logs)
+            self.assertEqual(len(logs), 2)
+
     def test_get_missing_resources(self):
         eng = engine.SFResourceBackendEngine(None, None)
         current_resources = {
