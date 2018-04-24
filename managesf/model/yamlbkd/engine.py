@@ -34,13 +34,15 @@ from managesf.model.yamlbkd.resources.gitrepository import GitRepository
 from managesf.model.yamlbkd.resources.group import Group
 from managesf.model.yamlbkd.resources.gitacls import ACL
 from managesf.model.yamlbkd.resources.project import Project
+from managesf.model.yamlbkd.resources.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
 MAPPING = {'repos': GitRepository,
            'groups': Group,
            'projects': Project,
-           'acls': ACL}
+           'acls': ACL,
+           'tenants': Tenant}
 
 
 class ResourceDepsException(Exception):
