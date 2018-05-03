@@ -23,7 +23,7 @@ from pecan.rest import RestController
 from pecan import request, response
 from stevedore import driver
 
-from managesf.controllers import backup, localuser, introspection
+from managesf.controllers import localuser, introspection
 from managesf.controllers import SFuser
 from managesf.services import base
 from managesf.services import exceptions
@@ -118,36 +118,6 @@ def authorize(rule_name, target):
         user_groups = code_review.project.get_user_groups(request.remote_user)
         credentials['groups'] = [grp['name'] for grp in user_groups]
     return policy.authorize(rule_name, target, credentials)
-
-
-class BackupController(RestController):
-    @expose('json')
-    def get(self):
-        _policy = 'managesf.backup:get'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        filepath = os.path.join(conf.managesf.get('backup_dir',
-                                                  '/var/www/managesf/'),
-                                'sf_backup.tar.gz')
-        if not os.path.isfile(filepath):
-            abort(404)
-        response.body_file = open(filepath, 'rb')
-        return response
-
-    @expose('json')
-    def post(self):
-        _policy = 'managesf.backup:create'
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            backup.backup_start()
-            response.status = 204
-        except Exception as e:
-            return report_unhandled_error(e)
 
 
 class LocalUserController(RestController):
@@ -1036,7 +1006,6 @@ AGENTSPROVIDERS = [s for s in SF_SERVICES
 
 class V2Controller(object):
     # Mimic api v1 and replace endpoints incrementally
-    backup = BackupController()
     user = LocalUserController()
     bind = LocalUserBindController()
     about = introspection.IntrospectionController()
@@ -1069,7 +1038,6 @@ class RootController(object):
             logger.info('API v2 is not configured, skipping endpoint.')
             self.v2 = RestController()
 
-        self.backup = BackupController()
         self.user = LocalUserController()
         self.bind = LocalUserBindController()
         self.about = introspection.IntrospectionController()

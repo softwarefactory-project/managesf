@@ -267,49 +267,6 @@ def project_get(*args, **kwargs):
     return ['p0', 'p1']
 
 
-class TestManageSFAppBackupController(FunctionalTest):
-    def tearDown(self):
-        bkp = os.path.join(self.config['managesf']['backup_dir'],
-                           'sf_backup.tar.gz')
-        if os.path.isfile(bkp):
-            os.unlink(bkp)
-
-    def test_backup_get(self):
-        bkp = os.path.join(self.config['managesf']['backup_dir'],
-                           'sf_backup.tar.gz')
-        file(bkp, 'w').write('backup content')
-        with patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
-            gug.return_value = []
-            response = self.app.get('/backup', status="*")
-            self.assertEqual(response.status_int, 401)
-            # TODO policies don't play nice with the test admin user
-            environ = {'REMOTE_USER': 'admin'}
-            response = self.app.get('/backup',
-                                    extra_environ=environ,
-                                    status="*")
-            self.assertEqual(response.body, 'backup content')
-            os.unlink(bkp)
-            response = self.app.get('/backup',
-                                    extra_environ=environ,
-                                    status="*")
-            self.assertEqual(response.status_int, 404)
-
-    def test_backup_post(self):
-        with patch('managesf.controllers.backup.'
-                   'backup_start') as backup_start, \
-                patch.object(SFGerritProjectManager,
-                             'get_user_groups') as gug:
-            gug.return_value = []
-            response = self.app.post('/backup', status="*")
-            self.assertEqual(response.status_int, 401)
-            environ = {'REMOTE_USER': 'admin'}
-            response = self.app.post('/backup',
-                                     extra_environ=environ,
-                                     status="*")
-            self.assertEqual(response.status_int, 204)
-            self.assertTrue(backup_start.called)
-
-
 class TestManageSFServicesUserController(FunctionalTest):
 
     def test_add_user_in_backends_non_admin(self):
