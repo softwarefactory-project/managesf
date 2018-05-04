@@ -95,6 +95,8 @@ class TestResourcesManager(BaseTestResourceEndpoint):
         manager = manageSF.SFResourcesManager(c)
         ret = manager.resources.get()
         self.assertIn("resources", ret)
+        self.assertEqual(
+            ret.get("config-repo"), 'file://%s' % repo_path)
 
     def test_create(self):
         """test validate resources on the resources manager"""
