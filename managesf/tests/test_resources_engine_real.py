@@ -1246,12 +1246,10 @@ wrong ! This string won't be accepted by Gerrit !
             'resources': {
                 'tenants': {
                     'kimchi': {
-                        'config-project': 'https://github.com/kimchi/config',
-                        'type': 'github'
+                        'url': 'https://kimchi.sftests.com',
                         },
                     'natto': {
-                        'config-project': 'https://sftests.com/r/natto/config',
-                        'type': 'github'
+                        'url': 'https://natto.sftests.com',
                         },
                     }
                 }

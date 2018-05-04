@@ -35,21 +35,13 @@ class Tenant(BaseResource):
             False,
             "The tenant name",
         ),
-        'config-project': (
+        'url': (
             str,
             '.*',
             True,
             None,
             True,
-            "The tenant config-project location",
-        ),
-        'type': (
-            str,
-            '^(gerrit|github|bare)$',
-            True,
-            "gerrit",
-            True,
-            "Service type where repository is stored (gerrit, github or bare)",
+            "The tenant Software Factory access URL",
         ),
         'description': (
             str,
