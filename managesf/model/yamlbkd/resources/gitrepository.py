@@ -349,6 +349,15 @@ class GitRepository(BaseResource):
             True,
             "The repository description",
         ),
+        'connection': (
+            str,
+            '.*',
+            False,
+            "",
+            "gerrit",
+            False,
+            "The project connection name",
+        ),
         'acl': (
             str,
             '.*',

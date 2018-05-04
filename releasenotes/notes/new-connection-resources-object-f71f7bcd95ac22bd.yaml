@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    The resources model got a new connection object to fully describe repository
+    location.
