@@ -1077,6 +1077,8 @@ wrong ! This string won't be accepted by Gerrit !
                     'p1': {
                         'name': 'p1',
                         'description': 'An awesome project',
+                        'tenant': 'local',
+                        'connection': 'github.com',
                         'source-repositories': ['r1'],
                     },
                 },
@@ -1246,12 +1248,13 @@ wrong ! This string won't be accepted by Gerrit !
             'resources': {
                 'tenants': {
                     'kimchi': {
-                        'config-project': 'https://github.com/kimchi/config',
-                        'type': 'github'
+                        'url': 'https://kimchi.sftests.com/manage',
+                        'tenant-options': {
+                            'zuul/default-jobs-timeout': '3600',
+                            }
                         },
                     'natto': {
-                        'config-project': 'https://sftests.com/r/natto/config',
-                        'type': 'github'
+                        'url': 'https://natto.sftests.com/manage',
                         },
                     }
                 }
@@ -1269,6 +1272,44 @@ wrong ! This string won't be accepted by Gerrit !
                           'be created.', logs)
             self.assertIn('Resource [type: tenants, ID: natto] is going to '
                           'be created.', logs)
+            self.assertEqual(len(logs), 2)
+
+    def test_connection_validation(self):
+        master = {
+            'resources': {
+                'connections': {
+                    'local': {
+                        'base-url': 'https://sftests.com/r/',
+                        'type': 'gerrit',
+                        },
+                    }
+            }
+        }
+        new = {
+            'resources': {
+                'connections': {
+                    'local': {
+                        'base-url': 'https://sftests.com/r/',
+                        'type': 'gerrit',
+                        },
+                    'github.com': {
+                        'base-url': 'https://github.com',
+                        'type': 'github'
+                        },
+                    }
+                }
+            }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'):
+            lrd.return_value = (master, new)
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertFalse(valid)
+            self.assertIn("Connections can't be updated manually, they are "
+                          "managed by configuration management.", logs)
             self.assertEqual(len(logs), 2)
 
     def test_get_missing_resources(self):

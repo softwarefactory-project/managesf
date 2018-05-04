@@ -35,6 +35,7 @@ from managesf.model.yamlbkd.resources.group import Group
 from managesf.model.yamlbkd.resources.gitacls import ACL
 from managesf.model.yamlbkd.resources.project import Project
 from managesf.model.yamlbkd.resources.tenant import Tenant
+from managesf.model.yamlbkd.resources.connection import Connection
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,8 @@ MAPPING = {'repos': GitRepository,
            'groups': Group,
            'projects': Project,
            'acls': ACL,
-           'tenants': Tenant}
+           'tenants': Tenant,
+           'connections': Connection}
 
 
 class ResourceDepsException(Exception):
@@ -555,7 +557,9 @@ class SFResourceBackendEngine(object):
         current = YAMLBackend(cur_uri, cur_ref,
                               self.subdir, self.workdir,
                               "%s_cache" % self.workdir.rstrip('/'))
-        return current.get_data()
+        data = current.get_data()
+        data["config-repo"] = cur_uri
+        return data
 
     def get_sql(self, cur_uri, cur_ref):
         """ Top level get function. This read the HEAD of the
