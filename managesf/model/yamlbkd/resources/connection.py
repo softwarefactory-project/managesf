@@ -20,12 +20,16 @@ from managesf.model.yamlbkd.resource import BaseResource
 logger = logging.getLogger(__name__)
 
 
-class Tenant(BaseResource):
+def prevent_update():
+    return ["Connections can't be updated manually, they are managed by "
+            "configuration management."]
 
-    DESCRIPTION = ("The tenant resource can be is used to describe a tenant "
-                   "like where is located the config repository of tenant.")
 
-    MODEL_TYPE = 'tenant'
+class Connection(BaseResource):
+
+    DESCRIPTION = ("The connection resource describes Zuul connections.")
+
+    MODEL_TYPE = 'connection'
     MODEL = {
         'name': (
             str,
@@ -33,39 +37,31 @@ class Tenant(BaseResource):
             False,
             "",
             False,
-            "The tenant name",
+            "The connection name",
         ),
-        'url': (
+        'base-url': (
             str,
             '.*',
             True,
-            None,
-            True,
-            "The Software Factory managesf URL",
-        ),
-        'tenant-options': (
-            dict,
-            ('.+', '.+'),
-            False,
-            {},
-            True,
-            "List of tenant options",
-        ),
-        'description': (
-            str,
-            '.*',
-            False,
             "",
+            False,
+            "The connection base url",
+        ),
+        'type': (
+            str,
+            '^(gerrit|github|git)$',
             True,
-            "The tenant description",
+            "gerrit",
+            True,
+            "Connection type [gerrit|github|git]",
         ),
     }
     PRIORITY = 5
     PRIMARY_KEY = 'name'
     CALLBACKS = {
-        'update': lambda conf, new, kwargs: [],
-        'create': lambda conf, new, kwargs: [],
-        'delete': lambda conf, new, kwargs: [],
-        'extra_validations': lambda conf, new, kwargs: [],
+        'update': lambda conf, new, kwargs: prevent_update(),
+        'create': lambda conf, new, kwargs: prevent_update(),
+        'delete': lambda conf, new, kwargs: prevent_update(),
+        'extra_validations': lambda conf, new, kwargs: prevent_update(),
         'get_all': lambda conf, new: ([], {}),
     }

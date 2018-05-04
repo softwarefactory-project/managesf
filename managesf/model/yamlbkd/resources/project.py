@@ -95,6 +95,22 @@ class Project(BaseResource):
             True,
             "The project description",
         ),
+        'tenant': (
+            str,
+            '.*',
+            False,
+            "local",
+            True,
+            "The tenant name",
+        ),
+        'connection': (
+            str,
+            '.*',
+            False,
+            "gerrit",
+            True,
+            "The default connection for source-repositories",
+        ),
         'website': (
             str,
             '.*',

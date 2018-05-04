@@ -1249,6 +1249,9 @@ class TestResourcesController(FunctionalTest):
                               'master_repo': repo_path}
             resp = self.app.get('/resources/')
             self.assertIn("resources", resp.json)
+            self.assertEqual(
+                resp.json.get("config-repo"),
+                repo_path)
 
     def test_post(self):
         workdir = tempfile.mkdtemp()

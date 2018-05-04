@@ -394,10 +394,11 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.yamlbackend.'
                       'YAMLBackend.get_data') as g:
             i.return_value = None
-            g.return_value = True
+            g.return_value = {}
             eng = SFResourceBackendEngine('/tmp/adir', None)
-            data = eng.get(None, None)
-            self.assertTrue(data)
+            data = eng.get('https://sftests.com/r/config', None)
+            self.assertTrue(
+                data.get('config-repo'), 'https://sftests.com/r/config')
 
     def test_get_data_diff(self):
         with patch.dict(engine.MAPPING, {'dummies': Dummy}):
