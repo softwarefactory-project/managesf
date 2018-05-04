@@ -43,6 +43,14 @@ class Tenant(BaseResource):
             True,
             "The tenant Software Factory access URL",
         ),
+        'tenant-options': (
+            dict,
+            ('.+', '.+'),
+            False,
+            {},
+            True,
+            "List of tenant options",
+        ),
         'description': (
             str,
             '.*',

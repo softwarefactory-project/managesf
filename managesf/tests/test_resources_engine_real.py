@@ -1247,6 +1247,9 @@ wrong ! This string won't be accepted by Gerrit !
                 'tenants': {
                     'kimchi': {
                         'url': 'https://kimchi.sftests.com',
+                        'tenant-options': {
+                            'zuul/default-jobs-timeout': '3600',
+                            }
                         },
                     'natto': {
                         'url': 'https://natto.sftests.com',
