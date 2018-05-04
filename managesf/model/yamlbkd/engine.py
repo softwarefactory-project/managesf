@@ -555,7 +555,9 @@ class SFResourceBackendEngine(object):
         current = YAMLBackend(cur_uri, cur_ref,
                               self.subdir, self.workdir,
                               "%s_cache" % self.workdir.rstrip('/'))
-        return current.get_data()
+        data = current.get_data()
+        data["config-repo"] = cur_uri
+        return data
 
     def get_sql(self, cur_uri, cur_ref):
         """ Top level get function. This read the HEAD of the
