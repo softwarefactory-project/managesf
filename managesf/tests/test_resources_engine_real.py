@@ -1269,6 +1269,44 @@ wrong ! This string won't be accepted by Gerrit !
                           'be created.', logs)
             self.assertEqual(len(logs), 2)
 
+    def test_connection_validation(self):
+        master = {
+            'resources': {
+                'connections': {
+                    'local': {
+                        'base-url': 'https://sftests.com/r/',
+                        'type': 'gerrit',
+                        },
+                    }
+            }
+        }
+        new = {
+            'resources': {
+                'connections': {
+                    'local': {
+                        'base-url': 'https://sftests.com/r/',
+                        'type': 'gerrit',
+                        },
+                    'github.com': {
+                        'base-url': 'https://github.com',
+                        'type': 'github'
+                        },
+                    }
+                }
+            }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'):
+            lrd.return_value = (master, new)
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertFalse(valid)
+            self.assertIn("Connections can't be updated manually, they are "
+                          "managed by configuration management.", logs)
+            self.assertEqual(len(logs), 2)
+
     def test_get_missing_resources(self):
         eng = engine.SFResourceBackendEngine(None, None)
         current_resources = {
