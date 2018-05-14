@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a2fa921_b6eb48b0",
+        "filename": "managesf/model/yamlbkd/resources/connection.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-05-14T23:58:16Z",
+      "side": 1,
+      "message": "extra \u0027)\u0027 at the end",
+      "revId": "f67db8e41c8fee27dd50698d75945faafb7c1bcd",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
