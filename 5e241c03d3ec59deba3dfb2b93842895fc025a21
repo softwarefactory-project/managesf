@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a2fa921_f6e1c0d1",
+        "filename": "managesf/tests/test_resources_engine_real.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 1249,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-05-14T23:57:24Z",
+      "side": 1,
+      "message": "I think it would be more flexible if we reference the managesf endpoint, e.g. sftests.com/manage",
+      "revId": "5e241c03d3ec59deba3dfb2b93842895fc025a21",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
