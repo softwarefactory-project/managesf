@@ -293,6 +293,8 @@ class ImageUpdatesCRUD():
 def init_model():
     c = dict(conf.sqlalchemy)
     url = c.pop('url')
+    if url.startswith('mysql://'):
+        url = url.replace('mysql://', 'mysql+pymysql://')
     if url.startswith('mysql') and not url.endswith('?charset=utf8'):
         url += '?charset=utf8'
     globals()['engine'] = create_engine(url, pool_recycle=600, **c)

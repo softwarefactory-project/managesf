@@ -2,7 +2,7 @@
 
 Name:           managesf
 Version:        0.12.0
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -30,7 +30,7 @@ BuildRequires:  libyaml-devel
 BuildRequires:  yaml-cpp
 BuildRequires:  PyYAML
 BuildRequires:  python2-stevedore
-BuildRequires:  MySQL-python
+BuildRequires:  python2-PyMySQL
 BuildRequires:  python-six
 BuildRequires:  python2-oslo-policy
 BuildRequires:  python2-deepdiff
@@ -55,7 +55,7 @@ Requires:       python-crypto
 Requires:       yaml-cpp
 Requires:       PyYAML
 Requires:       python2-stevedore
-Requires:       MySQL-python
+Requires:       python2-PyMySQL
 Requires:       python-six
 Requires:       python2-oslo-policy
 Requires:       python2-deepdiff
@@ -135,6 +135,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Mon May 14 2018 Fabien Boucher <fboucher@redhat.com> - 0.12.0-6
+- Change un-maintained dependency MySQL-python to pure python python2-PyMySQL
+
 * Tue Apr 18 2018 Tristan Cacqueray <tdecacqu@redhat.com> - 0.12.0-5
 - Add missing storyboardclient dependency
 

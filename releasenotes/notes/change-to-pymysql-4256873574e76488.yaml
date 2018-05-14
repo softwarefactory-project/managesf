@@ -1,0 +1,4 @@
+---
+other:
+  - |
+    MySQL connector changed to PyMySQL https://github.com/PyMySQL/PyMySQL/

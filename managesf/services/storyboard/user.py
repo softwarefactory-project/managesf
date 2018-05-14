@@ -37,7 +37,7 @@ class StoryboardUserManager(base.UserManager):
     def __init__(self, plugin):
         super(StoryboardUserManager, self).__init__(plugin)
         # Set sql access to add users directly
-        db_uri = 'mysql://%s:%s@%s/%s?charset=utf8' % (
+        db_uri = 'mysql+pymysql://%s:%s@%s/%s?charset=utf8' % (
             self.plugin.conf['db_user'],
             self.plugin.conf['db_password'],
             self.plugin.conf['db_host'],

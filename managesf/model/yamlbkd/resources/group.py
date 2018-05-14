@@ -127,7 +127,7 @@ class GroupOps(object):
         self._set_client()
 
         # Needed for the final group delete
-        db_uri = 'mysql://%s:%s@%s/%s?charset=utf8' % (
+        db_uri = 'mysql+pymysql://%s:%s@%s/%s?charset=utf8' % (
             self.conf.gerrit['db_user'],
             self.conf.gerrit['db_password'],
             self.conf.gerrit['db_host'],
