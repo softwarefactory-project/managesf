@@ -1158,6 +1158,133 @@ wrong ! This string won't be accepted by Gerrit !
 
         master = {
             'resources': {
+                'projects': {},
+                }
+            }
+
+        new = {
+            'resources': {
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'source-repositories': [
+                            {'config': {
+                                'zuul/config-project': True
+                            }},
+                            'sf-jobs',
+                            'zuul-jobs',
+                        ],
+                    }
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv2:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertIn('Resource [type: projects, ID: p1] is going to '
+                          'be created.', logs)
+
+        master = {
+            'resources': {
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'source-repositories': [
+                            {'config': {
+                                'zuul/config-project': True
+                            }},
+                            'sf-jobs',
+                            'zuul-jobs',
+                        ],
+                    }
+                }
+            }
+        }
+
+        new = {
+            'resources': {
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'source-repositories': [
+                            {'config2': {
+                                'zuul/config-project': True
+                            }},
+                            'sf-jobs',
+                            'zuul-jobs',
+                        ],
+                    }
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv2:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertIn('Resource [type: projects, ID: p1] is going to '
+                          'be updated.', logs)
+
+        new = {
+            'resources': {
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'source-repositories': [
+                            {'config': {
+                                'zuul/config-project': True,
+                                'default-branch': ['devel', 'stable-2.4'],
+                            }},
+                            'sf-jobs',
+                            'zuul-jobs',
+                        ],
+                    }
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.gitacls.'
+                      'ACLOps.extra_validations') as xv, \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv2:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertIn('Resource [type: projects, ID: p1] is going to '
+                          'be updated.', logs)
+
+        master = {
+            'resources': {
                 'projects': {
                     'p1': {
                         'name': 'p1',
