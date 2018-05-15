@@ -126,6 +126,7 @@ class ResourcesTest(TestCase):
                 'key2': (str, ".+", False, "default", True, "desc"),
                 'key3': (list, "[0-9]+", False, [], True, "desc"),
                 'key4': (dict, ('[a-z]', '\d+'), False, {}, True, "desc"),
+                'key5': (list, (dict, '.+'), False, [], True, "desc"),
             }
             PRIMARY_KEY = None
             PRIORITY = 10
@@ -154,6 +155,12 @@ class ResourcesTest(TestCase):
         self.assertRaises(ResourceInvalidException,
                           res.validate)
         res = R1('id', {'key': 1,
+                        'key3': [
+                            '12',
+                            {'a1': None}]})
+        self.assertRaises(ResourceInvalidException,
+                          res.validate)
+        res = R1('id', {'key': 1,
                         'key4': {}})
         res.validate()
         res = R1('id', {'key': 1,
@@ -162,6 +169,20 @@ class ResourcesTest(TestCase):
         res = R1('id', {'key': 1,
                         'key4': {'master': '1234',
                                  'dev': 'abc'}})
+        self.assertRaises(ResourceInvalidException,
+                          res.validate)
+        res = R1('id', {'key': 1,
+                        'key5': [
+                            'a1',
+                            {'a2': None}
+                        ]})
+        res.validate()
+        res = R1('id', {'key': 1,
+                        'key5': [
+                            'a1',
+                            {'a2': None,
+                             'morekey': None}
+                        ]})
         self.assertRaises(ResourceInvalidException,
                           res.validate)
 

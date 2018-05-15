@@ -145,8 +145,33 @@ class BaseResource(object):
                     # Validate list default values match the regexp
                     # if list type
                     if constraints[0] is list:
-                        assert all([re.match(constraints[1], c) for
-                                    c in constraints[3]]) is True
+                        # Constraints[1] is string (a regexp) in case of list
+                        # of str only
+                        if isinstance(constraints[1], basestring):
+                            assert all([re.match(constraints[1], c) for
+                                        c in constraints[3]]) is True
+                        # If constraints[1] is a tuple then constraints[1][0]
+                        # must be a dict and constraints[1][1] is regexp for
+                        # the dict key. But value can still be a simple string
+                        # then the value is validated against constraints[1][1]
+                        elif isinstance(constraints[1], tuple):
+                            assert constraints[1][0] is dict
+                            assert isinstance(constraints[1][1], str)
+                            for c in constraints[3]:
+                                if isinstance(c, dict):
+                                    # Make sure default value only have dict
+                                    # with a single key
+                                    assert len(c.keys()) == 1
+                                    # Make sure default value only have dict
+                                    # with a key matching the regexp
+                                    assert re.match(
+                                        constraints[1][1], c.keys()[0])
+                                if isinstance(c, basestring):
+                                    assert re.match(constraints[1][1], c)
+                        else:
+                            # Unsuported case constraints[1] can be only a
+                            # basestring or tuple
+                            assert False
         except Exception:
             raise ModelInvalidException(
                 "Model %s is invalid and not usable "
@@ -208,17 +233,72 @@ class BaseResource(object):
                             self.id,
                             key,
                             self.__class__.MODEL[key][1]))
-            # For list type validate the content as according the regex
+            # For list type validate the content as according the regex, we
+            # expect a string if MODEL[key][1] is a string. But the list will
+            # contain dictionaries or string if MODEL[key][1] is a tuple
             if self.__class__.MODEL[key][0] is list:
-                if not all([re.match(self.__class__.MODEL[key][1], v)
-                            for v in value]):
-                    raise ResourceInvalidException(
-                        "Resource [type: %s, ID: %s] has an invalid "
-                        "key (%s) data content (expected match : %s)" % (
-                            self.__class__.MODEL_TYPE,
-                            self.id,
-                            key,
-                            self.__class__.MODEL[key][1]))
+                if isinstance(self.__class__.MODEL[key][1], basestring):
+                    # List values can be only string
+                    if not all([isinstance(v, basestring) for v in value]):
+                        raise ResourceInvalidException(
+                            "Resource [type: %s, ID: %s] has an "
+                            "invalid key (%s) data content (expected "
+                            "a string)" % (
+                                self.__class__.MODEL_TYPE,
+                                self.id,
+                                key))
+                    if not all([re.match(self.__class__.MODEL[key][1], v)
+                                for v in value]):
+                        raise ResourceInvalidException(
+                            "Resource [type: %s, ID: %s] has an "
+                            "invalid key (%s) data content (expected "
+                            "match : %s)" % (
+                                self.__class__.MODEL_TYPE,
+                                self.id,
+                                key,
+                                self.__class__.MODEL[key][1]))
+                else:
+                    # We assume self.__class__.MODEL[key][1] is tuple. List
+                    # values can be dict or list
+                    for v in value:
+                        if isinstance(v, basestring):
+                            if not re.match(
+                                    self.__class__.MODEL[key][1][1], v):
+                                raise ResourceInvalidException(
+                                    "Resource [type: %s, ID: %s] has an "
+                                    "invalid key (%s) data content (expected "
+                                    "match : %s)" % (
+                                        self.__class__.MODEL_TYPE,
+                                        self.id,
+                                        key,
+                                        self.__class__.MODEL[key][1][1]))
+                        elif isinstance(v, dict):
+                            if not len(v.keys()) == 1:
+                                raise ResourceInvalidException(
+                                    "Resource [type: %s, ID: %s] has an "
+                                    "invalid key (%s) data content. List "
+                                    "contains a dictionary with multiple "
+                                    "keys" % (
+                                        self.__class__.MODEL_TYPE,
+                                        self.id,
+                                        key))
+                            if not re.match(
+                                    self.__class__.MODEL[key][1][1],
+                                    v.keys()[0]):
+                                raise ResourceInvalidException(
+                                    "Resource [type: %s, ID: %s] has an "
+                                    "invalid key (%s) data content (expected "
+                                    "match : %s)" % (
+                                        self.__class__.MODEL_TYPE,
+                                        self.id,
+                                        key,
+                                        self.__class__.MODEL[key][1]))
+                        else:
+                            raise ResourceInvalidException(
+                                "Resource [type: %s, ID: %s] key %s contains "
+                                "unsuported data type. Please check the "
+                                " model." % (self.__class__.MODEL_TYPE,
+                                             self.id, key))
             # For dict type validate the content as according the regex
             if self.__class__.MODEL[key][0] is dict:
                 try:
