@@ -261,6 +261,13 @@ class BaseResource(object):
             return ''
         return {}
 
+    def is_deps_soft(self):
+        """ If this returns True contraints dependencies check become
+        soft. That means resources ids returned by get_deps won't be
+        checked for existence.
+        """
+        return False
+
     def set_defaults(self):
         """ Enrich the data MODEL. This method add
         missing fields to the resource. Missing fields are

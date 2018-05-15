@@ -102,7 +102,9 @@ class StoryboardOps(object):
             p.id for p in
             self.client.project_groups.get(id=pg.id).projects.get_all()]
         for sr_name in sources_repositories:
-            sr = self.new['resources']['repos'][sr_name]
+            sr = self.new['resources']['repos'].get(sr_name)
+            if not sr:
+                continue
             try:
                 self.update_project(name=sr_name,
                                     description=sr['description'])

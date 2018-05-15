@@ -194,3 +194,6 @@ class Project(BaseResource):
         if keyname:
             return 'source-repositories'
         return {'repos': set(self.resource['source-repositories'])}
+
+    def is_deps_soft(self):
+        return True
