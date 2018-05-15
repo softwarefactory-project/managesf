@@ -208,10 +208,18 @@ class BaseResource(object):
                             self.id,
                             key,
                             self.__class__.MODEL[key][1]))
-            # For list type validate the content as according the regex
+            # For list type validate the content as according the regex, we
+            # expect a string. But the list can also contain dictionaries.
+            # Each dictionary must be single key.
             if self.__class__.MODEL[key][0] is list:
+                valid = True
                 if not all([re.match(self.__class__.MODEL[key][1], v)
-                            for v in value]):
+                            for v in value if isinstance(v, basestring)]):
+                    valid = False
+                if not all([re.match(self.__class__.MODEL[key][1], v.keys()[0])
+                            for v in value if isinstance(v, dict)]):
+                    valid = False
+                if not valid:
                     raise ResourceInvalidException(
                         "Resource [type: %s, ID: %s] has an invalid "
                         "key (%s) data content (expected match : %s)" % (
@@ -219,6 +227,15 @@ class BaseResource(object):
                             self.id,
                             key,
                             self.__class__.MODEL[key][1]))
+                if not all([len(v.keys()) == 1
+                            for v in value if isinstance(v, dict)]):
+                    raise ResourceInvalidException(
+                        "Resource [type: %s, ID: %s] has an invalid "
+                        "key (%s) data content. List contains at a dictionary "
+                        "with multiple keys" % (
+                            self.__class__.MODEL_TYPE,
+                            self.id,
+                            key))
             # For dict type validate the content as according the regex
             if self.__class__.MODEL[key][0] is dict:
                 try:
