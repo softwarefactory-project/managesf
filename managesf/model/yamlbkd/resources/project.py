@@ -169,7 +169,7 @@ class Project(BaseResource):
         ),
         'source-repositories': (
             list,
-            '.+',
+            (dict, '.+'),
             True,
             None,
             True,
@@ -193,7 +193,13 @@ class Project(BaseResource):
     def get_deps(self, keyname=False):
         if keyname:
             return 'source-repositories'
-        return {'repos': set(self.resource['source-repositories'])}
+        ids = set()
+        for sr in self.resource['source-repositories']:
+            if isinstance(sr, dict):
+                ids.add(sr.keys()[0])
+            else:
+                ids.add(sr)
+        return {'repos': ids}
 
     def is_deps_soft(self):
         return True

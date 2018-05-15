@@ -102,6 +102,8 @@ class StoryboardOps(object):
             p.id for p in
             self.client.project_groups.get(id=pg.id).projects.get_all()]
         for sr_name in sources_repositories:
+            if isinstance(sr_name, dict):
+                sr_name = sr_name.keys()[0]
             sr = self.new['resources']['repos'].get(sr_name)
             if not sr:
                 continue
