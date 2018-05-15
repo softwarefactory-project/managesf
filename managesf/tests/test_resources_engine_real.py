@@ -1151,12 +1151,10 @@ wrong ! This string won't be accepted by Gerrit !
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
-            # Project depends on an unknown r2 resource
-            self.assertFalse(valid)
-            self.assertIn('Resource [type: projects, ID: p1] depends on '
-                          'an unknown resource [type: repos, ID: r2]',
-                          logs)
-            self.assertEqual(len(logs), 1)
+            # Project depends on an unknown r2 resource but soft deps is
+            # set to True for project type so no deps check is performed
+            # between projects and repos.
+            self.assertTrue(valid)
 
         master = {
             'resources': {

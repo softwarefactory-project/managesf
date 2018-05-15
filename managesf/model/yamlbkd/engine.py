@@ -173,6 +173,9 @@ class SFResourceBackendEngine(object):
         for rtype, resources in new_data['resources'].items():
             for rid, data in resources.items():
                 r = MAPPING[rtype](rid, data)
+                if r.is_deps_soft():
+                    # This resource do not require deps existence check
+                    continue
                 r.set_defaults()
                 deps = r.get_deps()
                 for deps_type, deps_ids in deps.items():
