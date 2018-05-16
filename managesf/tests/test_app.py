@@ -1247,7 +1247,9 @@ class TestResourcesController(FunctionalTest):
             conf.resources = {'workdir': workdir,
                               'subdir': 'resources',
                               'master_repo': repo_path}
-            resp = self.app.get('/resources/')
+            with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                            {'dummies': Dummy}):
+                resp = self.app.get('/resources/')
             self.assertIn("resources", resp.json)
             self.assertEqual(
                 resp.json.get("config-repo"),

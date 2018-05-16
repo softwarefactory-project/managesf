@@ -93,7 +93,9 @@ class TestResourcesManager(BaseTestResourceEndpoint):
         repo_path = self.prepare_repo(data)
         c.resources['master_repo'] = 'file://%s' % repo_path
         manager = manageSF.SFResourcesManager(c)
-        ret = manager.resources.get()
+        with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
+                        {'dummies': Dummy}):
+            ret = manager.resources.get()
         self.assertIn("resources", ret)
         self.assertEqual(
             ret.get("config-repo"), 'file://%s' % repo_path)
