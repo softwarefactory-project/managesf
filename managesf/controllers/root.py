@@ -570,8 +570,9 @@ class ResourcesController(RestController):
 
     def get_project_by_repo(self, reponame):
         for _, project in self.get_resources().get('projects', {}).items():
-            if reponame in project.get('source-repositories', []):
-                return project
+            for repo in project.get('source-repositories', []):
+                if reponame in repo:
+                    return project
         return None
 
 

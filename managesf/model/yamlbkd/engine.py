@@ -102,7 +102,7 @@ class SFResourceBackendEngine(object):
 
     def _get_data_diff(self, prev, new):
         """ Top level resources diff method that take two
-        resources trees and compute rsources added/removed
+        resources trees and compute resources added/removed
         and updated.
 
         This method returns a dict containing ids and data
@@ -192,8 +192,7 @@ class SFResourceBackendEngine(object):
 
     def _validate_changes(self, sanitized_changes, validation_logs, new):
         """ This method validates if changes on the tree is authorized
-        based on each resources constraints. The validation stop
-        once the first error is found.
+        based on each resources constraints.
         """
         for rtype, changes in sanitized_changes.items():
             for ctype, scoped_changes in changes.items():
@@ -561,8 +560,14 @@ class SFResourceBackendEngine(object):
                               self.subdir, self.workdir,
                               "%s_cache" % self.workdir.rstrip('/'))
         data = current.get_data()
-        data["config-repo"] = cur_uri
-        return data
+        data_trans = {"resources": {}}
+        for rtype, resources in data.get('resources', {}).items():
+            for rid, rdata in resources.items():
+                r = MAPPING[rtype](rid, rdata)
+                dtrans = r.transform_for_get()
+                data_trans["resources"].setdefault(rtype, {})[rid] = dtrans
+        data_trans["config-repo"] = cur_uri
+        return data_trans
 
     def get_sql(self, cur_uri, cur_ref):
         """ Top level get function. This read the HEAD of the
