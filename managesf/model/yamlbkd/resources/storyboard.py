@@ -55,7 +55,11 @@ class StoryboardOps(object):
                         " (Maximal len is %s)" % (
                             kwargs['name'], NAME_MAX_LEN))
         sources_repositories = kwargs['source-repositories']
-        for name in sources_repositories:
+        for sr_name in sources_repositories:
+            if isinstance(sr_name, dict):
+                name = list(sr_name.keys()[0])
+            else:
+                name = sr_name
             if len(name) < NAME_MIN_LEN:
                 logs.append(
                     "Storyboard project name %s length is invalid"
