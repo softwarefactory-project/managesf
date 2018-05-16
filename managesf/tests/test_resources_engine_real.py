@@ -1541,8 +1541,6 @@ wrong ! This string won't be accepted by Gerrit !
                     'p1': {
                         'name': 'p1',
                         'description': 'An awesome project',
-                        'tenant': 'local',
-                        'connection': 'github.com',
                         'source-repositories': [
                             'r1',
                             {'r2': {
@@ -1573,5 +1571,5 @@ wrong ! This string won't be accepted by Gerrit !
                             ],
                             'tenant': 'local',
                             'description': 'An awesome project',
-                            'name': 'p1', 'connection': 'github.com'}}}}
+                            'name': 'p1', 'connection': 'gerrit'}}}}
             self.assertDictEqual(data, expected)

@@ -348,13 +348,17 @@ class BaseResource(object):
         """
         return False
 
-    def set_defaults(self):
+    def set_defaults(self, soft=False):
         """ Enrich the data MODEL. This method add
         missing fields to the resource. Missing fields are
         initialized with their default value.
+        If soft is True then only default value that is data (not [] or '')
+        will be added as default value.
         """
         for key, constraints in self.__class__.MODEL.items():
             if key not in self.resource:
+                if soft and not constraints[3]:
+                    continue
                 self.resource[key] = constraints[3]
 
     def get_resource(self):
