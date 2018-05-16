@@ -21,6 +21,8 @@ import tempfile
 from unittest import TestCase
 from mock import patch
 
+from managesf.tests import dummy_conf
+
 from managesf.model.yamlbkd import engine
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 from managesf.model.yamlbkd.engine import ResourceDepsException
@@ -34,6 +36,12 @@ from managesf.model.yamlbkd.resources.dummy import Dummy
 
 
 class EngineTest(TestCase):
+
+    @classmethod
+    def setupClass(cls):
+        cls.conf = dummy_conf()
+        engine.conf = cls.conf
+
     def setUp(self):
         self.to_delete = []
 

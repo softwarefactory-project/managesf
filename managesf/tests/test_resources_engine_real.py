@@ -18,10 +18,18 @@
 from unittest import TestCase
 from mock import patch
 
+from managesf.tests import dummy_conf
+
 from managesf.model.yamlbkd import engine
 
 
 class EngineRealResourcesTest(TestCase):
+
+    @classmethod
+    def setupClass(cls):
+        cls.conf = dummy_conf()
+        engine.conf = cls.conf
+
     def test_group_validation(self):
         master = {
             'resources': {
@@ -1562,6 +1570,7 @@ wrong ! This string won't be accepted by Gerrit !
             data = eng.get(None, None)
             expected = {
                 'config-repo': None,
+                'public-url': 'http://sftests.com/manage',
                 'resources': {
                     'projects': {
                         'p1': {
