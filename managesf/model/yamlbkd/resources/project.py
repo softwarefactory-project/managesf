@@ -203,3 +203,18 @@ class Project(BaseResource):
 
     def is_deps_soft(self):
         return True
+
+    def transform_for_get(self):
+        ret = {}
+        for key, data in self.resource.items():
+            if key == 'source-repositories':
+                srs = []
+                for sr in data:
+                    if isinstance(sr, basestring):
+                        srs.append({sr: {}})
+                    else:
+                        srs.append(sr)
+            else:
+                ret[key] = data
+        ret['source-repositories'] = srs
+        return ret
