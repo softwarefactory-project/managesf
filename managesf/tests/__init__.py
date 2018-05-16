@@ -76,6 +76,7 @@ class dummy_conf():
         'workdir': tempfile.mkdtemp(),
         'subdir': 'resources',
         'master_repo': 'http://sftests.com/r/config',
+        'public_url': 'http://sftests.com/manage',
     }
     mysql = {
         'host': 'mysql.test.dom',
