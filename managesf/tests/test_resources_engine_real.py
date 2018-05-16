@@ -1533,3 +1533,45 @@ wrong ! This string won't be accepted by Gerrit !
             logs, tree = eng.get_missing_resources(None, None)
             self.assertListEqual(logs, [])
             self.assertDictEqual(tree, expected)
+
+    def test_resources_project_get(self):
+        master = {
+            'resources': {
+                'projects': {
+                    'p1': {
+                        'name': 'p1',
+                        'description': 'An awesome project',
+                        'tenant': 'local',
+                        'connection': 'github.com',
+                        'source-repositories': [
+                            'r1',
+                            {'r2': {
+                                'zuul/config-project': True
+                            }}
+                        ],
+                    },
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.YAMLBackend.'
+                   'get_data') as gd, \
+                patch('managesf.model.yamlbkd.engine.YAMLBackend.refresh'), \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'):
+            gd.return_value = master
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            data = eng.get(None, None)
+            expected = {
+                'config-repo': None,
+                'resources': {
+                    'projects': {
+                        'p1': {
+                            'source-repositories': [
+                                {'r1': {}},
+                                {'r2': {'zuul/config-project': True}}
+                            ],
+                            'tenant': 'local',
+                            'description': 'An awesome project',
+                            'name': 'p1', 'connection': 'github.com'}}}}
+            self.assertDictEqual(data, expected)

@@ -366,3 +366,9 @@ class BaseResource(object):
         rtype possible) has been updated.
         """
         return True
+
+    def transform_for_get(self):
+        """ This method can be overwritten to format of the resource
+        when a get on the resource tree is asked.
+        """
+        return self.resource
