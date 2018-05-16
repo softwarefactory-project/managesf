@@ -564,6 +564,7 @@ class SFResourceBackendEngine(object):
         for rtype, resources in data.get('resources', {}).items():
             for rid, rdata in resources.items():
                 r = MAPPING[rtype](rid, rdata)
+                r.set_defaults(soft=True)
                 dtrans = r.transform_for_get()
                 data_trans["resources"].setdefault(rtype, {})[rid] = dtrans
         data_trans["config-repo"] = cur_uri
