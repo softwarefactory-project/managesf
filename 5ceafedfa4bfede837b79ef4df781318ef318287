@@ -16,6 +16,24 @@
       "revId": "5ceafedfa4bfede837b79ef4df781318ef318287",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7a2fa921_df9a97c5",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-05-17T08:56:04Z",
+      "side": 1,
+      "message": "the continue is invalid, i couldn\u0027t quite figure out the logic of this method yet :)",
+      "parentUuid": "7a2fa921_1f624fd9",
+      "revId": "5ceafedfa4bfede837b79ef4df781318ef318287",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
