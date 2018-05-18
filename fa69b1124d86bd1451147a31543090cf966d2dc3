@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a2fa921_8a793b32",
+        "filename": "managesf/model/yamlbkd/resources/tenant.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-05-18T10:47:32Z",
+      "side": 1,
+      "message": "We can even set \u0027gerrit\u0027 as default here.",
+      "revId": "fa69b1124d86bd1451147a31543090cf966d2dc3",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
