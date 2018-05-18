@@ -1388,6 +1388,8 @@ wrong ! This string won't be accepted by Gerrit !
                         },
                     'natto': {
                         'url': 'https://natto.sftests.com/manage',
+                        'description': 'The natto tenant',
+                        'default-connection': 'gerrit',
                         },
                     }
                 }
@@ -1580,5 +1582,8 @@ wrong ! This string won't be accepted by Gerrit !
                             ],
                             'tenant': 'local',
                             'description': 'An awesome project',
-                            'name': 'p1', 'connection': 'gerrit'}}}}
+                            'name': 'p1'}
+                        }
+                    }
+                }
             self.assertDictEqual(data, expected)

@@ -51,6 +51,14 @@ class Tenant(BaseResource):
             True,
             "List of tenant options",
         ),
+        'default-connection': (
+            str,
+            '.*',
+            False,
+            "",
+            True,
+            "The tenant connection to be used in default pipelines",
+        ),
         'description': (
             str,
             '.*',
