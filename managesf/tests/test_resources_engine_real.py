@@ -1428,7 +1428,8 @@ wrong ! This string won't be accepted by Gerrit !
                         'type': 'gerrit',
                         },
                     'github.com': {
-                        'base-url': 'https://github.com',
+                        'github-app-name': 'softwarefactory-project-zuul',
+                        'github-label': 'zuulit',
                         'type': 'github'
                         },
                     }
