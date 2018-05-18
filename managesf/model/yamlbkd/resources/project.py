@@ -107,7 +107,7 @@ class Project(BaseResource):
             str,
             '.*',
             False,
-            "gerrit",
+            "",
             True,
             "The default connection for source-repositories",
         ),
