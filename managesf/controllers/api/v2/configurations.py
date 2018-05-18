@@ -156,7 +156,7 @@ class ZuulTenantsLoad:
 
     def merge_tenant_from_resources(
             self, tenants, tenant_resources, tenant_name, projects_list,
-            local_resources):
+            local_resources, default_conn):
         for pid, project in tenant_resources['resources']['projects'].items():
             if project['tenant'] != tenant_name:
                 continue
@@ -168,7 +168,7 @@ class ZuulTenantsLoad:
                     # already defined in flat zuul tenant file
                     continue
                 source = (sr[sr_name].get('connection') or
-                          project['connection'])
+                          project.get('connection', default_conn))
                 if source not in local_resources['resources']['connections']:
                     raise RuntimeError("%s is an unknown connection" % source)
                 _project = {sr_name: {}}
@@ -217,9 +217,10 @@ class ZuulTenantsLoad:
             tenants_conf_files = self.discover_yaml_files(tenants_dir)
             self.merge_tenant_from_files(
                 tenants, tenants_conf_files, tenant_name, projects_list)
+            default_conn = data["default-connection"]
             self.merge_tenant_from_resources(
                 tenants, tenant_resources, tenant_name, projects_list,
-                self.main_resources)
+                self.main_resources, default_conn)
 
         final_yaml = self.final_tenant_merge(tenants)
         return yaml.safe_dump(final_yaml)

@@ -219,9 +219,10 @@ class TenantsLoadTests(TestCase):
                 }
             }
         }
+        default_conn = 'gerrit'
         ztl.merge_tenant_from_resources(
             tenants, resources, 'ansible-network', projects_list,
-            local_resources)
+            local_resources, default_conn)
         up = tenants['ansible-network']['source'][
             'gerrit']['untrusted-projects']
         cp = tenants['ansible-network']['source'][
@@ -247,5 +248,5 @@ class TenantsLoadTests(TestCase):
         with self.assertRaises(RuntimeError) as ctx:
             ztl.merge_tenant_from_resources(
                 tenants, resources, 'ansible-network', projects_list,
-                local_resources)
+                local_resources, default_conn)
         self.assertEqual(str(ctx.exception), "gerrit is an unknown connection")

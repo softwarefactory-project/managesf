@@ -51,7 +51,7 @@ class Connection(BaseResource):
             str,
             '^(gerrit|github|git)$',
             True,
-            "gerrit",
+            "",
             True,
             "Connection type [gerrit|github|git]",
         ),
