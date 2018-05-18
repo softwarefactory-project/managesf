@@ -235,7 +235,7 @@ class ZuulTenantsLoadTests(TestCase):
         }
         ztl.merge_tenant_from_resources(
             tenants, resources, 'ansible-network', projects_list,
-            local_resources)
+            local_resources, 'gerrit')
         up = tenants['ansible-network']['source'][
             'gerrit']['untrusted-projects']
         cp = tenants['ansible-network']['source'][
@@ -261,7 +261,7 @@ class ZuulTenantsLoadTests(TestCase):
         with self.assertRaises(RuntimeError) as ctx:
             ztl.merge_tenant_from_resources(
                 tenants, resources, 'ansible-network', projects_list,
-                local_resources)
+                local_resources, 'gerrit')
         self.assertEqual(str(ctx.exception), "gerrit is an unknown connection")
 
     def test_tenant_options_from_resources(self):
@@ -274,7 +274,8 @@ class ZuulTenantsLoadTests(TestCase):
             }
         }
         ztl.merge_tenant_from_resources(
-            tenants, {}, "third-party-ci-tenant", {}, {}, tenant_options)
+            tenants, {}, "third-party-ci-tenant", {}, {}, 'gerrit',
+            tenant_options)
         final_data = ztl.final_tenant_merge(tenants)
         self.assertIn("default-jobs-timeout", final_data[0]['tenant'])
         self.assertEqual(final_data[0]['tenant']['default-jobs-timeout'],
