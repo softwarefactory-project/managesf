@@ -1,0 +1,9 @@
+Code-Review+2: Tristan de Cacqueray <tdecacqu@redhat.com>
+Code-Review+2: Fabien Boucher <fboucher@redhat.com>
+Workflow+1: Tristan de Cacqueray <tdecacqu@redhat.com>
+Verified+2: Zuul CI <zuul@softwarefactory-project.io>
+Submitted-by: Zuul CI <zuul@softwarefactory-project.io>
+Submitted-at: Sat, 19 May 2018 12:31:33 +0000
+Reviewed-on: https://softwarefactory-project.io/r/12222
+Project: software-factory/managesf
+Branch: refs/heads/master
