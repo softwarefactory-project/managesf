@@ -20,6 +20,7 @@ from mock import patch, call
 
 from managesf.tests import dummy_conf
 from managesf.model.yamlbkd.resources.group import GroupOps
+from managesf.services.gerrit import utils
 
 
 class GroupOpsTest(TestCase):
@@ -217,7 +218,7 @@ class GroupOpsTest(TestCase):
             self.assertEqual(len(logs), 0)
         with patch('managesf.services.gerrit.utils.'
                    'GerritClient.get_account') as ga:
-            ga.return_value = False
+            ga.side_effect = utils.NotFound()
             logs = o.extra_validations(**kwargs)
             self.assertEqual(len(ga.call_args_list), 2)
             self.assertEqual(len(logs), 2)

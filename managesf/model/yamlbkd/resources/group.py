@@ -232,8 +232,9 @@ class GroupOps(object):
         self._set_client()
 
         for member in members:
-            ret = self.client.get_account(member)
-            if not isinstance(ret, dict):
+            try:
+                self.client.get_account(member)
+            except utils.NotFound:
                 logs.append("Check group members [%s does not exists]: "
                             "err API unable to find the member" % member)
         return logs
