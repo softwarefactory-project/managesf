@@ -56,6 +56,8 @@ class StoryboardOps(object):
                             kwargs['name'], NAME_MAX_LEN))
         sources_repositories = kwargs['source-repositories']
         for name in sources_repositories:
+            if isinstance(name, dict):
+                name = name.keys()[0]
             if len(name) < NAME_MIN_LEN:
                 logs.append(
                     "Storyboard project name %s length is invalid"
@@ -117,6 +119,8 @@ class StoryboardOps(object):
         projects = self.client.projects.get_all()
         wanted_included = []
         for sr_name in sources_repositories:
+            if isinstance(sr_name, dict):
+                sr_name = sr_name.keys()[0]
             project = [p for p in projects if p.name == sr_name]
             if project:
                 wanted_included.append(project[0].id)
