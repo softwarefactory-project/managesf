@@ -220,7 +220,7 @@ class ZuulTenantsLoad:
 
             # First we look for the tenant resources
             if tenant_name != "local" and \
-               tenant_conf["url"] == self.main_resources["public-url"]:
+               tenant_conf["url"] != self.main_resources["public-url"]:
                 url = os.path.join(tenant_conf['url'], 'resources')
                 self.log.debug("%s: loading resources %s", tenant_name, url)
                 tenant_resources = self.get_resources(url)
