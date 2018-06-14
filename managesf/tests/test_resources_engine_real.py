@@ -30,6 +30,28 @@ class EngineRealResourcesTest(TestCase):
         cls.conf = dummy_conf()
         engine.conf = cls.conf
 
+    def test_unknown_resources(self):
+        master = {
+            'resources': {}
+        }
+        new = {
+            'resources': {
+                'abc': {
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'):
+            lrd.return_value = (master, new)
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertFalse(valid)
+            self.assertEqual(len(logs), 1)
+            self.assertIn('Resources type: abc not exists', logs)
+
     def test_group_validation(self):
         master = {
             'resources': {

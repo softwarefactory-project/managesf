@@ -27,6 +27,7 @@ from managesf.model.yamlbkd import engine
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 from managesf.model.yamlbkd.engine import ResourceDepsException
 from managesf.model.yamlbkd.engine import ResourceUnicityException
+from managesf.model.yamlbkd.engine import RTYPENotDefinedException
 
 from managesf.model.yamlbkd.yamlbackend import YAMLDBException
 from managesf.model.yamlbkd.resource import BaseResource
@@ -125,7 +126,9 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as vc:
+                      '_validate_changes') as vc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
             lrd.return_value = (None, None)
             eng = SFResourceBackendEngine(path, None)
             status, _ = eng.validate(None, None, None, None)
@@ -134,6 +137,7 @@ class EngineTest(TestCase):
             self.assertTrue(cdc.called)
             self.assertTrue(cu.called)
             self.assertTrue(vc.called)
+            self.assertTrue(cd.called)
             self.assertTrue(status)
 
         with patch('managesf.model.yamlbkd.engine.'
@@ -145,7 +149,9 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as vc:
+                      '_validate_changes') as vc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
             lrd.side_effect = YAMLDBException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate(None, None, None, None)
@@ -161,7 +167,9 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as vc:
+                      '_validate_changes') as vc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
             lrd.return_value = (None, None)
             vc.side_effect = ResourceInvalidException('')
             eng = SFResourceBackendEngine(path, None)
@@ -178,7 +186,10 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as vc:
+                      '_validate_changes') as vc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
+
             lrd.return_value = (None, None)
             vc.side_effect = ResourceDepsException('')
             eng = SFResourceBackendEngine(path, None)
@@ -195,10 +206,32 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_check_unicity_constraints') as cu, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as vc:
+                      '_validate_changes') as vc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
 
             lrd.return_value = (None, None)
             cu.side_effect = ResourceUnicityException('')
+            eng = SFResourceBackendEngine(path, None)
+            status, logs = eng.validate(None, None, None, None)
+            self.assertEqual(len(logs), 1)
+            self.assertFalse(status)
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_get_data_diff') as gdd, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_deps_constraints') as cdc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_unicity_constraints') as cu, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_validate_changes') as vc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
+
+            lrd.return_value = (None, None)
+            cd.side_effect = RTYPENotDefinedException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate(None, None, None, None)
             self.assertEqual(len(logs), 1)
@@ -219,7 +252,9 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as vc:
+                      '_validate_changes') as vc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
             lrd.return_value = (None, None)
             eng = SFResourceBackendEngine(path, None)
             status, _ = eng.validate_from_structured_data(
@@ -230,6 +265,7 @@ class EngineTest(TestCase):
             self.assertTrue(lm.called)
             self.assertTrue(gdd.called)
             self.assertTrue(vc.called)
+            self.assertTrue(cd.called)
             self.assertTrue(status)
 
         with patch('managesf.model.yamlbkd.engine.'
@@ -243,7 +279,9 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as vc:
+                      '_validate_changes') as vc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
             lrd.side_effect = YAMLDBException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate_from_structured_data(
@@ -262,9 +300,55 @@ class EngineTest(TestCase):
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
                       '_get_data_diff') as gdd, \
                 patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
-                      '_validate_changes') as v:
+                      '_validate_changes') as v, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
             lrd.return_value = (None, None)
             v.side_effect = ResourceInvalidException('')
+            eng = SFResourceBackendEngine(path, None)
+            status, logs = eng.validate_from_structured_data(
+                None, None, None)
+            self.assertEqual(len(logs), 1)
+            self.assertFalse(status)
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resource_data') as lrd, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_deps_constraints') as cdc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_unicity_constraints') as cu, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_load_resource_data_from_memory') as lm, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_get_data_diff') as gdd, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_validate_changes') as v, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
+            lrd.return_value = (None, None)
+            v.side_effect = ResourceInvalidException('')
+            eng = SFResourceBackendEngine(path, None)
+            status, logs = eng.validate_from_structured_data(
+                None, None, None)
+            self.assertEqual(len(logs), 1)
+            self.assertFalse(status)
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resource_data') as lrd, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_deps_constraints') as cdc, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_unicity_constraints') as cu, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_load_resource_data_from_memory') as lm, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_get_data_diff') as gdd, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_validate_changes') as v, \
+                patch('managesf.model.yamlbkd.engine.SFResourceBackendEngine.'
+                      '_check_rtype_defined') as cd:
+            lrd.return_value = (None, None)
+            cd.side_effect = RTYPENotDefinedException('')
             eng = SFResourceBackendEngine(path, None)
             status, logs = eng.validate_from_structured_data(
                 None, None, None)
