@@ -226,6 +226,10 @@ class ZuulTenantsLoad:
                 tenant_resources = self.get_resources(url)
             else:
                 tenant_resources = self.main_resources
+                # Fallback to local tenant default connection
+                if not tenant_conf.get("default-connection"):
+                    tenant_conf["default-connection"] = self.main_resources[
+                        "resources"]["tenants"]["local"]["default-connection"]
 
             # Then we pull tenant config repository for legacy zuul flat files
             path = self.fetch_git_repo(
