@@ -55,6 +55,10 @@ class ResourceUnicityException(Exception):
     pass
 
 
+class RTYPENotDefinedException(Exception):
+    pass
+
+
 class SFResourceBackendEngine(object):
     def __init__(self, workdir, subdir):
         self.workdir = workdir
@@ -145,6 +149,12 @@ class SFResourceBackendEngine(object):
                 rtype, prev['resources'][rtype], new['resources'][rtype],
                 changed_resources_ids[rtype])
         return sanitized_changes
+
+    def _check_rtype_defined(self, data):
+        for rtype in data['resources']:
+            if rtype not in MAPPING:
+                raise RTYPENotDefinedException(
+                    "Resources type: %s not exists" % rtype)
 
     def _check_unicity_constraints(self, new_data):
         """ This method read the new tree and validate if each
@@ -474,6 +484,7 @@ class SFResourceBackendEngine(object):
         try:
             prev, new = self._load_resources_data(
                 repo_prev_uri, prev_ref, repo_new_uri, new_ref)
+            self._check_rtype_defined(new)
             self._check_deps_constraints(new)
             self._check_unicity_constraints(new)
             changes = self._get_data_diff(prev, new)
@@ -481,6 +492,7 @@ class SFResourceBackendEngine(object):
             validation_logs.extend(
                 self._resolv_resources_need_refresh(changes, new))
         except (YAMLDBException,
+                RTYPENotDefinedException,
                 ModelInvalidException,
                 ResourceInvalidException,
                 ResourceUnicityException,
@@ -505,6 +517,7 @@ class SFResourceBackendEngine(object):
             prev = self._load_resource_data(
                 repo_prev_uri, prev_ref, 'prev')
             new = self._load_resource_data_from_memory(data)
+            self._check_rtype_defined(new)
             self._check_deps_constraints(new)
             self._check_unicity_constraints(new)
             changes = self._get_data_diff(prev, new)
@@ -512,6 +525,7 @@ class SFResourceBackendEngine(object):
             validation_logs.extend(
                 self._resolv_resources_need_refresh(changes, new))
         except (YAMLDBException,
+                RTYPENotDefinedException,
                 ModelInvalidException,
                 ResourceInvalidException,
                 ResourceUnicityException,
@@ -608,6 +622,8 @@ class SFResourceBackendEngine(object):
             for rtype in MAPPING:
                 prev['resources'].setdefault(rtype, {})
                 new['resources'].setdefault(rtype, {})
+            self._check_rtype_defined(prev)
+            self._check_rtype_defined(new)
             self._check_deps_constraints(new)
             self._check_unicity_constraints(new)
             changes = self._get_data_diff(prev, new)
@@ -616,6 +632,7 @@ class SFResourceBackendEngine(object):
                 self._resolv_resources_need_refresh(changes, new))
             partial = self._apply_changes(changes, direct_apply_logs, new)
         except (YAMLDBException,
+                RTYPENotDefinedException,
                 ModelInvalidException,
                 ResourceInvalidException,
                 ResourceUnicityException,
