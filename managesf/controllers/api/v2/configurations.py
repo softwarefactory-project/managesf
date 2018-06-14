@@ -171,10 +171,14 @@ class ZuulTenantsLoad:
 
         for project_name, project in tenant_resources.get(
                 'resources', {}).get('projects', {}).items():
-            # TODO: check if resources are remote, and fail/warn if tenant
-            #       deployment tries to add project to other tenant
-            if project['tenant'] != tenant_name:
-                continue
+            if not project.get('tenant'):
+                project['tenant'] = tenant_name
+            else:
+                if project['tenant'] != tenant_name:
+                    print("Skip project %s as it is attached to"
+                          " unauthorized tenant %s" % (
+                              project_name, tenant_name))
+                    continue
             for sr in project['source-repositories']:
                 sr_name = sr.keys()[0]
                 if (tenant_name in projects_list and

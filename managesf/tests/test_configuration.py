@@ -213,7 +213,6 @@ class ZuulTenantsLoadTests(TestCase):
             'resources': {
                 'projects': {
                     'project1': {
-                        'tenant': 'ansible-network',
                         'connection': 'gerrit',
                         'source-repositories': [
                             {'repo3': {
