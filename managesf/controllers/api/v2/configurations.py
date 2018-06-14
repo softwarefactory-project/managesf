@@ -181,6 +181,8 @@ class ZuulTenantsLoad:
                         sr_name in projects_list[tenant_name]):
                     # already defined in flat zuul tenant file
                     continue
+                else:
+                    projects_list.setdefault(tenant_name, []).append(sr_name)
                 source = (sr[sr_name].get('connection') or
                           project.get('connection', default_conn))
                 if source not in local_resources['resources']['connections']:
@@ -198,6 +200,22 @@ class ZuulTenantsLoad:
                         'source', {}).setdefault(
                             source, {}).setdefault(
                                 sr_type, []).append(_project)
+
+        tenant_repos = tenant_resources.get(
+            'resources', {}).get('repos', {}).items()
+        r_type = 'untrusted-projects'
+        for repo_name, repo in tenant_repos:
+            if (tenant_name not in projects_list or
+                    repo_name not in projects_list[tenant_name]):
+                if default_conn not in local_resources[
+                        'resources']['connections']:
+                    raise RuntimeError("%s is an unknown connection" % source)
+                _project = {repo_name: {'include': []}}
+                tenants.setdefault(
+                    tenant_name, {}).setdefault(
+                        'source', {}).setdefault(
+                            default_conn, {}).setdefault(
+                                r_type, []).append(_project)
 
     def final_tenant_merge(self, tenants):
         final_data = []

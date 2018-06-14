@@ -260,7 +260,7 @@ class ZuulTenantsLoadTests(TestCase):
         tenants = orig_tenants
         with self.assertRaises(RuntimeError) as ctx:
             ztl.merge_tenant_from_resources(
-                tenants, resources, 'ansible-network', projects_list,
+                tenants, resources, 'ansible-network', {},
                 local_resources, 'gerrit')
         self.assertEqual(str(ctx.exception), "gerrit is an unknown connection")
 
@@ -280,3 +280,39 @@ class ZuulTenantsLoadTests(TestCase):
         self.assertIn("default-jobs-timeout", final_data[0]['tenant'])
         self.assertEqual(final_data[0]['tenant']['default-jobs-timeout'],
                          "3600")
+
+    def test_tenant_add_extra_repo(self):
+        tenants = {}
+        local_resources = {
+            'resources': {
+                'connections': {
+                    'gerrit': {}
+                }
+            }
+        }
+        tenant_resources = {
+            'resources': {
+                'projects': {
+                    'project1': {
+                        'tenant': 'tenant1',
+                        'source-repositories': [
+                            {'repo1': {'zuul/include': ['jobs']}},
+                            {'repo3': {}},
+                        ]
+                    }
+                },
+                'repos': {
+                    'repo1': {},
+                    'repo2': {},
+                }
+            }
+        }
+        ztl = ZuulTenantsLoad(utests=True)
+        ztl.merge_tenant_from_resources(
+            tenants, tenant_resources, "tenant1", {},
+            local_resources, 'gerrit')
+        up = tenants['tenant1']['source']['gerrit']['untrusted-projects']
+        self.assertIn({'repo1': {'include': ['jobs']}}, up)
+        self.assertIn({'repo2': {'include': []}}, up)
+        self.assertIn({'repo3': {}}, up)
+        self.assertEqual(len(up), 3)
