@@ -49,7 +49,9 @@ class ConfigurationController:
 class ZuulTenantsLoad:
     log = logging.getLogger("managesf.ZuulTenantsLoad")
 
-    def __init__(self, engine=None, utests=False):
+    def __init__(self, engine=None, utests=False,
+                 cache_dir="/var/lib/managesf/git"):
+        self.cache_dir = cache_dir
         if utests:
             # Skip this for unittests
             return
@@ -247,8 +249,7 @@ class ZuulTenantsLoad:
 
             # Then we pull tenant config repository for legacy zuul flat files
             path = self.fetch_git_repo(
-                tenant_name, tenant_resources["config-repo"],
-                "/var/lib/managesf/git")
+                tenant_name, tenant_resources["config-repo"], self.cache_dir)
             tenants_dir = os.path.join(path, 'zuul')
             if not os.path.isdir(tenants_dir):
                 continue
@@ -276,7 +277,8 @@ def cli():
     args = p.parse_args()
 
     if args.service == "zuul":
-        ztl = ZuulTenantsLoad()
+        ztl = ZuulTenantsLoad(
+            cache_dir="/var/lib/software-factory/git-configuration")
         conf = ztl.start()
 
     if args.output:
