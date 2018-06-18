@@ -205,6 +205,8 @@ class ZuulTenantsLoad:
                             source, {}).setdefault(
                                 sr_type, []).append(_project)
 
+    def add_missing_repos(self, tenants, tenant_resources, tenant_name,
+                          projects_list, local_resources, default_conn):
         tenant_repos = tenant_resources.get(
             'resources', {}).get('repos', {}).items()
         r_type = 'untrusted-projects'
@@ -213,7 +215,8 @@ class ZuulTenantsLoad:
                     repo_name not in projects_list[tenant_name]):
                 if default_conn not in local_resources[
                         'resources']['connections']:
-                    raise RuntimeError("%s is an unknown connection" % source)
+                    raise RuntimeError(
+                        "%s is an unknown connection" % default_conn)
                 _project = {repo_name: {'include': []}}
                 tenants.setdefault(
                     tenant_name, {}).setdefault(
@@ -236,6 +239,9 @@ class ZuulTenantsLoad:
         tenants = {}
         # projects_list is the list of projects used to check for conflicts
         projects_list = {}
+        # mrs_by_config_repo is the list of SF instance where missing
+        # repositories were already added to the default tenant
+        mrs_by_config_repo = set()
 
         for tenant_name, tenant_conf in self.main_resources.get(
                 "resources", {}).get("tenants", {}).items():
@@ -270,6 +276,11 @@ class ZuulTenantsLoad:
             self.merge_tenant_from_resources(
                 tenants, tenant_resources, tenant_name, projects_list,
                 self.main_resources, default_conn, tenant_conf)
+            if tenant_conf["url"] not in mrs_by_config_repo:
+                self.add_missing_repos(
+                    tenants, tenant_resources, tenant_name, projects_list,
+                    self.main_resources, default_conn)
+                mrs_by_config_repo.add(tenant_conf['url'])
 
         final_data = self.final_tenant_merge(tenants)
         return yaml.safe_dump(final_data)
