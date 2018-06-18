@@ -110,7 +110,7 @@ class SFGerritUserManager(base.UserManager):
             return None
 
     def update(self, uid, username=None, full_name=None, email=None,
-               ssh_keys=None, external_id=None):
+               ssh_keys=None, external_id=None, **infos):
         self.log.debug(u"Updating account %s", uid)
         client = self.plugin.get_client()
         user = client.get_account(uid, details=True)
