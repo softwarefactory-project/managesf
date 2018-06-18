@@ -85,8 +85,8 @@ class YAMLBackend(object):
     def _update_cache(self):
         repo_hash = self._get_repo_hash()
         self.hash = repo_hash
-        yaml.dump(self.data, file(self.cache_path, 'w'),
-                  Dumper=YDumper)
+        yaml.safe_dump(self.data, file(self.cache_path, 'w'),
+                       Dumper=YDumper)
         file(self.cache_path_hash, 'w').write(repo_hash)
         logger.info("Cache file has been updated.")
 
@@ -98,8 +98,8 @@ class YAMLBackend(object):
             cached_repo_hash = self._get_cache_hash()
             if cached_repo_hash == repo_hash:
                 self.hash = repo_hash
-                self.data = yaml.load(file(self.cache_path),
-                                      Loader=YLoader)
+                self.data = yaml.safe_load(file(self.cache_path),
+                                           Loader=YLoader)
                 logger.info("Load data from the cache.")
             else:
                 logger.info("DB cache is outdated.")
@@ -142,7 +142,7 @@ class YAMLBackend(object):
         for f in yamlfiles:
             logger.info("Reading %s ..." % f)
             try:
-                yaml_data = yaml.load(
+                yaml_data = yaml.safe_load(
                     file(os.path.join(self.db_path, f)),
                     Loader=YLoader)
             except Exception:
@@ -257,7 +257,7 @@ class MemoryYAMLBackend(YAMLBackend):
         for k, v in self.buffer_d.items():
             logger.info("Reading buffer %s ..." % k)
             try:
-                yaml_data = yaml.load(
+                yaml_data = yaml.safe_load(
                     StringIO.StringIO(v),
                     Loader=YLoader)
             except Exception:
@@ -307,8 +307,8 @@ class YAMLtoSQLBackend(YAMLBackend):
             cached_repo_hash = self._get_cache_hash()
             if cached_repo_hash == repo_hash:
                 logger.info("Load data from the cache.")
-                self.data = yaml.load(file(self.cache_path),
-                                      Loader=YLoader)
+                self.data = yaml.safe_load(file(self.cache_path),
+                                           Loader=YLoader)
                 if os.path.isfile(self.sqlite_cache_path):
                     self._load_tables()
                 else:
