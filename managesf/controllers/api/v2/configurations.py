@@ -152,6 +152,7 @@ class ZuulTenantsLoad:
     def merge_tenant_from_files(
             self, tenants, tenants_conf_files, tenant_name, projects_list):
         """Load legacy zuul yaml file into the tenants object"""
+        print('Merge tenant files for tenant %s' % tenant_name)
         for path in tenants_conf_files:
             data = yaml.safe_load(open(path))
             if not data:
@@ -164,6 +165,7 @@ class ZuulTenantsLoad:
     def merge_tenant_from_resources(
             self, tenants, tenant_resources, tenant_name, projects_list,
             local_resources, default_conn, tenant_conf={}):
+        print('Merge resources for tenant %s' % tenant_name)
         # Set zuul-tenant-option
         tenant_options = tenant_conf.get("zuul-tenant-options", {})
         for name, value in tenant_options.items():
@@ -175,9 +177,6 @@ class ZuulTenantsLoad:
                 project['tenant'] = tenant_name
             else:
                 if project['tenant'] != tenant_name:
-                    print("Skip project %s as it is attached to"
-                          " unauthorized tenant %s" % (
-                              project_name, tenant_name))
                     continue
             for sr in project['source-repositories']:
                 sr_name = sr.keys()[0]
@@ -205,21 +204,22 @@ class ZuulTenantsLoad:
                             source, {}).setdefault(
                                 sr_type, []).append(_project)
 
+    def add_missing_repos(self, tenants, tenant_resources, tenant_name,
+                          projects_list, local_resources, default_conn):
+        print('Merge missing repos for tenant %s' % tenant_name)
         tenant_repos = tenant_resources.get(
             'resources', {}).get('repos', {}).items()
         r_type = 'untrusted-projects'
         for repo_name, repo in tenant_repos:
             if (tenant_name not in projects_list or
                     repo_name not in projects_list[tenant_name]):
-                if default_conn not in local_resources[
-                        'resources']['connections']:
-                    raise RuntimeError("%s is an unknown connection" % source)
                 _project = {repo_name: {'include': []}}
                 tenants.setdefault(
                     tenant_name, {}).setdefault(
                         'source', {}).setdefault(
                             default_conn, {}).setdefault(
                                 r_type, []).append(_project)
+            projects_list.setdefault(tenant_name, []).append(repo_name)
 
     def final_tenant_merge(self, tenants):
         final_data = []
@@ -265,11 +265,27 @@ class ZuulTenantsLoad:
             self.merge_tenant_from_files(
                 tenants, tenants_conf_files, tenant_name, projects_list)
 
-            # Finaly we load project from the resources
+            # We load project from the resources
             default_conn = tenant_conf["default-connection"]
             self.merge_tenant_from_resources(
                 tenants, tenant_resources, tenant_name, projects_list,
                 self.main_resources, default_conn, tenant_conf)
+
+            # Finally we add Repos not listed in sr with an include: [] to Zuul
+            if tenant_conf["url"] == self.main_resources["public-url"]:
+                # If tenant is hosted locally then use the local tenant
+                tenant_name = 'local'
+            # Check default_conn is a registered connection
+            if default_conn not in self.main_resources[
+                    'resources']['connections']:
+                # We cannot add repos to Zuul if no valid connection for
+                # that tenant
+                print("Skip adding missing repos. The tenant has an invalid"
+                      " default connection: %s" % default_conn)
+                continue
+            self.add_missing_repos(
+                tenants, tenant_resources, tenant_name, projects_list,
+                self.main_resources, default_conn)
 
         final_data = self.final_tenant_merge(tenants)
         return yaml.safe_dump(final_data)
