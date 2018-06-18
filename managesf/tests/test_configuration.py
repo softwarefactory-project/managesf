@@ -226,7 +226,10 @@ class ZuulTenantsLoadTests(TestCase):
                             # will be ignored
                             {'repo1': {
                                 'zuul/include': [],
-                            }}
+                            }},
+                            {'repo4': {
+                                'zuul/ignore': True,
+                            }},
                         ]
                     }
                 }
@@ -248,6 +251,7 @@ class ZuulTenantsLoadTests(TestCase):
                 'exclude-unprotected-branches': True,
                 'include': [],
             }}, up)
+        self.assertNotIn('repo4', up)
 
         local_resources = {
             'resources': {

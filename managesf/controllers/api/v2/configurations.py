@@ -189,6 +189,8 @@ class ZuulTenantsLoad:
                     continue
                 else:
                     projects_list.setdefault(tenant_name, []).append(sr_name)
+                    if sr[sr_name].get('zuul/ignore') is True:
+                        continue
                 source = (sr[sr_name].get('connection') or
                           project.get('connection', default_conn))
                 if source not in local_resources['resources']['connections']:
