@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d828d2c8_30faed31",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-06-19T01:00:29Z",
+      "side": 1,
+      "message": "Why is this checked here? The default_conn seems like a constant in this method, shouldn\u0027t the check be done outside?",
+      "revId": "cfb0a4d5fcba94f5ab2741de4205c9927da0223a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "35cf440d_cb96db15",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-06-19T01:00:29Z",
+      "side": 1,
+      "message": "i think we need to ensure we add missing_repos to the \u0027local\u0027 tenant (if other tenants are being hosted locally).",
+      "revId": "cfb0a4d5fcba94f5ab2741de4205c9927da0223a",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
