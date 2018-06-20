@@ -267,9 +267,9 @@ class ZuulTenantsLoadTests(TestCase):
         tenants = {}
         ztl = ZuulTenantsLoad(utests=True)
         tenant_options = {
-            "zuul-tenant-options": {
-                "default-jobs-timeout": "3600",
-                "allowed-reporter": "review.openstack.org"
+            "tenant-options": {
+                "zuul/default-jobs-timeout": "3600",
+                "zuul/allowed-reporter": "review.openstack.org"
             }
         }
         ztl.merge_tenant_from_resources(
