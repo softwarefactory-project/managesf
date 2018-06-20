@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "06bbbb25_27392f06",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-06-20T03:02:45Z",
+      "side": 1,
+      "message": "Next PS will convert those to self.log and it will adds debug statement.",
+      "revId": "cea12281cbc5b427730949cc38783e890f02792d",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1939c36d_06fe021b",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-06-20T03:02:45Z",
+      "side": 1,
+      "message": "Next PS will make non \u0027local\u0027 tenant not call add_missing_repos.",
+      "revId": "cea12281cbc5b427730949cc38783e890f02792d",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
