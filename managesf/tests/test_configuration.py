@@ -286,6 +286,7 @@ class ZuulTenantsLoadTests(TestCase):
 
     def test_tenant_add_extra_repo(self):
         tenants = {}
+        projects_list = {}
         local_resources = {
             'resources': {
                 'connections': {
@@ -312,7 +313,10 @@ class ZuulTenantsLoadTests(TestCase):
         }
         ztl = ZuulTenantsLoad(utests=True)
         ztl.merge_tenant_from_resources(
-            tenants, tenant_resources, "tenant1", {},
+            tenants, tenant_resources, "tenant1", projects_list,
+            local_resources, 'gerrit')
+        ztl.add_missing_repos(
+            tenants, tenant_resources, "tenant1", projects_list,
             local_resources, 'gerrit')
         up = tenants['tenant1']['source']['gerrit']['untrusted-projects']
         self.assertIn({'repo1': {'include': ['jobs']}}, up)
