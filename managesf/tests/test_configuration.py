@@ -121,14 +121,22 @@ class ZuulTenantsLoadTests(TestCase):
                     projects:
                       - repo3
         """
+        tenant_data_3 = """
+        - tenant:
+            name: local2
+            max-nodes-per-job: 5
+        """
         final_tenants = {}
         projects_list = {}
         tenant1 = yaml.load(tenant_data_1)[0]
         tenant2 = yaml.load(tenant_data_2)[0]
+        tenant3 = yaml.load(tenant_data_3)[0]
         ztl.merge_tenant_from_data(
             final_tenants, tenant1, '/t1', 'local', projects_list)
         ztl.merge_tenant_from_data(
             final_tenants, tenant2, '/t2', 'ansible-network', projects_list)
+        ztl.merge_tenant_from_data(
+            final_tenants, tenant3, '/t3', 'local2', projects_list)
         projects_list_expected = {
             'local': ['config'],
             'ansible-network': ['config', 'repo1', 'repo2', 'repo3']}
@@ -166,6 +174,13 @@ class ZuulTenantsLoadTests(TestCase):
                     }
                 }
             }
+        # Verify tenants def w/o sources are supported
+        expected_tenant_local2 = {
+            'tenant': {
+                'name': 'local2',
+                'max-nodes-per-job': 5,
+                }
+            }
         self.assertDictEqual(
             [t for t in final_tenants if
              t['tenant']['name'] == 'ansible-network'][0],
@@ -174,7 +189,11 @@ class ZuulTenantsLoadTests(TestCase):
             [t for t in final_tenants if
              t['tenant']['name'] == 'local'][0],
             expected_tenant_local)
-        self.assertEqual(len(final_tenants), 2)
+        self.assertDictEqual(
+            [t for t in final_tenants if
+             t['tenant']['name'] == 'local2'][0],
+            expected_tenant_local2)
+        self.assertEqual(len(final_tenants), 3)
 
     def test_merge_tenants_from_resources(self):
         ztl = ZuulTenantsLoad(utests=True)
