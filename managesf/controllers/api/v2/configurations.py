@@ -34,7 +34,10 @@ class BaseConfigurationController(base.APIv2RestController):
 class ZuulConfigurationController(BaseConfigurationController):
     @expose()
     def get(self, **kwargs):
-        return ZuulTenantsLoad(self.engine).start()
+        return ZuulTenantsLoad(
+            engine=self.engine,
+            default_tenant_name=conf.resources.get('tenant_name', 'local')
+            ).start()
 
 
 class ConfigurationController:
@@ -50,8 +53,10 @@ class ZuulTenantsLoad:
     log = logging.getLogger("managesf.ZuulTenantsLoad")
 
     def __init__(self, engine=None, utests=False,
-                 cache_dir="/var/lib/managesf/git"):
+                 cache_dir="/var/lib/managesf/git",
+                 default_tenant_name="local"):
         self.cache_dir = cache_dir
+        self.default_tenant_name = default_tenant_name
         if utests:
             # Skip this for unittests
             return
@@ -221,8 +226,7 @@ class ZuulTenantsLoad:
             'resources', {}).get('repos', {}).items()
         r_type = 'untrusted-projects'
         for repo_name, repo in tenant_repos:
-            if (tenant_name not in projects_list or
-                    repo_name not in projects_list[tenant_name]):
+            if not [True for v in projects_list.values() if repo_name in v]:
                 _project = {repo_name: {'include': []}}
                 self.log.debug("-> Adding %s to %s" % (_project, default_conn))
                 tenants.setdefault(
@@ -247,6 +251,7 @@ class ZuulTenantsLoad:
         tenants = {}
         # projects_list is the list of projects used to check for conflicts
         projects_list = {}
+        tenant_resources_cache = {}
 
         for tenant_name, tenant_conf in self.main_resources.get(
                 "resources", {}).get("tenants", {}).items():
@@ -255,17 +260,20 @@ class ZuulTenantsLoad:
                 "--[ Processing %s - %s" % (tenant_name, tenant_conf))
 
             # First we look for the tenant resources
-            if tenant_name != "local" and \
+            if tenant_name != self.default_tenant_name and \
                tenant_conf["url"] != self.main_resources["public-url"]:
                 url = os.path.join(tenant_conf['url'], 'resources')
                 self.log.debug("%s: loading resources %s", tenant_name, url)
                 tenant_resources = self.get_resources(url)
             else:
                 tenant_resources = self.main_resources
-                # Fallback to local tenant default connection
+                # Fallback to default_tenant_name tenant default connection
                 if not tenant_conf.get("default-connection"):
                     tenant_conf["default-connection"] = self.main_resources[
-                        "resources"]["tenants"]["local"]["default-connection"]
+                        "resources"]["tenants"][self.default_tenant_name][
+                            "default-connection"]
+
+            tenant_resources_cache[tenant_name] = tenant_resources
 
             # Then we pull tenant config repository for legacy zuul flat files
             path = self.fetch_git_repo(
@@ -284,11 +292,17 @@ class ZuulTenantsLoad:
                 tenants, tenant_resources, tenant_name, projects_list,
                 self.main_resources, default_conn, tenant_conf)
 
+        for tenant_name, tenant_conf in self.main_resources.get(
+                "resources", {}).get("tenants", {}).items():
+
+            tenant_resources = tenant_resources_cache[tenant_name]
+
             # Finally we add Repos not listed in sr with an include: [] to Zuul
             skip_missing_resources = False
             if tenant_conf["url"] == self.main_resources["public-url"]:
-                if tenant_name != "local":
-                    # We only add local missing resources to the local tenant
+                if tenant_name != self.default_tenant_name:
+                    # We only add local missing resources to the
+                    # default_tenant_name tenant
                     skip_missing_resources = True
             # Check default_conn is a registered connection
             if default_conn not in self.main_resources[
@@ -317,6 +331,7 @@ def cli():
     p.add_argument(
         "--cache-dir", default="/var/lib/software-factory/git-configuration")
     p.add_argument("--debug", action="store_true")
+    p.add_argument("--default-tenant-name", default="local")
     p.add_argument("service", choices=["zuul"])
     args = p.parse_args()
 
@@ -325,7 +340,9 @@ def cli():
         level=logging.DEBUG if args.debug else logging.INFO)
 
     if args.service == "zuul":
-        ztl = ZuulTenantsLoad(cache_dir=args.cache_dir)
+        ztl = ZuulTenantsLoad(
+            cache_dir=args.cache_dir,
+            default_tenant_name=args.default_tenant_name)
         conf = ztl.start()
 
     if args.output:
