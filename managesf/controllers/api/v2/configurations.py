@@ -43,15 +43,19 @@ class ConfigurationController:
             os.path.join(conf.resources['workdir'], 'read'),
             conf.resources['subdir'])
 
-        self.zuul = ZuulConfigurationController(self.engine)
+        self.zuul = ZuulConfigurationController(
+            engine=self.engine,
+            default_tenant_name=conf.resources.get('tenant_name', 'local'))
 
 
 class ZuulTenantsLoad:
     log = logging.getLogger("managesf.ZuulTenantsLoad")
 
     def __init__(self, engine=None, utests=False,
-                 cache_dir="/var/lib/managesf/git"):
+                 cache_dir="/var/lib/managesf/git",
+                 default_tenant_name="local"):
         self.cache_dir = cache_dir
+        self.default_tenant_name = default_tenant_name
         if utests:
             # Skip this for unittests
             return
@@ -243,7 +247,7 @@ class ZuulTenantsLoad:
                 "resources", {}).get("tenants", {}).items():
 
             # First we look for the tenant resources
-            if tenant_name != "local" and \
+            if tenant_name != self.default_tenant_name and \
                tenant_conf["url"] != self.main_resources["public-url"]:
                 url = os.path.join(tenant_conf['url'], 'resources')
                 self.log.debug("%s: loading resources %s", tenant_name, url)
@@ -253,7 +257,8 @@ class ZuulTenantsLoad:
                 # Fallback to local tenant default connection
                 if not tenant_conf.get("default-connection"):
                     tenant_conf["default-connection"] = self.main_resources[
-                        "resources"]["tenants"]["local"]["default-connection"]
+                        "resources"]["tenants"][self.default_tenant_name][
+                            "default-connection"]
 
             # Then we pull tenant config repository for legacy zuul flat files
             path = self.fetch_git_repo(
@@ -283,11 +288,14 @@ def cli():
     p.add_argument("--output")
     p.add_argument(
         "--cache-dir", default="/var/lib/software-factory/git-configuration")
+    p.add_argument("--default-tenant-name", default="local")
     p.add_argument("service", choices=["zuul"])
     args = p.parse_args()
 
     if args.service == "zuul":
-        ztl = ZuulTenantsLoad(cache_dir=args.cache_dir)
+        ztl = ZuulTenantsLoad(
+            cache_dir=args.cache_dir,
+            default_tenant_name=args.default_tenant_name)
         conf = ztl.start()
 
     if args.output:
