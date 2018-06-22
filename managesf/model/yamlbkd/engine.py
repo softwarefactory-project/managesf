@@ -563,7 +563,7 @@ class SFResourceBackendEngine(object):
             logger.info(l)
         return not partial, apply_logs
 
-    def get(self, cur_uri, cur_ref):
+    def get(self, cur_uri, cur_ref, public_url=None):
         """ Top level get function. This read the HEAD of the
         repo and return the resources data tree unmodified.
         """
@@ -582,7 +582,8 @@ class SFResourceBackendEngine(object):
                 dtrans = r.transform_for_get()
                 data_trans["resources"].setdefault(rtype, {})[rid] = dtrans
         data_trans["config-repo"] = cur_uri
-        data_trans["public-url"] = conf.resources.get("public_url")
+        data_trans["public-url"] = (
+            public_url or conf.resources.get("public_url"))
         return data_trans
 
     def get_sql(self, cur_uri, cur_ref):
