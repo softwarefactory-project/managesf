@@ -54,13 +54,33 @@ class ZuulTenantsLoad:
 
     def __init__(self, engine=None, utests=False,
                  cache_dir="/var/lib/managesf/git",
-                 default_tenant_name="local"):
+                 default_tenant_name="local",
+                 config_dir=None,
+                 gateway_url=None,
+                 tenant=None,
+                 master_sf_url=None):
         self.cache_dir = cache_dir
         self.default_tenant_name = default_tenant_name
+        self.tenant_resources = None
+        self.gateway_url = gateway_url
         if utests:
             # Skip this for unittests
             return
-        if engine is None:
+        if not os.path.isdir(self.cache_dir):
+            os.makedirs(self.cache_dir)
+        if config_dir and gateway_url:
+            eng = SFResourceBackendEngine(
+                os.path.join(self.cache_dir, 'validate'), 'resources')
+            resources = eng.get(
+               'file://%s' % config_dir,
+               'master', '%s/manage' % gateway_url.rstrip('/'))
+            if tenant and master_sf_url:
+                self.main_resources = self.get_resources(
+                    "%s/manage/v2/resources" % master_sf_url)
+                self.tenant_resources = resources
+            else:
+                self.main_resources = resources
+        elif engine is None:
             # From cli uses api instead
             self.main_resources = self.get_resources(
                 "http://localhost:20001/v2/resources")
@@ -256,6 +276,11 @@ class ZuulTenantsLoad:
         for tenant_name, tenant_conf in self.main_resources.get(
                 "resources", {}).get("tenants", {}).items():
 
+            if self.tenant_resources:
+                if tenant_conf['url'] != '%s/manage' % (
+                        self.gateway_url.rstrip('/')):
+                    continue
+
             self.log.debug(
                 "--[ Processing %s - %s" % (tenant_name, tenant_conf))
 
@@ -263,8 +288,14 @@ class ZuulTenantsLoad:
             if tenant_name != self.default_tenant_name and \
                tenant_conf["url"] != self.main_resources["public-url"]:
                 url = os.path.join(tenant_conf['url'], 'resources')
-                self.log.debug("%s: loading resources %s", tenant_name, url)
-                tenant_resources = self.get_resources(url)
+                if self.tenant_resources:
+                    self.log.debug("%s: loading resources from workspace",
+                                   tenant_name)
+                    tenant_resources = self.tenant_resources
+                else:
+                    self.log.debug("%s: loading resources %s",
+                                   tenant_name, url)
+                    tenant_resources = self.get_resources(url)
             else:
                 tenant_resources = self.main_resources
                 # Fallback to default_tenant_name tenant default connection
@@ -328,6 +359,10 @@ def cli():
 
     p = argparse.ArgumentParser()
     p.add_argument("--output")
+    p.add_argument("--config-dir")
+    p.add_argument("--gateway-url")
+    p.add_argument("--master-sf-url")
+    p.add_argument("--tenant", action='store_true')
     p.add_argument(
         "--cache-dir", default="/var/lib/software-factory/git-configuration")
     p.add_argument("--debug", action="store_true")
@@ -342,7 +377,11 @@ def cli():
     if args.service == "zuul":
         ztl = ZuulTenantsLoad(
             cache_dir=args.cache_dir,
-            default_tenant_name=args.default_tenant_name)
+            default_tenant_name=args.default_tenant_name,
+            config_dir=args.config_dir,
+            gateway_url=args.gateway_url,
+            master_sf_url=args.master_sf_url,
+            tenant=args.tenant)
         conf = ztl.start()
 
     if args.output:
