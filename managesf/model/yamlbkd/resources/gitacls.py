@@ -32,7 +32,8 @@ KEYS_EXP_GROUP_REGEXS = (
     'forgeAuthor',
     'create',
     'push',
-    'label-[^ ]+'
+    'label-[^ ]+',
+    'addPatchSet'
 )
 
 KEYS_EXP_BOOLEAN_VALUES = (
