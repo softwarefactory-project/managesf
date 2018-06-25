@@ -57,7 +57,7 @@ class Tenant(BaseResource):
             False,
             "",
             True,
-            "The tenant connection to be used in default pipelines",
+            "The tenant connection to be used in default Zuul pipelines",
         ),
         'description': (
             str,

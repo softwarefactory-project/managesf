@@ -172,9 +172,11 @@ class ZuulTenantsLoad:
             local_resources, default_conn, tenant_conf={}):
         self.log.debug('Merge resources for tenant %s' % tenant_name)
         # Set zuul-tenant-option
-        tenant_options = tenant_conf.get("zuul-tenant-options", {})
+        tenant_options = tenant_conf.get("tenant-options", {})
         for name, value in tenant_options.items():
-            tenants.setdefault(tenant_name, {})[name] = value
+            if name.startswith('zuul/'):
+                tenants.setdefault(
+                    tenant_name, {})[name.replace('zuul/', '')] = value
 
         for project_name, project in tenant_resources.get(
                 'resources', {}).get('projects', {}).items():
