@@ -341,7 +341,7 @@ class GerritClient:
         resp = self.request("delete", os.path.join(self.url, url), json_data)
         return self.decode(resp)
 
-    def put(self, url, json_data):
+    def put(self, url, json_data=None):
         resp = self.request("put", os.path.join(self.url, url), json_data)
         return self.decode(resp)
 
