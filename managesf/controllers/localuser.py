@@ -20,7 +20,7 @@ from basicauth import decode, DecodeError
 from passlib.hash import pbkdf2_sha256
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class UserNotFound(Exception):
@@ -66,6 +66,7 @@ def hash_password(infos):
 def update_user(username, infos):
     reason = ''
     if not model.get_user(username):
+        log.info(u"Adding user %s" % username)
         infos['username'] = username
         verify_input(infos)
         hash_password(infos)
@@ -74,6 +75,7 @@ def update_user(username, infos):
             del infos['hashed_password']
             ret = infos
     else:
+        log.info("Updating user %s" % username)
         verify_input(infos)
         hash_password(infos)
         ret = model.update_user(username, infos)
@@ -85,6 +87,7 @@ def update_user(username, infos):
 
 
 def delete_user(username):
+    log.info(u"Deleting user %s" % username)
     ret = model.delete_user(username)
     if not ret:
         raise UserNotFound("%s not found" % username)
@@ -107,9 +110,11 @@ def bind_user(authorization):
         raise BindForbidden("Wrong authorization header")
     ret = model.get_user(username)
     if not ret:
+        log.warning(u"User not found %s" % username)
         raise UserNotFound("%s not found" % username)
     if pbkdf2_sha256.verify(password, ret['hashed_password']):
         del ret['hashed_password']
         return ret
     else:
+        log.warning(u"Invalid password for user %s" % username)
         raise BindForbidden("Authentication failed")

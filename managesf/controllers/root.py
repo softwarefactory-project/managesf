@@ -177,6 +177,8 @@ class LocalUserController(RestController):
 
 class LocalUserBindController(RestController):
 
+    log = logging.getLogger("BindController")
+
     @expose('json')
     def get(self):
         _policy = 'managesf.localuser:bind'
@@ -187,20 +189,26 @@ class LocalUserBindController(RestController):
             username, password = localuser.decode(authorization)
             username = unicode(username, encoding='utf8')
         except localuser.DecodeError:
+            self.log.warning("Authorization decoding error")
             abort(401, detail="Wrong authorization header")
         if not authorize(_policy,
                          target={'username': username}):
+            self.log.error(u"%s: policy error" % username)
             return abort(401,
                          detail='Failure to comply with policy %s' % _policy)
 
         try:
             ret = localuser.bind_user(authorization)
         except (localuser.BindForbidden, localuser.UserNotFound) as e:
+            self.log.warning(u"%s: UserNotFound or Forbidden" % username)
             abort(401, detail=unicode(e))
         except Exception as e:
+            self.log.exception(u"%s: couldn't bind user" % username)
             return report_unhandled_error(e)
         if not ret:
+            self.log.exception(u"%s: Authentication failed" % username)
             abort(401, detail="Authentication failed")
+        self.log.info(u"%s: binding success" % username)
         return ret
 
 
