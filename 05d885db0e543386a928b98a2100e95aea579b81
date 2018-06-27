@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ebbdac36_2c803fd6",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-06-27T09:21:40Z",
+      "side": 1,
+      "message": "Perhaps adds a comment to explain what is this condition for. E.g. \"used by config-check cli usage\"",
+      "revId": "05d885db0e543386a928b98a2100e95aea579b81",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4b660082_501a733e",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2018-06-27T09:21:40Z",
+      "side": 1,
+      "message": "Could you please comment what is this condition refers to?",
+      "revId": "05d885db0e543386a928b98a2100e95aea579b81",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
