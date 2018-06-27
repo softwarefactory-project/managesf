@@ -75,9 +75,9 @@ class Connection(BaseResource):
     PRIORITY = 5
     PRIMARY_KEY = 'name'
     CALLBACKS = {
-        'update': lambda conf, new, kwargs: prevent_update(),
-        'create': lambda conf, new, kwargs: prevent_update(),
-        'delete': lambda conf, new, kwargs: prevent_update(),
+        'update': lambda conf, new, kwargs: [],
+        'create': lambda conf, new, kwargs: [],
+        'delete': lambda conf, new, kwargs: [],
         'extra_validations': lambda conf, new, kwargs: prevent_update(),
         'get_all': lambda conf, new: ([], {}),
     }
