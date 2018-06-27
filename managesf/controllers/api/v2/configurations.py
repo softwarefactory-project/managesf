@@ -13,9 +13,9 @@
 # under the License.
 
 import os
-import sys
 import git
 import yaml
+import copy
 import requests
 import logging
 
@@ -40,6 +40,12 @@ class ZuulConfigurationController(BaseConfigurationController):
             ).start()
 
 
+class RepoXplorerConfigurationController(BaseConfigurationController):
+    @expose()
+    def get(self, **kwargs):
+        return RepoXplorerConf(engine=self.engine).start()
+
+
 class ConfigurationController:
     def __init__(self):
         self.engine = SFResourceBackendEngine(
@@ -47,6 +53,7 @@ class ConfigurationController:
             conf.resources['subdir'])
 
         self.zuul = ZuulConfigurationController(self.engine)
+        self.repoxplorer = RepoXplorerConfigurationController(self.engine)
 
 
 class ZuulTenantsLoad:
@@ -348,8 +355,9 @@ class ZuulTenantsLoad:
                     'resources']['connections']:
                 # We cannot add repos to Zuul if no valid connection for
                 # that tenant
-                print("Skip adding missing repos. The tenant has an invalid"
-                      " default connection: %s" % default_conn)
+                self.log.debug(
+                    "Skip adding missing repos. The tenant has an invalid"
+                    " default connection: %s" % default_conn)
                 continue
             if not skip_missing_resources:
                 self.add_missing_repos(
@@ -360,6 +368,125 @@ class ZuulTenantsLoad:
 
         final_data = self.final_tenant_merge(tenants)
         return yaml.safe_dump(final_data)
+
+
+class RepoXplorerConf():
+    log = logging.getLogger("managesf.RepoXplorerConf")
+
+    default = {
+        'project-templates': {
+            'default': {
+                'branches': ['master']
+            }
+        },
+        'projects': {},
+        'identities': {},
+        'groups': {},
+    }
+
+    def __init__(self, engine=None,
+                 utests=False, default_tenant_name="local",):
+        self.default_tenant_name = default_tenant_name
+        self.repos_cache = set()
+        if utests:
+            # Skip this for unittests
+            return
+        if engine is None:
+            # From cli uses api instead
+            self.main_resources = self.get_resources(
+                "http://localhost:20001/v2/resources")
+        else:
+            self.main_resources = engine.get(
+                conf.resources['master_repo'], 'master')
+
+    def get_resources(self, url, verify_ssl=True):
+        """Get resources and config location from tenant deployment."""
+        ret = requests.get(url, verify=bool(int(verify_ssl)))
+        return ret.json()
+
+    def compute_uri_gitweb(self, conn):
+        conn_type = self.main_resources['resources'][
+            'connections'][conn]['type']
+        base_url = self.main_resources['resources'][
+            'connections'][conn]['base-url'].rstrip('/')
+        if conn_type == 'gerrit':
+            uri = base_url + '/%(name)s'
+            gitweb = (base_url + '/gitweb?p=%(name)s.git' +
+                      ';a=commitdiff;h=%%(sha)s;ds=sidebyside')
+        elif conn_type == 'github':
+            uri = 'http://github.com/%(name)s'
+            gitweb = 'http://github.com/%(name)s/commit/%%(sha)s'
+        else:
+            uri = base_url + '/%(name)s'
+            gitweb = base_url + '/%(name)s' + '/commit/?id=%%(sha)s'
+        return uri, gitweb
+
+    def start(self):
+        for project, data in self.main_resources[
+                'resources']['projects'].items():
+
+            # Get the connection type to get the gitweb model
+            conn = data.get('connection')
+            if not conn:
+                tenant_name = data.get('tenant', self.default_tenant_name)
+                tenant = self.main_resources['resources'][
+                    'tenants'][tenant_name]
+                conn = tenant['default-connection']
+            uri, gitweb = self.compute_uri_gitweb(conn)
+
+            # Add the project
+            self.default['projects'][project] = {
+                'repos': {},
+                'description': data.get('description', '')
+            }
+
+            # Set a template by project to ease overwriting via the config repo
+            self.default['project-templates'][project] = copy.deepcopy(
+                self.default['project-templates']['default'])
+            self.default['project-templates'][project]['uri'] = uri
+            self.default['project-templates'][project]['gitweb'] = gitweb
+
+            # Add repos in the project
+            for repo in data['source-repositories']:
+                reponame = list(repo.keys())[0]
+                self.default['projects'][project]['repos'][reponame] = {
+                    'template': project}
+                self.repos_cache.add(reponame)
+
+            # Add the groups
+            for group, data in self.main_resources[
+                    'resources']['groups'].items():
+                grp = {}
+                grp['description'] = data.get('description', '')
+                grp['emails'] = dict((member, None) for
+                                     member in data.get('members', []))
+                # Only add groups with members
+                if grp['emails']:
+                    self.default['groups'][group] = grp
+
+        # Add not associated repos
+        repos = set(self.main_resources['resources']['repos'].keys())
+        missing_repos = repos - self.repos_cache
+        if missing_repos:
+            tenant = self.main_resources['resources'][
+                'tenants'].get(self.default_tenant_name)
+            if tenant:
+                conn = tenant['default-connection']
+                uri, gitweb = self.compute_uri_gitweb(conn)
+                self.default['project-templates']['default']['uri'] = uri
+                self.default['project-templates']['default']['gitweb'] = gitweb
+                default_project = 'extras'
+                self.default['projects'][default_project] = {
+                    'repos': {},
+                    'description':
+                        'Repositories not associated to any projects'
+                }
+                for repo in missing_repos:
+                    self.default['projects'][default_project][
+                            'repos'][repo] = {
+                        'template': 'default'}
+
+        return yaml.safe_dump(self.default)
 
 
 def cli():
@@ -375,7 +502,7 @@ def cli():
         "--cache-dir", default="/var/lib/software-factory/git-configuration")
     p.add_argument("--debug", action="store_true")
     p.add_argument("--default-tenant-name", default="local")
-    p.add_argument("service", choices=["zuul"])
+    p.add_argument("service", choices=["zuul", "repoxplorer"])
     args = p.parse_args()
 
     logging.basicConfig(
@@ -392,16 +519,12 @@ def cli():
             tenant=args.tenant)
         conf = ztl.start()
 
+    if args.service == "repoxplorer":
+        rpc = RepoXplorerConf(
+            default_tenant_name=args.default_tenant_name)
+        conf = rpc.start()
+
     if args.output:
         open(args.output, "w").write(conf)
     else:
         print(conf)
-
-
-if __name__ == "__main__":
-    try:
-        ztl = ZuulTenantsLoad()
-        print(ztl.start())
-    except Exception:
-        print("Unexpected error running %s" % " ".join(sys.argv))
-        raise
