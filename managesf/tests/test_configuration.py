@@ -17,6 +17,7 @@ import yaml
 from unittest import TestCase
 
 from managesf.controllers.api.v2.configurations import ZuulTenantsLoad
+from managesf.controllers.api.v2.configurations import RepoXplorerConf
 
 
 class ZuulTenantsLoadTests(TestCase):
@@ -342,3 +343,92 @@ class ZuulTenantsLoadTests(TestCase):
         self.assertIn({'repo2': {'include': []}}, up)
         self.assertIn({'repo3': {}}, up)
         self.assertEqual(len(up), 3)
+
+
+class RepoXplorerConfTests(TestCase):
+
+    def test_load(self):
+        rpc = RepoXplorerConf(utests=True)
+        resources = {
+            'resources': {
+                'tenants': {
+                    'local': {
+                        'url': 'https://sftests.com/manage',
+                        'default-connection': 'gerrit'
+                    }
+                },
+                'connections': {
+                    'gerrit': {
+                        'base-url': 'https://sftests.com/r',
+                        'type': 'gerrit'
+                    }
+                },
+                'projects': {
+                    'project1': {
+                        'tenant': 'local',
+                        'source-repositories': [
+                            {'repo1': {}},
+                        ]
+                    }
+                },
+                'repos': {
+                    'repo2': {}
+                },
+                'groups': {
+                    'group1': {
+                        'members': [
+                            'admin@sftests.com'
+                        ]
+                    }
+                }
+            }
+        }
+        rpc.main_resources = resources
+        ret = yaml.load(rpc.start())
+        expected_ret = {
+            'identities': {},
+            'groups': {
+                'group1': {
+                    'description': '',
+                    'emails': {
+                        'admin@sftests.com': None
+                    }
+                }
+            },
+            'project-templates': {
+                'default': {
+                    'uri': 'https://sftests.com/r/%(name)s',
+                    'branches': ['master'],
+                    'gitweb':
+                        ('https://sftests.com/r/gitweb?p=%(name)s.git;'
+                         'a=commitdiff;h=%%(sha)s;ds=sidebyside')
+                },
+                'project1': {
+                    'uri': 'https://sftests.com/r/%(name)s',
+                    'branches': ['master'],
+                    'gitweb':
+                        ('https://sftests.com/r/gitweb?p=%(name)s.git;'
+                         'a=commitdiff;h=%%(sha)s;ds=sidebyside')
+                }
+            },
+            'projects': {
+                'extras': {
+                    'description':
+                        'Repositories not associated to any projects',
+                    'repos': {
+                        'repo2': {
+                            'template': 'default'
+                        }
+                    }
+                },
+                'project1': {
+                    'description': '',
+                    'repos': {
+                        'repo1': {
+                            'template': 'project1'
+                        }
+                    }
+                }
+            }
+        }
+        self.assertEqual(ret, expected_ret)
