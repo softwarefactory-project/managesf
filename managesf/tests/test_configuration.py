@@ -354,7 +354,10 @@ class RepoXplorerConfTests(TestCase):
                 'tenants': {
                     'local': {
                         'url': 'https://sftests.com/manage',
-                        'default-connection': 'gerrit'
+                        'default-connection': 'gerrit',
+                    },
+                    'tenant2': {
+                        'url': 'https://sftests.com/manage',
                     }
                 },
                 'connections': {
@@ -368,6 +371,15 @@ class RepoXplorerConfTests(TestCase):
                         'tenant': 'local',
                         'source-repositories': [
                             {'repo1': {}},
+                        ]
+                    },
+                    'project2': {
+                        'tenant': 'tenant2',
+                        'source-repositories': [
+                            {'repo3': {}},
+                            {'repo4': {
+                                'connection': 'gerrit'
+                            }},
                         ]
                     }
                 },
@@ -409,7 +421,13 @@ class RepoXplorerConfTests(TestCase):
                     'gitweb':
                         ('https://sftests.com/r/gitweb?p=%(name)s.git;'
                          'a=commitdiff;h=%%(sha)s;ds=sidebyside')
-                }
+                },
+                'project2/repo4': {
+                    'uri': 'https://sftests.com/r/%(name)s',
+                    'branches': ['master'],
+                    'gitweb': ('https://sftests.com/r/gitweb?p=%(name)s.git;'
+                               'a=commitdiff;h=%%(sha)s;ds=sidebyside')
+                },
             },
             'projects': {
                 'extras': {
@@ -426,6 +444,14 @@ class RepoXplorerConfTests(TestCase):
                     'repos': {
                         'repo1': {
                             'template': 'project1'
+                        }
+                    }
+                },
+                'project2': {
+                    'description': '',
+                    'repos': {
+                        'repo4': {
+                            'template': 'project2/repo4'
                         }
                     }
                 }

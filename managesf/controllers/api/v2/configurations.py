@@ -430,8 +430,14 @@ class RepoXplorerConf():
                 tenant_name = data.get('tenant', self.default_tenant_name)
                 tenant = self.main_resources['resources'][
                     'tenants'][tenant_name]
-                conn = tenant['default-connection']
-            uri, gitweb = self.compute_uri_gitweb(conn)
+                conn = tenant.get('default-connection')
+
+            if conn:
+                uri, gitweb = self.compute_uri_gitweb(conn)
+                self.default['project-templates'][project] = copy.deepcopy(
+                    self.default['project-templates']['default'])
+                self.default['project-templates'][project]['uri'] = uri
+                self.default['project-templates'][project]['gitweb'] = gitweb
 
             # Add the project
             self.default['projects'][project] = {
@@ -439,17 +445,30 @@ class RepoXplorerConf():
                 'description': data.get('description', '')
             }
 
-            # Set a template by project to ease overwriting via the config repo
-            self.default['project-templates'][project] = copy.deepcopy(
-                self.default['project-templates']['default'])
-            self.default['project-templates'][project]['uri'] = uri
-            self.default['project-templates'][project]['gitweb'] = gitweb
-
             # Add repos in the project
             for repo in data['source-repositories']:
                 reponame = list(repo.keys())[0]
+                if project not in self.default['project-templates']:
+                    # Now template has been defined because project or tenant
+                    # does not have a connection info
+                    # Get the info at source-repositories level
+                    _conn = repo[reponame].get('connection')
+                    if not _conn:
+                        # Nothing to do then. Skip it.
+                        continue
+                    uri, gitweb = self.compute_uri_gitweb(_conn)
+                    tmpl_name = "%s/%s" % (project, reponame)
+                    self.default['project-templates'][
+                            tmpl_name] = copy.deepcopy(
+                        self.default['project-templates']['default'])
+                    self.default['project-templates'][
+                        tmpl_name]['uri'] = uri
+                    self.default['project-templates'][
+                        tmpl_name]['gitweb'] = gitweb
+                else:
+                    tmpl_name = project
                 self.default['projects'][project]['repos'][reponame] = {
-                    'template': project}
+                    'template': tmpl_name}
                 self.repos_cache.add(reponame)
 
         # Add the groups
@@ -470,20 +489,22 @@ class RepoXplorerConf():
             tenant = self.main_resources['resources'][
                 'tenants'].get(self.default_tenant_name)
             if tenant:
-                conn = tenant['default-connection']
-                uri, gitweb = self.compute_uri_gitweb(conn)
-                self.default['project-templates']['default']['uri'] = uri
-                self.default['project-templates']['default']['gitweb'] = gitweb
-                default_project = 'extras'
-                self.default['projects'][default_project] = {
-                    'repos': {},
-                    'description':
-                        'Repositories not associated to any projects'
-                }
-                for repo in missing_repos:
-                    self.default['projects'][default_project][
-                            'repos'][repo] = {
-                        'template': 'default'}
+                conn = tenant.get('default-connection')
+                if conn:
+                    uri, gitweb = self.compute_uri_gitweb(conn)
+                    self.default['project-templates'][
+                        'default']['uri'] = uri
+                    self.default['project-templates'][
+                        'default']['gitweb'] = gitweb
+                    default_project = 'extras'
+                    self.default['projects'][default_project] = {
+                        'repos': {},
+                        'description':
+                            'Repositories not associated to any projects'
+                    }
+                    for repo in missing_repos:
+                        self.default['projects'][default_project][
+                            'repos'][repo] = {'template': 'default'}
 
         return yaml.safe_dump(self.default)
 
