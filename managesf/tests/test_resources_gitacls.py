@@ -23,7 +23,8 @@ class TestACLOps(TestCase):
 
     def test_extra_validations(self):
         kwargs = {'file': 'invalid ACLs !',
-                  'groups': []}
+                  'groups': [],
+                  'name': 'myacl'}
         o = ACLOps(None, None)
         logs = o.extra_validations(**kwargs)
         self.assertTrue(logs[0].startswith(
@@ -31,7 +32,8 @@ class TestACLOps(TestCase):
         self.assertEqual(len(logs), 1)
 
         kwargs = {'file': '',
-                  'groups': []}
+                  'groups': [],
+                  'name': 'myacl'}
         o = ACLOps(None, None)
         logs = o.extra_validations(**kwargs)
         self.assertEqual(len(logs), 0)
@@ -53,7 +55,8 @@ class TestACLOps(TestCase):
 [access "refs/*"]
 \tread = coders
 """,
-                  'groups': ['mygid']}
+                  'groups': ['mygid'],
+                  'name': 'myacl'}
 
         o = ACLOps(None, new)
         logs = o.extra_validations(**kwargs)
@@ -67,7 +70,8 @@ class TestACLOps(TestCase):
 [access "refs/*"]
 \tlabel-Code-Review = -2..+2 coders
 """,
-                  'groups': ['mygid']}
+                  'groups': ['mygid'],
+                  'name': 'myacl'}
 
         o = ACLOps(None, new)
         logs = o.extra_validations(**kwargs)
@@ -83,7 +87,8 @@ class TestACLOps(TestCase):
 \tread = group coders
 \tlabel-Code-Review = -2..+2 group coders
 """,
-                  'groups': ['mygid']}
+                  'groups': ['mygid'],
+                  'name': 'myacl'}
         o = ACLOps(None, new)
         logs = o.extra_validations(**kwargs)
         self.assertEqual(len(logs), 0)
