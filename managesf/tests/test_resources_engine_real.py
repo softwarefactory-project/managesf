@@ -905,6 +905,387 @@ wrong ! This string won't be accepted by Gerrit !
             xv.return_value = []
             eng = engine.SFResourceBackendEngine('fake', 'resources')
             valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertIn(
+                'Resource [type: acls, ID: a1] is going to be created.',
+                logs)
+
+        master = {
+            'resources': {
+                'acls': {
+                    'a1': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = group Registered Users
+    read = group Anonymous Users
+""",
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {},
+                'repos': {
+                    'r1': {
+                        'acl': 'a1',
+                    }
+                }
+            }
+        }
+
+        new = {
+            'resources': {
+                'acls': {
+                    'a1': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = deny group Registered Users
+    read = deny group Anonymous Users
+""",
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {},
+                'repos': {
+                    'r1': {
+                        'acl': 'a1',
+                        }
+                    }
+                }
+            }
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertFalse(valid)
+            self.assertIn(
+                "['r1'] repositories use a private Gerrit ACL but are not "
+                "defined as private in a project", logs)
+            self.assertIn(
+                'Resource [type: acls, ID: a1] extra validations failed', logs)
+
+        new = {
+            'resources': {
+                'acls': {
+                    'a1': {
+                        'file': """[project]
+    description = A description
+    [access "refs/*"]
+    read = deny group Registered Users
+    read = deny group Anonymous Users
+    """,
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {
+                    'p1': {
+                        'description': 'desc',
+                        'source-repositories': [
+                            {'r1': {'private': True}},
+                        ]
+                    }
+                },
+                'repos': {
+                    'r1': {
+                        'acl': 'a1',
+                        }
+                    }
+                }
+            }
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+            self.assertEqual(len(logs), 4)
+
+        master = {
+            'resources': {
+                'acls': {
+                    'public': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = group Registered Users
+    read = group Anonymous Users
+""",
+                        'groups': [],
+                        },
+                    'private': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = deny group Registered Users
+    read = deny group Anonymous Users
+""",
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {},
+                'repos': {
+                    'r1': {
+                        'acl': 'public',
+                    }
+                }
+            }
+        }
+
+        new = {
+            'resources': {
+                'acls': {
+                    'public': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = group Registered Users
+    read = group Anonymous Users
+""",
+                        'groups': [],
+                        },
+                    'private': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = deny group Registered Users
+    read = deny group Anonymous Users
+""",
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {},
+                'repos': {
+                    'r1': {
+                        'acl': 'private',
+                    }
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertFalse(valid)
+            self.assertIn(
+                "r1 repository use a private Gerrit ACL but are not "
+                "defined as private in a project", logs)
+            self.assertIn(
+                'Resource [type: repos, ID: r1] extra validations failed',
+                logs)
+
+        new = {
+            'resources': {
+                'acls': {
+                    'public': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = group Registered Users
+    read = group Anonymous Users
+""",
+                        'groups': [],
+                        },
+                    'private': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = deny group Registered Users
+    read = deny group Anonymous Users
+""",
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {
+                    'p1': {
+                        'description': 'desc',
+                        'source-repositories': [
+                            {'r1': {'private': True}},
+                        ]
+                    }
+                },
+                'repos': {
+                    'r1': {
+                        'acl': 'private',
+                    }
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
+
+        master = {
+            'resources': {
+                'acls': {
+                    'public': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = group Registered Users
+    read = group Anonymous Users
+""",
+                        'groups': [],
+                        },
+                    'private': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = deny group Registered Users
+    read = deny group Anonymous Users
+""",
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {},
+                'repos': {
+                    'r1': {
+                        'acl': 'private',
+                    }
+                }
+            }
+        }
+
+        new = {
+            'resources': {
+                'acls': {
+                    'public': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = group Registered Users
+    read = group Anonymous Users
+""",
+                        'groups': [],
+                        },
+                    'private': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = deny group Registered Users
+    read = deny group Anonymous Users
+""",
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {
+                    'p1': {
+                        'description': 'desc',
+                        'source-repositories': [
+                            {'r1': {}}
+                        ]
+                    }
+                },
+                'repos': {
+                    'r1': {
+                        'acl': 'private',
+                    }
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertFalse(valid)
+            self.assertIn(
+                "r1 repository use a private Gerrit ACL but are not "
+                "defined as private in the project p1", logs)
+            self.assertIn(
+                'Resource [type: projects, ID: p1] extra validations failed',
+                logs)
+
+        new = {
+            'resources': {
+                'acls': {
+                    'public': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = group Registered Users
+    read = group Anonymous Users
+""",
+                        'groups': [],
+                        },
+                    'private': {
+                        'file': """[project]
+    description = A description
+[access "refs/*"]
+    read = deny group Registered Users
+    read = deny group Anonymous Users
+""",
+                        'groups': [],
+                        }
+                    },
+                'groups': {},
+                'projects': {
+                    'p1': {
+                        'description': 'desc',
+                        'source-repositories': [
+                            {'r1': {'private': True}}
+                        ]
+                    }
+                },
+                'repos': {
+                    'r1': {
+                        'acl': 'private',
+                    }
+                }
+            }
+        }
+
+        with patch('managesf.model.yamlbkd.engine.'
+                   'SFResourceBackendEngine._load_resources_data') as lrd, \
+                patch('os.path.isdir'), \
+                patch('os.mkdir'), \
+                patch('managesf.model.yamlbkd.resources.group.'
+                      'GroupOps.extra_validations') as xv:
+            lrd.return_value = (master, new)
+            xv.return_value = []
+            eng = engine.SFResourceBackendEngine('fake', 'resources')
+            valid, logs = eng.validate(None, None, None, None)
+            self.assertTrue(valid)
 
     def test_gitrepo_validation(self):
         master = {

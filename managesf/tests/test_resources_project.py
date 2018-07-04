@@ -91,16 +91,26 @@ class ProjectOpsTest(TestCase):
                 self.assertIn('xyz', logs[0])
 
     def test_extra_validations(self):
-        p = ProjectOps(self.conf, None)
+        new = {
+            'resources': {
+                'projects': {
+                    'p1': {
+                        'source-repositories': []
+                    }
+                }
+            }
+        }
+        p = ProjectOps(self.conf, new)
+        kwargs = {'name': 'p1'}
         with patch.object(p.stb_ops, 'is_activated') as is_activated:
             is_activated.return_value = True
             with patch.object(p.stb_ops, 'extra_validations') as c:
                 c.return_value = []
-                logs = p.extra_validations()
+                logs = p.extra_validations(**kwargs)
                 self.assertTrue(c.called)
                 self.assertEqual(len(logs), 0)
             is_activated.return_value = False
             with patch.object(p.stb_ops, 'extra_validations') as c:
-                logs = p.extra_validations()
+                logs = p.extra_validations(**kwargs)
                 self.assertFalse(c.called)
                 self.assertEqual(len(logs), 0)

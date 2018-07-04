@@ -66,6 +66,7 @@ class ACLOps(object):
         logs = []
         acls = kwargs['file']
         groups = kwargs['groups']
+        name = kwargs['name']
 
         fd, path = tempfile.mkstemp()
         os.close(fd)
@@ -85,6 +86,8 @@ class ACLOps(object):
         for group_id in groups:
             name = self.new['resources']['groups'][group_id]['name']
             group_names.add(name)
+
+        # Verify the validity of the ACL
         sections = [s for s in c.sections() if c != 'project']
         for section_name in sections:
             for k, v in c.items(section_name):
@@ -124,6 +127,35 @@ class ACLOps(object):
                             "ACLs file section (%s), key (%s) relies on an "
                             "unknown group name: %s" % (
                                 section_name, k, group_name))
+
+        # Try to detect an ACL that make a repository private
+        if ('read = deny group Registered Users' in acls and
+                'read = deny group Anonymous Users' in acls):
+            # That a private ACLs then make sure repos that use it
+            # use the private flag at project level
+            # Find repos that use this ACL
+            private_repos = []
+            for repo, rdata in self.new['resources']['repos'].items():
+                if rdata['acl'] == name:
+                    private_repos.append(repo)
+            # Find repos marked as private in projects
+            # and remove them from the private_repos accu
+            if private_repos:
+                projects = self.new['resources']['projects'].values()
+                for project in projects:
+                    for sr in project['source-repositories']:
+                        if isinstance(sr, dict):
+                            sr_name = list(sr.keys())[0]
+                            sr_attrs = sr[sr_name]
+                            if sr_attrs.get('private') is True:
+                                private_repos.remove(sr_name)
+            # If some remains in the accu then the 'private' attribute
+            # is missing on them
+            if private_repos:
+                logs.append(
+                    "%s repositories use a private Gerrit ACL but are not"
+                    " defined as private in a project" % private_repos)
+
         return logs
 
 

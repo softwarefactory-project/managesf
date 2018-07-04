@@ -64,8 +64,32 @@ class ProjectOps(object):
 
     def extra_validations(self, **kwargs):
         logs = []
+        name = kwargs['name']
+
         if self.stb_ops.is_activated(**kwargs):
             logs.extend(self.stb_ops.extra_validations(**kwargs))
+
+        project = self.new['resources']['projects'][name]
+        for sr in project['source-repositories']:
+            if isinstance(sr, dict):
+                sr_name = list(sr.keys())[0]
+                sr_attrs = sr[sr_name]
+                private = sr_attrs.get('private', False)
+            else:
+                sr_name = sr
+                private = False
+            repo = self.new['resources'].get('repos', {}).get(sr_name)
+            if not repo:
+                continue
+            acl = self.new['resources']['acls'][repo['acl']]
+            if ('read = deny group Registered Users' in acl['file'] and
+                    'read = deny group Anonymous Users' in acl['file']):
+                if not private:
+                    logs.append(
+                        "%s repository use a private Gerrit ACL but are not"
+                        " defined as private in the project %s" % (
+                            sr_name, name))
+
         return logs
 
 
