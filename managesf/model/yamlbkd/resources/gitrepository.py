@@ -56,6 +56,35 @@ class GitRepositoryOps(object):
             gerrit = SoftwareFactoryGerrit(self.conf)
             self.client = gerrit.get_client()
 
+    def extra_validations(self, **kwargs):
+        repo_name = kwargs['name']
+        acl_id = kwargs['acl']
+
+        logs = []
+        set_private = False
+
+        acls = self.new['resources']['acls'][acl_id]['file']
+        # Detect if the ACL make that repository private
+        if ('read = deny group Registered Users' in acls and
+                'read = deny group Anonymous Users' in acls):
+            # Find repos marked as private in projects
+            # and remove them from the private_repos accu
+            projects = self.new['resources']['projects'].values()
+            for project in projects:
+                for sr in project['source-repositories']:
+                    if isinstance(sr, dict):
+                        sr_name = list(sr.keys())[0]
+                        sr_attrs = sr[sr_name]
+                        if (sr_name == repo_name and
+                                sr_attrs.get('private') is True):
+                            set_private = True
+            if not set_private:
+                logs.append(
+                    "%s repository use a private Gerrit ACL but are not"
+                    " defined as private in a project" % repo_name)
+
+        return logs
+
     def get_all(self):
         logs = []
         gitrepos = {}
@@ -391,7 +420,8 @@ class GitRepository(BaseResource):
             GitRepositoryOps(conf, new).create(**kwargs),
         'delete': lambda conf, new, kwargs:
             GitRepositoryOps(conf, new).delete(**kwargs),
-        'extra_validations': lambda conf, new, kwargs: [],
+        'extra_validations': lambda conf, new, kwargs:
+            GitRepositoryOps(conf, new).extra_validations(**kwargs),
         'get_all': lambda conf, new:
             GitRepositoryOps(conf, new).get_all(),
     }
