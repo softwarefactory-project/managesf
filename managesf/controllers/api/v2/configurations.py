@@ -230,6 +230,8 @@ class ZuulTenantsLoad:
                     projects_list.setdefault(tenant_name, []).append(sr_name)
                     if sr[sr_name].get('zuul/ignore') is True:
                         continue
+                    if sr[sr_name].get('private') is True:
+                        continue
                 source = (sr[sr_name].get('connection') or
                           project.get('connection', default_conn))
                 if source not in local_resources['resources']['connections']:
@@ -448,6 +450,9 @@ class RepoXplorerConf():
             # Add repos in the project
             for repo in data['source-repositories']:
                 reponame = list(repo.keys())[0]
+                if repo[reponame].get('private'):
+                    self.repos_cache.add(reponame)
+                    continue
                 if project not in self.default['project-templates']:
                     # Now template has been defined because project or tenant
                     # does not have a connection info

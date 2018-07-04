@@ -250,6 +250,9 @@ class ZuulTenantsLoadTests(TestCase):
                             {'repo4': {
                                 'zuul/ignore': True,
                             }},
+                            {'repo5': {
+                                'private': True,
+                            }},
                         ]
                     }
                 }
@@ -272,6 +275,7 @@ class ZuulTenantsLoadTests(TestCase):
                 'include': [],
             }}, up)
         self.assertNotIn('repo4', up)
+        self.assertNotIn('repo5', up)
 
         local_resources = {
             'resources': {
@@ -380,11 +384,15 @@ class RepoXplorerConfTests(TestCase):
                             {'repo4': {
                                 'connection': 'gerrit'
                             }},
+                            {'repo5': {
+                                'private': True
+                            }},
                         ]
                     }
                 },
                 'repos': {
-                    'repo2': {}
+                    'repo2': {},
+                    'repo5': {},
                 },
                 'groups': {
                     'group1': {
@@ -457,4 +465,5 @@ class RepoXplorerConfTests(TestCase):
                 }
             }
         }
+        print ret
         self.assertEqual(ret, expected_ret)
