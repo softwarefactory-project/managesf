@@ -465,5 +465,4 @@ class RepoXplorerConfTests(TestCase):
                 }
             }
         }
-        print ret
         self.assertEqual(ret, expected_ret)

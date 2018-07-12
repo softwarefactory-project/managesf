@@ -433,8 +433,9 @@ class RepoXplorerConf():
                 tenant = self.main_resources['resources'][
                     'tenants'][tenant_name]
                 conn = tenant.get('default-connection')
-
-            if conn:
+            conn_defined = self.main_resources['resources'].get(
+                'connections', {}).get(conn)
+            if conn and conn_defined:
                 uri, gitweb = self.compute_uri_gitweb(conn)
                 self.default['project-templates'][project] = copy.deepcopy(
                     self.default['project-templates']['default'])
@@ -454,12 +455,16 @@ class RepoXplorerConf():
                     self.repos_cache.add(reponame)
                     continue
                 if project not in self.default['project-templates']:
-                    # Now template has been defined because project or tenant
+                    # No template has been defined because project or tenant
                     # does not have a connection info
                     # Get the info at source-repositories level
                     _conn = repo[reponame].get('connection')
                     if not _conn:
                         # Nothing to do then. Skip it.
+                        continue
+                    if not self.main_resources['resources'].get(
+                            'connections', {}).get(_conn):
+                        # The conn is not defined. Skip it
                         continue
                     uri, gitweb = self.compute_uri_gitweb(_conn)
                     tmpl_name = "%s/%s" % (project, reponame)
@@ -488,8 +493,11 @@ class RepoXplorerConf():
                 self.default['groups'][group] = grp
 
         # Add not associated repos
-        repos = set(self.main_resources['resources']['repos'].keys())
-        missing_repos = repos - self.repos_cache
+        if self.main_resources['resources'].get('repos'):
+            repos = set(self.main_resources['resources']['repos'].keys())
+            missing_repos = repos - self.repos_cache
+        else:
+            missing_repos = None
         if missing_repos:
             tenant = self.main_resources['resources'][
                 'tenants'].get(self.default_tenant_name)
