@@ -43,7 +43,11 @@ class ZuulConfigurationController(BaseConfigurationController):
 class RepoXplorerConfigurationController(BaseConfigurationController):
     @expose()
     def get(self, **kwargs):
-        return RepoXplorerConf(engine=self.engine).start()
+        return RepoXplorerConf(
+            engine=self.engine,
+            default_tenant_name=conf.resources.get('tenant_name', 'local'),
+            master_sf_url=conf.resources.get('master_sf_url')
+            ).start()
 
 
 class ConfigurationController:
@@ -376,9 +380,11 @@ class RepoXplorerConf():
     log = logging.getLogger("managesf.RepoXplorerConf")
 
     def __init__(self, engine=None,
-                 utests=False, default_tenant_name="local"):
+                 utests=False, default_tenant_name="local",
+                 master_sf_url=None):
         self.default_tenant_name = default_tenant_name
         self.repos_cache = set()
+        self.master_sf_url = None
         self.default = {
             'project-templates': {
                 'default': {
@@ -399,6 +405,12 @@ class RepoXplorerConf():
         else:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
+        if self.master_sf_url:
+            master_resources = self.get_resources(
+                "%s/manage/v2/resources" % self.master_sf_url.rstrip('/')
+            )
+            self.main_resources["resources"]["connections"] = (
+                master_resources["resources"].get("connections", {}))
 
     def get_resources(self, url, verify_ssl=True):
         """Get resources and config location from tenant deployment."""
@@ -554,7 +566,8 @@ def cli():
 
     if args.service == "repoxplorer":
         rpc = RepoXplorerConf(
-            default_tenant_name=args.default_tenant_name)
+            default_tenant_name=args.default_tenant_name,
+            master_sf_url=args.master_sf_url)
         conf = rpc.start()
 
     if args.output:
