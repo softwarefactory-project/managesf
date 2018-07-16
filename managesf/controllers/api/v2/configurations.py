@@ -43,7 +43,10 @@ class ZuulConfigurationController(BaseConfigurationController):
 class RepoXplorerConfigurationController(BaseConfigurationController):
     @expose()
     def get(self, **kwargs):
-        return RepoXplorerConf(engine=self.engine).start()
+        return RepoXplorerConf(
+            engine=self.engine,
+            default_tenant_name=conf.resources.get('tenant_name', 'local')
+            ).start()
 
 
 class ConfigurationController:
@@ -376,8 +379,11 @@ class RepoXplorerConf():
     log = logging.getLogger("managesf.RepoXplorerConf")
 
     def __init__(self, engine=None,
-                 utests=False, default_tenant_name="local"):
+                 utests=False,
+                 master_sf_url=None,
+                 default_tenant_name='local'):
         self.default_tenant_name = default_tenant_name
+        self.master_sf_url = master_sf_url
         self.repos_cache = set()
         self.default = {
             'project-templates': {
@@ -396,9 +402,20 @@ class RepoXplorerConf():
             # From cli uses api instead
             self.main_resources = self.get_resources(
                 "http://localhost:20001/v2/resources")
+            if self.master_sf_url:
+                master_resources = self.get_resources(
+                    "%s/manage/v2/resources" % self.master_sf_url.rstrip('/'))
+                self.main_resources["resources"]["connections"] = (
+                    master_resources["resources"].get("connections", {}))
         else:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
+            # Get connections from the config file if not empty.
+            # This means we are in tenant deployment and needs
+            # to get connections populated in the config file.
+            if conf.resources.get('connections', {}):
+                self.main_resources['resources'][
+                    'connections'] = conf.resources.get('connections', {})
 
     def get_resources(self, url, verify_ssl=True):
         """Get resources and config location from tenant deployment."""
@@ -454,14 +471,8 @@ class RepoXplorerConf():
                 if repo[reponame].get('private'):
                     self.repos_cache.add(reponame)
                     continue
-                if project not in self.default['project-templates']:
-                    # No template has been defined because project or tenant
-                    # does not have a connection info
-                    # Get the info at source-repositories level
-                    _conn = repo[reponame].get('connection')
-                    if not _conn:
-                        # Nothing to do then. Skip it.
-                        continue
+                _conn = repo[reponame].get('connection')
+                if _conn:
                     if not self.main_resources['resources'].get(
                             'connections', {}).get(_conn):
                         # The conn is not defined. Skip it
@@ -475,10 +486,13 @@ class RepoXplorerConf():
                         tmpl_name]['uri'] = uri
                     self.default['project-templates'][
                         tmpl_name]['gitweb'] = gitweb
-                else:
+                elif conn:
                     tmpl_name = project
-                self.default['projects'][project]['repos'][reponame] = {
-                    'template': tmpl_name}
+                else:
+                    tmpl_name = None
+                if tmpl_name:
+                    self.default['projects'][project]['repos'][reponame] = {
+                        'template': tmpl_name}
                 self.repos_cache.add(reponame)
 
         # Add the groups
@@ -503,7 +517,9 @@ class RepoXplorerConf():
                 'tenants'].get(self.default_tenant_name)
             if tenant:
                 conn = tenant.get('default-connection')
-                if conn:
+                conn_defined = self.main_resources['resources'].get(
+                    'connections', {}).get(conn)
+                if conn and conn_defined:
                     uri, gitweb = self.compute_uri_gitweb(conn)
                     self.default['project-templates'][
                         'default']['uri'] = uri
@@ -554,6 +570,7 @@ def cli():
 
     if args.service == "repoxplorer":
         rpc = RepoXplorerConf(
+            master_sf_url=args.master_sf_url,
             default_tenant_name=args.default_tenant_name)
         conf = rpc.start()
 
