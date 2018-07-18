@@ -59,6 +59,22 @@ class Tenant(BaseResource):
             True,
             "The tenant connection to be used in default Zuul pipelines",
         ),
+        'allowed-reporters': (
+            list,
+            '.+',
+            False,
+            [],
+            True,
+            "The list of allowed reporter connections for Zuul",
+        ),
+        'allowed-triggers': (
+            list,
+            '.+',
+            False,
+            [],
+            True,
+            "The list of allowed trigger connections for Zuul",
+        ),
         'description': (
             str,
             '.*',

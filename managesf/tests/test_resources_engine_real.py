@@ -1795,6 +1795,8 @@ wrong ! This string won't be accepted by Gerrit !
                         'url': 'https://natto.sftests.com/manage',
                         'description': 'The natto tenant',
                         'default-connection': 'gerrit',
+                        'allowed-triggers': ['gerrit1', 'gerrit2'],
+                        'allowed-reporters': ['review.openstack.org'],
                         },
                     }
                 }
