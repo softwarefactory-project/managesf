@@ -346,7 +346,9 @@ class ZuulTenantsLoad:
         for tenant_name, tenant_conf in self.main_resources.get(
                 "resources", {}).get("tenants", {}).items():
 
-            tenant_resources = tenant_resources_cache[tenant_name]
+            tenant_resources = tenant_resources_cache.get(tenant_name)
+            if not tenant_resources:
+                continue
 
             # Finally we add Repos not listed in sr with an include: [] to Zuul
             skip_missing_resources = False
