@@ -1988,7 +1988,6 @@ wrong ! This string won't be accepted by Gerrit !
                                 {'r1': {}},
                                 {'r2': {'zuul/config-project': True}}
                             ],
-                            'tenant': 'local',
                             'description': 'An awesome project',
                             'name': 'p1'}
                         }

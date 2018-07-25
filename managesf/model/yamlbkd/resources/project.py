@@ -123,7 +123,7 @@ class Project(BaseResource):
             str,
             '.*',
             False,
-            "local",
+            "",
             True,
             "The tenant name",
         ),
