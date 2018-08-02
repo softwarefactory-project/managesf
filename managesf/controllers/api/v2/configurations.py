@@ -69,6 +69,7 @@ class ZuulTenantsLoad:
                  gateway_url=None,
                  tenant=None,
                  master_sf_url=None):
+        self.main_resources = {}
         self.cache_dir = cache_dir
         self.default_tenant_name = default_tenant_name
         self.tenant_resources = None
@@ -219,6 +220,11 @@ class ZuulTenantsLoad:
         for project_name, project in tenant_resources.get(
                 'resources', {}).get('projects', {}).items():
             if not project.get('tenant'):
+                if tenant_resources == self.main_resources and \
+                      tenant_name != self.default_tenant_name:
+                    # This is a tenant hosted on the master instance,
+                    # we only match project with an explicit tenant name
+                    continue
                 project['tenant'] = tenant_name
             else:
                 if project['tenant'] != tenant_name:
