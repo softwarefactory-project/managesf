@@ -1493,6 +1493,10 @@ wrong ! This string won't be accepted by Gerrit !
                         'tenant': 'local',
                         'connection': 'github.com',
                         'source-repositories': ['r1'],
+                        'privileged-users': [
+                            'arale@norimaki.net',
+                            'senbei@norimaki.net',
+                        ],
                     },
                 },
                 'groups': {},
@@ -1792,6 +1796,10 @@ wrong ! This string won't be accepted by Gerrit !
                             }
                         },
                     'natto': {
+                        'privileged-users': [
+                            'obochaman@penguin.village',
+                            'suppaman@penguin.village',
+                        ],
                         'url': 'https://natto.sftests.com/manage',
                         'description': 'The natto tenant',
                         'default-connection': 'gerrit',

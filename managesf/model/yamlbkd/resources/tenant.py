@@ -83,6 +83,15 @@ class Tenant(BaseResource):
             True,
             "The tenant description",
         ),
+        'privileged-users': (
+            list,
+            '.+@.+',
+            False,
+            [],
+            True,
+            "Software Factory users allowed to perform privileged actions "
+            "on this tenant, such as dequeue jobs and autohold nodes."
+        ),
     }
     PRIORITY = 5
     PRIMARY_KEY = 'name'

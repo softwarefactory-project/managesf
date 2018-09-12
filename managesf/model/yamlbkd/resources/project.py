@@ -199,6 +199,16 @@ class Project(BaseResource):
             True,
             "Code source repositories related to the project",
         ),
+        'privileged-users': (
+            list,
+            '.+@.+',
+            False,
+            [],
+            True,
+            "Software Factory users allowed to perform privileged actions "
+            "on this project's pipelines, such as dequeue jobs "
+            "and autohold nodes."
+        ),
     }
     PRIORITY = 10
     PRIMARY_KEY = 'name'
