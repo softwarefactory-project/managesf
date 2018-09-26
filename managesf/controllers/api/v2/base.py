@@ -46,7 +46,7 @@ def get_user_groups(username):
         logger.info("Unable to read groups from the resources engine.")
         logger.info("It is probably because we are boostrapping SF.")
         return []
-    groups = resources['resources']['groups']
+    groups = resources['resources'].get('groups', {})
     return [g for g in groups if user_email in groups[g]['members']]
 
 
