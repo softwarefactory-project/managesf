@@ -36,7 +36,6 @@ BuildRequires:  python2-oslo-policy
 BuildRequires:  python2-deepdiff
 BuildRequires:  GitPython
 BuildRequires:  python-requests
-BuildRequires:  python-jenkins
 BuildRequires:  python-sphinx_rtd_theme
 BuildRequires:  python-future
 
@@ -61,7 +60,6 @@ Requires:       python2-oslo-policy
 Requires:       python2-deepdiff
 Requires:       GitPython
 Requires:       python-requests
-Requires:       python-jenkins
 Requires:       python-gunicorn
 Requires:       python-future
 Requires:       python2-storyboardclient
