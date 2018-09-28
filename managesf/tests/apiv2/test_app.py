@@ -31,13 +31,10 @@ class V2FunctionalTest(TestCase):
                        'app': c.app,
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
-                       'auth': c.auth,
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
-                       'mysql': c.mysql,
                        'policy': c.policy,
                        'resources': c.resources,
-                       'jenkins': c.jenkins,
                        'nodepool': c.nodepool,
                        'api': c.api, }
         # App must be loaded before we can import v2 managers

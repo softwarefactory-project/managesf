@@ -19,23 +19,17 @@ from pecan.configuration import conf_from_dict
 
 
 class dummy_conf():
-    auth = {
-        'host': 'auth.tests.dom',
-    }
     services = ['SFGerrit',
                 'SFStoryboard',
-                'SFJenkins',
                 'SFNodepool',
                 ]
     gerrit = {
         'url': 'http://gerrit.tests.dom',
         'password': 'admin_password',
-        'user': 'gerrit',
         'host': 'gerrit.test.dom',
         'top_domain': 'tests.dom',
         'ssh_port': 2929,
         'sshkey_priv_path': tempfile.mkstemp()[1],
-        'replication_config_path': tempfile.mkstemp()[1],
         'db_host': 'db.tests.dom',
         'db_name': 'gerrit_db',
         'db_user': 'gerrit_db_user',
@@ -56,11 +50,6 @@ class dummy_conf():
         'db_user': 'gerrit_db_user',
         'db_password': 'gerrit_db_password',
     }
-    jenkins = {
-        'api_url': 'http://jenkins.tests.dom:8080/jenkins/',
-        'user': 'jenkins',
-        'password': 'jenkins_password_or_api_token',
-    }
     nodepool = {
         'host': 'nodepool.tests.dom',
         'user': 'nodepool',
@@ -69,8 +58,6 @@ class dummy_conf():
     managesf = {
         'host': 'managesf.tests.dom',
         'sshkey_priv_path': '/tmp/id_rsa',
-        'sshkey_update_path': '/tmp/id_rsa',
-        'backup_dir': '/tmp',
     }
     resources = {
         'workdir': tempfile.mkdtemp(),
@@ -78,14 +65,9 @@ class dummy_conf():
         'master_repo': 'http://sftests.com/r/config',
         'public_url': 'http://sftests.com/manage',
     }
-    mysql = {
-        'host': 'mysql.test.dom',
-    }
     admin = {
         'name': 'user1',
         'email': 'user1@tests.dom',
-        'http_password': 'userpass',
-        'cookiejar': None
     }
     app = {
         'root': 'managesf.controllers.root.RootController',
