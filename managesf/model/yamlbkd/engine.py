@@ -23,7 +23,6 @@ from StringIO import StringIO
 from pecan import conf
 
 from managesf.model.yamlbkd.yamlbackend import YAMLBackend
-from managesf.model.yamlbkd.yamlbackend import YAMLtoSQLBackend
 from managesf.model.yamlbkd.yamlbackend import MemoryYAMLBackend
 from managesf.model.yamlbkd.yamlbackend import YAMLDBException
 from managesf.model.yamlbkd.resource import ModelInvalidException
@@ -585,18 +584,6 @@ class SFResourceBackendEngine(object):
         data_trans["public-url"] = (
             public_url or conf.resources.get("public_url"))
         return data_trans
-
-    def get_sql(self, cur_uri, cur_ref):
-        """ Top level get function. This read the HEAD of the
-        repo and return the resources data tree as a list of SQLite tables.
-        """
-        logger.info("Resources engine: get resource tree (SQL) requested")
-        if not os.path.isdir(self.workdir):
-            os.mkdir(self.workdir)
-        current = YAMLtoSQLBackend(cur_uri, cur_ref,
-                                   self.subdir, self.workdir,
-                                   "%s_cache" % self.workdir.rstrip('/'))
-        return current.get_data()
 
     def direct_apply(self, prev, new):
         """ Top level direct_apply function. This function should be
