@@ -20,4 +20,3 @@ six
 oslo.policy==1.13.0
 deepdiff==2.1.2
 GitPython==2.0.8
-python-jenkins==0.4.13
