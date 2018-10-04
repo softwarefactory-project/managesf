@@ -130,8 +130,8 @@ class YAMLBackend(object):
             repo.execute(['git', 'fetch', '-f', 'origin',
                           '%s:refs/remotes/origin/myref' % self.git_ref])
             repo.execute(['git', 'checkout', 'origin/myref'])
-        logger.info("Updated GIT repo %s at ref %s." % (self.git_repo_url,
-                                                        self.git_ref))
+        logger.info("Updated GIT repo %s from %s at ref %s." % (
+            self.clone_path, self.git_repo_url, self.git_ref))
 
     def _load_db(self):
         def check_ext(f):
