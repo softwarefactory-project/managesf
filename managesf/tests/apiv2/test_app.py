@@ -228,48 +228,6 @@ class TestManageSFV2ResourcesController(V2FunctionalTest):
             self.assertEqual('blop', response.json.get('error_description'))
 
 
-class TestManageSFV2ACLController(V2FunctionalTest):
-
-    @patch('managesf.controllers.api.v2.resources.manager')
-    def test_get_acl(self, rm):
-        with patch('managesf.controllers.api.v2.base.authorize'):
-            environ = {'REMOTE_USER': 'user'}
-            retval = {'skipped': 0,
-                      'total': 10,
-                      'limit': 1,
-                      'results': ['yo yo']}
-            rm.acls.get.return_value = retval
-            response = self.app.get('/v2/acl/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 200, response.text)
-            self.assertEqual('yo yo', response.json['results'][0])
-            retval['total'] = 0
-            response = self.app.get('/v2/acl/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 404, response.text)
-
-
-class TestManageSFV2ProjectsController(V2FunctionalTest):
-
-    @patch('managesf.controllers.api.v2.resources.manager')
-    def test_get_acl(self, rm):
-        with patch('managesf.controllers.api.v2.base.authorize'):
-            environ = {'REMOTE_USER': 'user'}
-            retval = {'skipped': 0,
-                      'total': 10,
-                      'limit': 1,
-                      'results': ['yo yo']}
-            rm.projects.get.return_value = retval
-            response = self.app.get('/v2/projects/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 200, response.text)
-            self.assertEqual('yo yo', response.json['results'][0])
-            retval['total'] = 0
-            response = self.app.get('/v2/projects/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 404, response.text)
-
-
 class TestManageSFV2ZuulController(V2FunctionalTest):
     """Test the zuul REST proxy"""
     @patch('requests.get')
