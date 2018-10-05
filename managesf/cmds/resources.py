@@ -140,14 +140,14 @@ def cli():
         level=logging.DEBUG if args.debug else logging.INFO,
         **kwargs)
 
-    configuration.set_config(args.managesf_config)
-
     if not os.path.isdir(os.path.expanduser(args.cache_dir)):
         os.makedirs(os.path.expanduser(args.cache_dir))
 
-    engine = SFResourceBackendEngine(
-        os.path.join(args.cache_dir, args.action),
-        conf.resources.subdir)
+    if args.action not in ['remote-validate']:
+        configuration.set_config(args.managesf_config)
+        engine = SFResourceBackendEngine(
+            os.path.join(args.cache_dir, args.action),
+            conf.resources.subdir)
 
     if args.action == "read":
         raw = engine.get(
