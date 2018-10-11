@@ -491,6 +491,15 @@ class EngineTest(TestCase):
             data = eng.get('https://sftests.com/r/config', None)
             self.assertTrue(
                 data.get('config-repo'), 'https://sftests.com/r/config')
+            self.assertNotIn('connections', data['resources'])
+            with patch('managesf.model.yamlbkd.engine.conf') as c:
+                c.resources.get.return_value = {
+                    'github.com': {'base_url': 'https://github.com'}}
+                data = eng.get('https://sftests.com/r/config', None)
+                self.assertTrue(
+                    data.get('config-repo'), 'https://sftests.com/r/config')
+                self.assertIn('connections', data['resources'])
+                self.assertIn('github.com', data['resources']['connections'])
 
     def test_get_data_diff(self):
         with patch.dict(engine.MAPPING, {'dummies': Dummy}):
