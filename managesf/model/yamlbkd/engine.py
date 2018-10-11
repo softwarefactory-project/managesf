@@ -583,6 +583,13 @@ class SFResourceBackendEngine(object):
         data_trans["config-repo"] = cur_uri
         data_trans["public-url"] = (
             public_url or conf.resources.get("public_url"))
+        # If we have connections defined in the configuration than mean
+        # we are on a tenant deployement. So can set the connections resources
+        # key from the config
+        if hasattr(
+                conf, 'resources') and conf.resources.get('connections', {}):
+            data_trans['resources'][
+                'connections'] = conf.resources.get('connections', {})
         return data_trans
 
     def direct_apply(self, prev, new):
