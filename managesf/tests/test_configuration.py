@@ -14,10 +14,12 @@
 
 import copy
 import yaml
+from mock import patch, call
 from unittest import TestCase
 
 from managesf.controllers.api.v2.configurations import ZuulTenantsLoad
 from managesf.controllers.api.v2.configurations import RepoXplorerConf
+from managesf.controllers.api.v2.configurations import BaseStandardServiceConf
 
 
 class ZuulTenantsLoadTests(TestCase):
@@ -347,6 +349,42 @@ class ZuulTenantsLoadTests(TestCase):
         self.assertIn({'repo2': {'include': []}}, up)
         self.assertIn({'repo3': {}}, up)
         self.assertEqual(len(up), 3)
+
+
+class BaseStandardServiceConfTests(TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_init(self):
+        with patch.object(BaseStandardServiceConf, 'get_resources') as gr:
+            gr.return_value = {'resources': 'fake'}
+            bsf = BaseStandardServiceConf()
+            self.assertDictEqual({'resources': 'fake'}, bsf.main_resources)
+            gr.reset_mock()
+            gr.side_effect = [
+                {'resources': {'tenants': None}},
+                {'resources': {'connections': 'fake'}}]
+            bsf = BaseStandardServiceConf(master_sf_url='https://mastersf.com')
+            self.assertDictEqual(
+                {'resources': {'tenants': None, 'connections': 'fake'}},
+                bsf.main_resources)
+            self.assertEqual(
+                gr.mock_calls[-1],
+                call('https://mastersf.com/manage/v2/resources'))
+
+        class Engine():
+            def get(*args, **kwargs):
+                return {'resources': {'tenants': None}}
+
+        engine = Engine()
+        with patch(
+                'managesf.controllers.api.v2.configurations.conf') as c:
+            c.resources.get.return_value = 'fake'
+            bsf = BaseStandardServiceConf(engine=engine)
+            self.assertDictEqual(
+                {'resources': {'tenants': None, 'connections': 'fake'}},
+                bsf.main_resources)
 
 
 class RepoXplorerConfTests(TestCase):

@@ -49,6 +49,12 @@ class RepoXplorerConfigurationController(BaseConfigurationController):
             ).start()
 
 
+class ResourcesConfigurationController(BaseConfigurationController):
+    @expose()
+    def get(self, **kwargs):
+        return Resources(engine=self.engine).start()
+
+
 class ConfigurationController:
     def __init__(self):
         self.engine = SFResourceBackendEngine(
@@ -57,6 +63,7 @@ class ConfigurationController:
 
         self.zuul = ZuulConfigurationController(self.engine)
         self.repoxplorer = RepoXplorerConfigurationController(self.engine)
+        self.resources = ResourcesConfigurationController(self.engine)
 
 
 class ZuulTenantsLoad:
@@ -383,8 +390,7 @@ class ZuulTenantsLoad:
         return yaml.safe_dump(final_data)
 
 
-class RepoXplorerConf():
-    log = logging.getLogger("managesf.RepoXplorerConf")
+class BaseStandardServiceConf():
 
     def __init__(self, engine=None,
                  utests=False,
@@ -392,17 +398,6 @@ class RepoXplorerConf():
                  default_tenant_name='local'):
         self.default_tenant_name = default_tenant_name
         self.master_sf_url = master_sf_url
-        self.repos_cache = set()
-        self.default = {
-            'project-templates': {
-                'default': {
-                    'branches': ['master']
-                }
-            },
-            'projects': {},
-            'identities': {},
-            'groups': {},
-        }
         if utests:
             # Skip this for unittests
             return
@@ -426,9 +421,26 @@ class RepoXplorerConf():
                     'connections'] = conf.resources.get('connections', {})
 
     def get_resources(self, url, verify_ssl=True):
-        """Get resources and config location from tenant deployment."""
         ret = requests.get(url, verify=bool(int(verify_ssl)))
         return ret.json()
+
+
+class RepoXplorerConf(BaseStandardServiceConf):
+    log = logging.getLogger("managesf.RepoXplorerConf")
+
+    def __init__(self, *args, **kwargs):
+        BaseStandardServiceConf.__init__(self, *args, **kwargs)
+        self.repos_cache = set()
+        self.default = {
+            'project-templates': {
+                'default': {
+                    'branches': ['master']
+                }
+            },
+            'projects': {},
+            'identities': {},
+            'groups': {},
+        }
 
     def compute_uri_gitweb(self, conn):
         conn_type = self.main_resources['resources'][
@@ -546,6 +558,22 @@ class RepoXplorerConf():
         return yaml.safe_dump(self.default)
 
 
+class Resources(BaseStandardServiceConf):
+    """ Simple resources get endpoint to handle master and tenant
+    SF context. Resources tree for a tenant does not have connections details
+    so we need that configuration endpoint to enhance the tree with
+    connection details grabbed from the managesf conf in case of
+    tenant context.
+    """
+    log = logging.getLogger("managesf.configuration.resources")
+
+    def __init__(self, *args, **kwargs):
+        BaseStandardServiceConf.__init__(self, *args, **kwargs)
+
+    def start(self):
+        return yaml.safe_dump(self.main_resources)
+
+
 def cli():
     import argparse
 
@@ -559,7 +587,9 @@ def cli():
         "--cache-dir", default="/var/lib/software-factory/git-configuration")
     p.add_argument("--debug", action="store_true")
     p.add_argument("--default-tenant-name", default="local")
-    p.add_argument("service", choices=["zuul", "repoxplorer"])
+    p.add_argument(
+        "service",
+        choices=["zuul", "repoxplorer", "resources"])
     args = p.parse_args()
 
     logging.basicConfig(
@@ -580,6 +610,10 @@ def cli():
         rpc = RepoXplorerConf(
             master_sf_url=args.master_sf_url,
             default_tenant_name=args.default_tenant_name)
+        conf = rpc.start()
+
+    if args.service == "resources":
+        rpc = Resources(master_sf_url=args.master_sf_url)
         conf = rpc.start()
 
     if args.output:
