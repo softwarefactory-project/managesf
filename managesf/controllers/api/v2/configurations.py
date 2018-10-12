@@ -410,20 +410,9 @@ class RepoXplorerConf():
             # From cli uses api instead
             self.main_resources = self.get_resources(
                 "http://localhost:20001/v2/resources")
-            if self.master_sf_url:
-                master_resources = self.get_resources(
-                    "%s/manage/v2/resources" % self.master_sf_url.rstrip('/'))
-                self.main_resources["resources"]["connections"] = (
-                    master_resources["resources"].get("connections", {}))
         else:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
-            # Get connections from the config file if not empty.
-            # This means we are in tenant deployment and needs
-            # to get connections populated in the config file.
-            if conf.resources.get('connections', {}):
-                self.main_resources['resources'][
-                    'connections'] = conf.resources.get('connections', {})
 
     def get_resources(self, url, verify_ssl=True):
         """Get resources and config location from tenant deployment."""
