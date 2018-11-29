@@ -199,6 +199,14 @@ class Project(BaseResource):
             True,
             "Code source repositories related to the project",
         ),
+        'options': (
+            list,
+            '.+',
+            False,
+            [],
+            True,
+            "Project options for services",
+        ),
     }
     PRIORITY = 10
     PRIMARY_KEY = 'name'
