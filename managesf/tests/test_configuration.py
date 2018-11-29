@@ -388,7 +388,25 @@ class RepoXplorerConfTests(TestCase):
                                 'private': True
                             }},
                         ]
-                    }
+                    },
+                    'project3': {
+                        'tenant': 'local',
+                        'source-repositories': [
+                            {'repo6': {}},
+                            {'repo7': {
+                                'repoxplorer/skip': True,
+                            }},
+                        ]
+                    },
+                    'project4': {
+                        'tenant': 'local',
+                        'options': [
+                            'repoxplorer/skip',
+                        ],
+                        'source-repositories': [
+                            {'repo7': {}},
+                        ]
+                    },
                 },
                 'repos': {
                     'repo2': {},
@@ -436,6 +454,13 @@ class RepoXplorerConfTests(TestCase):
                     'gitweb': ('https://sftests.com/r/gitweb?p=%(name)s.git;'
                                'a=commitdiff;h=%%(sha)s;ds=sidebyside')
                 },
+                'project3': {
+                    'uri': 'https://sftests.com/r/%(name)s',
+                    'branches': ['master'],
+                    'gitweb':
+                        ('https://sftests.com/r/gitweb?p=%(name)s.git;'
+                         'a=commitdiff;h=%%(sha)s;ds=sidebyside')
+                },
             },
             'projects': {
                 'extras': {
@@ -462,7 +487,15 @@ class RepoXplorerConfTests(TestCase):
                             'template': 'project2/repo4'
                         }
                     }
-                }
+                },
+                'project3': {
+                    'description': '',
+                    'repos': {
+                        'repo6': {
+                            'template': 'project3'
+                        }
+                    }
+                },
             }
         }
-        self.assertEqual(ret, expected_ret)
+        self.assertDictEqual(ret, expected_ret)
