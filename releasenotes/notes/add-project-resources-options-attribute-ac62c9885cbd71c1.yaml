@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    A new *options* attribute is available in the *project* resource object.
+    It will be used to pass options to services like Zuul, repoXplorer, cgit.
