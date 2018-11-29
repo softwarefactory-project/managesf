@@ -1581,6 +1581,9 @@ wrong ! This string won't be accepted by Gerrit !
                     'p1': {
                         'name': 'p1',
                         'description': 'An awesome project',
+                        'options': [
+                            'repoxplorer/skip',
+                        ],
                         'source-repositories': [
                             {'config': {
                                 'zuul/config-project': True
