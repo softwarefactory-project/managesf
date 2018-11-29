@@ -439,7 +439,8 @@ class RepoXplorerConf():
     def start(self):
         for project, data in self.main_resources[
                 'resources']['projects'].items():
-
+            if 'repoxplorer/skip' in data.get('options', []):
+                continue
             # Get the connection type to get the gitweb model
             conn = data.get('connection')
             if not conn:
@@ -466,6 +467,9 @@ class RepoXplorerConf():
             for repo in data['source-repositories']:
                 reponame = list(repo.keys())[0]
                 if repo[reponame].get('private'):
+                    self.repos_cache.add(reponame)
+                    continue
+                if repo[reponame].get('repoxplorer/skip'):
                     self.repos_cache.add(reponame)
                     continue
                 _conn = repo[reponame].get('connection')
