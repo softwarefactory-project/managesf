@@ -364,7 +364,7 @@ class GitRepository(BaseResource):
     MODEL = {
         'name': (
             str,
-            '^([a-zA-Z0-9\-_\./])+$',
+            r'^([a-zA-Z0-9\-_\./])+$',
             False,
             "",
             False,
@@ -388,7 +388,7 @@ class GitRepository(BaseResource):
         ),
         'default-branch': (
             str,
-            '[a-zA-Z0-9\-_\./]*',
+            r'[a-zA-Z0-9\-_\./]*',
             False,
             "",
             True,
@@ -398,7 +398,7 @@ class GitRepository(BaseResource):
         ),
         'branches': (
             dict,
-            ('[a-zA-Z0-9\-_\./]+', '[a-zA-Z0-9\-_\./]+'),
+            (r'[a-zA-Z0-9\-_\./]+', r'[a-zA-Z0-9\-_\./]+'),
             False,
             {},
             True,

@@ -105,7 +105,7 @@ class Project(BaseResource):
     MODEL = {
         'name': (
             str,
-            '^([a-zA-Z0-9\-_\./])+$',
+            r'^([a-zA-Z0-9\-_\./])+$',
             False,
             "",
             False,
@@ -169,7 +169,7 @@ class Project(BaseResource):
         ),
         'review-dashboard': (
             str,
-            '^([a-zA-Z0-9\-_])*$',
+            r'^([a-zA-Z0-9\-_])*$',
             False,
             "",
             True,
