@@ -46,7 +46,7 @@ class Dummy(BaseResource):
     MODEL = {
         'namespace': (
             str,
-            '^([a-zA-Z0-9\-_])+$',
+            r'^([a-zA-Z0-9\-_])+$',
             True,
             None,
             False,
@@ -54,7 +54,7 @@ class Dummy(BaseResource):
         ),
         'name': (
             str,
-            '^([a-zA-Z0-9\-_])+$',
+            r'^([a-zA-Z0-9\-_])+$',
             False,
             "",
             False,
@@ -62,7 +62,7 @@ class Dummy(BaseResource):
         ),
         'description': (
             str,
-            '^([a-zA-Z0-9\-_ ])*$',
+            r'^([a-zA-Z0-9\-_ ])*$',
             False,
             "",
             True,

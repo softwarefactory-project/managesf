@@ -125,7 +125,7 @@ class ResourcesTest(TestCase):
                 'key': (int, None, True, None, True, "desc"),
                 'key2': (str, ".+", False, "default", True, "desc"),
                 'key3': (list, "[0-9]+", False, [], True, "desc"),
-                'key4': (dict, ('[a-z]', '\d+'), False, {}, True, "desc"),
+                'key4': (dict, ('[a-z]', r'\d+'), False, {}, True, "desc"),
                 'key5': (list, (dict, '.+'), False, [], True, "desc"),
             }
             PRIMARY_KEY = None

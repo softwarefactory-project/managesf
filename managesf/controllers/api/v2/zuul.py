@@ -21,7 +21,7 @@ from managesf.api.v2.managers import zuul_proxy
 ZUUL_PREFIX = '.+/zuul/(?P<tenant>.+)/'
 GET_PREFIX = 'get ' + ZUUL_PREFIX
 GET_CHANGE_STATUS = 'get .+/zuul/status/change/(?P<change>.+),(?P<revision>.+)'
-GET_PROJECT_KEY = 'get .+/zuul/keys/(?P<source>.+)/(?P<repository>.+)\.pub$'
+GET_PROJECT_KEY = r'get .+/zuul/keys/(?P<source>.+)/(?P<repository>.+)\.pub$'
 
 
 class ZuulController(base.APIv2RestProxyController):

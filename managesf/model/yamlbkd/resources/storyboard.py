@@ -20,7 +20,7 @@ from managesf.services.storyboard import SoftwareFactoryStoryboard
 
 logger = logging.getLogger(__name__)
 
-NAME_RE = "^[a-zA-Z0-9]+([_\-\./]?[a-zA-Z0-9]+)*$"
+NAME_RE = r"^[a-zA-Z0-9]+([_\-\./]?[a-zA-Z0-9]+)*$"
 PROJECT_NAME_RE = re.compile(NAME_RE)
 NAME_MIN_LEN = 3
 NAME_MAX_LEN = 100

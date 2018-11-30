@@ -267,7 +267,7 @@ class Group(BaseResource):
     MODEL = {
         'name': (
             str,
-            '^([a-zA-Z0-9\-_\./])+$',
+            r'^([a-zA-Z0-9\-_\./])+$',
             False,
             "",
             False,

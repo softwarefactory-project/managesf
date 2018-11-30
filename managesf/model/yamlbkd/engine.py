@@ -95,7 +95,7 @@ class SFResourceBackendEngine(object):
                              'dictionary_item_removed'):
                     for c in _changes:
                         key = re.search(
-                            "root\['(" + KEY_RE_CONSTRAINT + ")'\].*$", c)
+                            r"root\['(" + KEY_RE_CONSTRAINT + r")'\].*$", c)
                         key = key.groups()[0]
                         r_key_changes[rid]['changed'].add(key)
                 else:
