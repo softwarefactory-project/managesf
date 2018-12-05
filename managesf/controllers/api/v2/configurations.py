@@ -313,7 +313,11 @@ class ZuulTenantsLoad:
             # First we look for the tenant resources
             if tenant_name != self.default_tenant_name and \
                tenant_conf["url"] != self.main_resources["public-url"]:
-                url = os.path.join(tenant_conf['url'], 'resources')
+                # check for v2
+                tenant_url = tenant_conf['url'].rstrip('/')
+                if not tenant_url.endswith('/v2'):
+                    tenant_url = os.path.join(tenant_url, "v2")
+                url = os.path.join(tenant_url, 'resources')
                 if self.tenant_resources:
                     self.log.debug("%s: loading resources from workspace",
                                    tenant_name)
