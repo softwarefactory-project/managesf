@@ -2,7 +2,7 @@
 
 Name:           managesf
 Version:        0.12.0
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -19,7 +19,6 @@ Buildrequires:  python2-pbr
 BuildRequires:  python-pecan
 BuildRequires:  python2-gerritlib
 BuildRequires:  python-ldap
-BuildRequires:  python-ecdsa
 BuildRequires:  python2-passlib
 BuildRequires:  python2-basicauth
 BuildRequires:  python-sqlalchemy
@@ -44,7 +43,6 @@ Requires:       python2-pbr
 Requires:       python2-gerritlib
 Requires:       python-ldap
 Requires:       libyaml
-Requires:       python-ecdsa
 Requires:       python2-passlib
 Requires:       python2-basicauth
 Requires:       python-sqlalchemy
@@ -133,6 +131,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Tue Dec 11 2018 Tristan Cacqueray <tdecacqu@redhat.com> - 0.12.0-7
+- Remove python-ecdsa requirement
+
 * Mon May 14 2018 Fabien Boucher <fboucher@redhat.com> - 0.12.0-6
 - Change un-maintained dependency MySQL-python to pure python python2-PyMySQL
 
