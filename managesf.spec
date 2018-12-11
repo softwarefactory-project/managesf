@@ -19,7 +19,6 @@ Buildrequires:  python2-pbr
 BuildRequires:  python-pecan
 BuildRequires:  python2-gerritlib
 BuildRequires:  python-ldap
-BuildRequires:  python-ecdsa
 BuildRequires:  python2-passlib
 BuildRequires:  python2-basicauth
 BuildRequires:  python-sqlalchemy
@@ -44,7 +43,6 @@ Requires:       python2-pbr
 Requires:       python2-gerritlib
 Requires:       python-ldap
 Requires:       libyaml
-Requires:       python-ecdsa
 Requires:       python2-passlib
 Requires:       python2-basicauth
 Requires:       python-sqlalchemy
