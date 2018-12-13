@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "83b62021_2b538693",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2018-12-13T10:52:23Z",
+      "side": 1,
+      "message": "if the project wasn\u0027t skipped initially, what happens? The setting has no effect?",
+      "range": {
+        "startLine": 442,
+        "startChar": 0,
+        "endLine": 443,
+        "endChar": 24
+      },
+      "revId": "e218d449f1aa2a340c3337afa44a0f1fab060cad",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
