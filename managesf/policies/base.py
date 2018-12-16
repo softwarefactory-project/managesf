@@ -47,7 +47,7 @@ class IsAuthenticatedCheck(policy.Check):
     def __call__(self, target, creds, enforcer):
         """Determine whether username is set or not."""
 
-        return bool(creds['username'])
+        return bool(creds.get('username'))
 
 
 @policy.register('group')
