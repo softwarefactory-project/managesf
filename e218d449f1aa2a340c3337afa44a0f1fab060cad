@@ -22,6 +22,30 @@
       "revId": "e218d449f1aa2a340c3337afa44a0f1fab060cad",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "364e54e7_2488bb36",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2018-12-17T19:51:37Z",
+      "side": 1,
+      "message": "The projects or repository will not be added to the repoxplorer config. If previously in the repoxplorer conf, then removed, repoxplorer sanitizes its database. So I don\u0027t see issue here.",
+      "parentUuid": "83b62021_2b538693",
+      "range": {
+        "startLine": 442,
+        "startChar": 0,
+        "endLine": 443,
+        "endChar": 24
+      },
+      "revId": "e218d449f1aa2a340c3337afa44a0f1fab060cad",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
