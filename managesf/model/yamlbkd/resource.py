@@ -141,7 +141,12 @@ class BaseResource(object):
                         val_re = re.compile(constraints[1][1])
                         for k, v in constraints[3].items():
                             assert key_re.match(k)
-                            assert val_re.match(v)
+                            if isinstance(v, basestring):
+                                assert val_re.match(v)
+                            else:
+                                if (not isinstance(v, bool) and
+                                        not isinstance(v, int)):
+                                    raise AssertionError()
                     # Validate list default values match the regexp
                     # if list type
                     if constraints[0] is list:
@@ -193,6 +198,9 @@ class BaseResource(object):
             raise ModelInvalidException(
                 "Model %s callbacks are invalid, model is not usable" % (
                     self.__class__.MODEL_TYPE))
+
+    def val_validate(self, v, val_re):
+        return val_re.match(v) if isinstance(v, basestring) else True
 
     def validate(self):
         """ Validate the data MODEL of the resource
@@ -304,17 +312,23 @@ class BaseResource(object):
                 try:
                     for k, v in value.items():
                         assert isinstance(k, str)
-                        assert isinstance(v, str)
+                        try:
+                            assert isinstance(v, str)
+                        except Exception:
+                            if (not isinstance(v, bool) and
+                                    not isinstance(v, int)):
+                                raise AssertionError()
                 except Exception:
                     raise ResourceInvalidException(
                         "Resource [type: %s, ID: %s] has an invalid "
-                        "key (%s) dict keys and values must by str" % (
+                        "key (%s) dict keys or values not valid" % (
                             self.__class__.MODEL_TYPE,
                             self.id,
                             key))
                 key_re = re.compile(self.__class__.MODEL[key][1][0])
                 val_re = re.compile(self.__class__.MODEL[key][1][1])
-                if not all([all([key_re.match(k), val_re.match(v)]) for
+                if not all([all([key_re.match(k),
+                                self.val_validate(v, val_re)]) for
                             k, v in value.items()]):
                     raise ResourceInvalidException(
                         "Resource [type: %s, ID: %s] has an invalid "

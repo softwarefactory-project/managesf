@@ -1791,7 +1791,9 @@ wrong ! This string won't be accepted by Gerrit !
                     'kimchi': {
                         'url': 'https://kimchi.sftests.com/manage',
                         'tenant-options': {
-                            'zuul/default-jobs-timeout': '3600',
+                            'zuul/default-jobs-timeout': 3600,
+                            'zuul/exclude-unprotected-branches': True,
+                            'zuul/default-parent': 'myparent',
                             }
                         },
                     'natto': {
