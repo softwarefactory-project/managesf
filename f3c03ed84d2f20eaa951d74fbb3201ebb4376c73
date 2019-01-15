@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2a6473b_f27e9bd3",
+        "filename": "managesf/model/yamlbkd/resource.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2019-01-15T23:01:07Z",
+      "side": 1,
+      "message": "I feel it would be better to have a way to specify the expected type of the value in the model, then apply the appropriate test, rather than check the type of the user-provided value *then* apply a test depending on its type.",
+      "revId": "f3c03ed84d2f20eaa951d74fbb3201ebb4376c73",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
