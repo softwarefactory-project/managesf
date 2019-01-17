@@ -502,7 +502,7 @@ class RepoXplorerConf():
 
         # Add the groups
         for group, data in self.main_resources[
-                'resources']['groups'].items():
+                'resources'].get('groups', {}).items():
             grp = {}
             grp['description'] = data.get('description', '')
             grp['emails'] = dict((member, None) for
