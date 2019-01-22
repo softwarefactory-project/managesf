@@ -37,6 +37,10 @@ from managesf.services.nodepool.node import SFNodepoolNodeManager as SFNNM
 from managesf.services.nodepool.image import SFNodepoolImageManager as SFNIM
 from managesf.services.nodepool.image import SFNodepoolDIBImageManager as SFNDM
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+
 
 def raiseexc(*args, **kwargs):
     raise Exception('FakeExcMsg')

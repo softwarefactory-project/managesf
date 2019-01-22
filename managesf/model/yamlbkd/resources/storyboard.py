@@ -112,7 +112,7 @@ class StoryboardOps(object):
             try:
                 self.update_project(name=sr_name,
                                     description=sr['description'])
-            except Exception, e:
+            except Exception as e:
                 # If a storyboard project update/create fails
                 # just report in service logs and pass to the next one
                 logger.exception("update_project failed %s" % e)

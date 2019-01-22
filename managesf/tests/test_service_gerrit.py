@@ -18,6 +18,10 @@ from mock import patch
 from managesf.tests import dummy_conf
 from managesf.services import gerrit
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+
 
 class BaseSFGerritService(TestCase):
     @classmethod

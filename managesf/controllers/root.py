@@ -37,6 +37,10 @@ from managesf.controllers.api.v2 import resources as v2_resources
 from managesf.controllers.api.v2 import zuul as v2_zuul
 from managesf.controllers.api.v2 import configurations as v2_configurations
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +191,6 @@ class LocalUserBindController(RestController):
             abort(401, detail="Authentication header missing")
         try:
             username, password = localuser.decode(authorization)
-            username = unicode(username, encoding='utf8')
         except localuser.DecodeError:
             self.log.warning("Authorization decoding error")
             abort(401, detail="Wrong authorization header")

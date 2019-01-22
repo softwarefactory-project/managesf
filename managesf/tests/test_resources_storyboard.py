@@ -17,7 +17,21 @@
 from unittest import TestCase
 
 from mock import patch, call, Mock
-from contextlib import nested
+# Py2/Py3 support
+try:
+    from contextlib import nested  # Python 2
+except ImportError:
+    from contextlib import ExitStack, contextmanager
+
+    @contextmanager
+    def nested(*contexts):
+        """
+        Reimplementation of nested in python 3.
+        """
+        with ExitStack() as stack:
+            for ctx in contexts:
+                stack.enter_context(ctx)
+            yield contexts
 
 from managesf.tests import dummy_conf
 from managesf.model.yamlbkd.resources.storyboard import StoryboardOps
