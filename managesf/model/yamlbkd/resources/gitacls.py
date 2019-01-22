@@ -70,12 +70,12 @@ class ACLOps(object):
 
         fd, path = tempfile.mkstemp()
         os.close(fd)
-        file(path, 'w').write(acls)
+        open(path, 'w').write(acls)
         # Validate the file has the right format
         try:
             c = GitConfigParser(path)
             c.read()
-        except Exception, e:
+        except Exception as e:
             logger.exception("GitConfigParser failed %s" % e)
             logs.append(str(e))
         finally:

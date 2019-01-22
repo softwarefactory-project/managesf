@@ -54,7 +54,7 @@ class TestGerritRepo(TestCase):
             gr.add_file('thefile', 'thecontent')
             p = os.path.join(gr.infos['localcopy_path'], 'thefile')
             self.assertTrue(os.path.isfile(p))
-            self.assertEqual('thecontent', file(p).read())
+            self.assertEqual('thecontent', open(p).read())
             self.assertEqual('git add thefile', ex.mock_calls[0][1][0])
 
     def test_push_config(self):
