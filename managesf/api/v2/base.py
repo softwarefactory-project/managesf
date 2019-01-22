@@ -25,6 +25,11 @@ from pecan import conf
 # TODO move exceptions somewhere more generic
 from managesf.services import exceptions as exc
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+    basestring = (str, bytes)
+
 
 logger = logging.getLogger(__name__)
 
