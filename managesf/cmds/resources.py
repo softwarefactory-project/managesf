@@ -71,7 +71,8 @@ def read_repo_to_validate(zuul_prev_commit, zuul_commit):
     if zuul_prev_commit == 'master':
         zuul_prev_commit = 'origin/master'
     commit_range = "%s..%s" % (zuul_prev_commit, zuul_commit)
-    head_commit_msg = subprocess.check_output(["git", "log", commit_range])
+    head_commit_msg = subprocess.check_output(
+        ["git", "log", commit_range]).decode()
     print(head_commit_msg)
     structured_data = read_data_to_validate()
     return structured_data, head_commit_msg
@@ -197,7 +198,7 @@ def cli():
                 ["git", "checkout", args.zuul_commit])
             commit_range = "%s..%s" % (args.zuul_prev_commit, args.zuul_commit)
             head_commit_msg = subprocess.check_output(
-                ["git", "log", commit_range])
+                ["git", "log", commit_range]).decode()
             print(head_commit_msg)
             status, logs = engine.apply(
                 conf.resources.master_repo, args.zuul_prev_commit,

@@ -46,8 +46,8 @@ class TestSFGerritUserManager(BaseSFGerritService):
             create.return_value = self.user_data
             self.gerrit.user.create('jojo', 'jojo@starplatinum.dom',
                                     'Jotaro Kujoh', None, 10)
-            _user = {'name': unicode('Jotaro Kujoh'),
-                     'email': unicode('jojo@starplatinum.dom')}
+            _user = {'name': str('Jotaro Kujoh'),
+                     'email': str('jojo@starplatinum.dom')}
             create.assert_called_with('jojo', _user)
             add_external.assert_called_with(5, 'jojo')
             create.reset_mock()

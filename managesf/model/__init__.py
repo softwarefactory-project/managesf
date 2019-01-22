@@ -37,7 +37,7 @@ def row2dict(row):
     for column in row.__table__.columns:
         ret[column.name] = getattr(row, column.name)
         # TODO: Fix test and remove bellow hack!
-        if not isinstance(ret[column.name], basestring) and \
+        if not isinstance(ret[column.name], (str, bytes)) and \
            not isinstance(ret[column.name], bool):
             ret[column.name] = str(ret[column.name])
     return ret
@@ -333,7 +333,7 @@ def add_user(user):
             session.add(u)
             return True, None
     except exc.IntegrityError as e:
-        return False, unicode(e)
+        return False, str(e)
 
 
 def get_user(username):
