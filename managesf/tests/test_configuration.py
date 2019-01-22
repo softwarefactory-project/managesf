@@ -23,6 +23,11 @@ from managesf.controllers.api.v2.configurations import CauthConf
 
 
 class ZuulTenantsLoadTests(TestCase):
+    def assertItemsEqual(self, *args, **kwargs):
+        try:
+            super(ZuulTenantsLoadTests, self).assertItemsEqual(*args, **kwargs)
+        except Exception:  # python 3
+            self.assertCountEqual(*args, **kwargs)
 
     def test_merge_tenant_from_flat_files(self):
         ztl = ZuulTenantsLoad(utests=True)

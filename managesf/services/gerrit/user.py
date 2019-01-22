@@ -64,12 +64,12 @@ class SFGerritUserManager(base.UserManager):
         #   e.g.: [{u'key': u'None'}]  or [u'key']
         if ssh_keys:
             for key in ssh_keys:
-                if isinstance(key, unicode) and key != u"None":
+                if isinstance(key, str) and key != u"None":
                     ssh_keys_valid.append(key)
                 elif key.get("key") and key.get('key') != u"None":
                     ssh_keys_valid.append(key.get("key"))
         client = self.plugin.get_client()
-        data = {"name": unicode(full_name), "email": email}
+        data = {"name": str(full_name), "email": email}
         if ssh_keys_valid:
             data["ssh_key"] = ssh_keys_valid[0]
         try:

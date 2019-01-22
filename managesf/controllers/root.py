@@ -34,6 +34,7 @@ from managesf.controllers.api.v2 import configurations as v2_configurations
 
 from managesf.api.v2.managers import resource_manager
 
+
 logger = logging.getLogger(__name__)
 
 LOGERRORMSG = "Unable to process client request, failed with "\
@@ -132,7 +133,7 @@ class LocalUserController(RestController):
         try:
             ret = localuser.update_user(username, infos)
         except (localuser.InvalidInfosInput, localuser.BadUserInfos) as e:
-            abort(400, detail=unicode(e))
+            abort(400, detail=str(e))
         except Exception as e:
             return report_unhandled_error(e)
         if isinstance(ret, dict):
@@ -150,7 +151,7 @@ class LocalUserController(RestController):
         try:
             ret = localuser.get_user(username)
         except localuser.UserNotFound as e:
-            abort(404, detail=unicode(e))
+            abort(404, detail=str(e))
         except Exception as e:
             return report_unhandled_error(e)
         return ret
@@ -165,7 +166,7 @@ class LocalUserController(RestController):
         try:
             ret = localuser.delete_user(username)
         except localuser.UserNotFound as e:
-            abort(404, detail=unicode(e))
+            abort(404, detail=str(e))
         except Exception as e:
             return report_unhandled_error(e)
         return ret
@@ -183,7 +184,6 @@ class LocalUserBindController(RestController):
             abort(401, detail="Authentication header missing")
         try:
             username, password = localuser.decode(authorization)
-            username = unicode(username, encoding='utf8')
         except localuser.DecodeError:
             self.log.warning("Authorization decoding error")
             abort(401, detail="Wrong authorization header")
@@ -197,7 +197,7 @@ class LocalUserBindController(RestController):
             ret = localuser.bind_user(authorization)
         except (localuser.BindForbidden, localuser.UserNotFound) as e:
             self.log.warning(u"%s: UserNotFound or Forbidden" % username)
-            abort(401, detail=unicode(e))
+            abort(401, detail=str(e))
         except Exception as e:
             self.log.exception(u"%s: couldn't bind user" % username)
             return report_unhandled_error(e)
@@ -456,8 +456,8 @@ class HooksController(RestController):
             msg = getattr(SERVICES[hook].hooks, hook_name)(**change)
         except Exception as e:
             status = 400
-            msg = unicode(e)
-            logger.error("[%s] hook %s failed with %s" % (
+            msg = str(e)
+            logger.error(u"[%s] hook %s failed with %s" % (
                 hook, hook_name, msg))
         response.status = status
         return {'msg': msg}

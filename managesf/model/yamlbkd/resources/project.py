@@ -18,6 +18,7 @@ import logging
 from managesf.model.yamlbkd.resource import BaseResource
 from managesf.model.yamlbkd.resources.storyboard import StoryboardOps
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +35,7 @@ class ProjectOps(object):
         if self.stb_ops.is_activated(**kwargs):
             try:
                 self.stb_ops.update_project_groups(**kwargs)
-            except Exception, e:
+            except Exception as e:
                 msg = "Create Storyboard project group : err: %s" % e
                 logger.exception(msg)
                 logs.append(msg)
@@ -45,7 +46,7 @@ class ProjectOps(object):
         if self.stb_ops.is_activated(**kwargs):
             try:
                 self.stb_ops.update_project_groups(**kwargs)
-            except Exception, e:
+            except Exception as e:
                 msg = "Update Storyboard project group: err: %s" % e
                 logger.exception(msg)
                 logs.append(msg)
@@ -56,7 +57,7 @@ class ProjectOps(object):
         if self.stb_ops.is_activated(**kwargs):
             try:
                 self.stb_ops.delete_project_groups(**kwargs)
-            except Exception, e:
+            except Exception as e:
                 msg = "Delete Storyboard project group: err: %s" % e
                 logger.exception(msg)
                 logs.append(msg)
@@ -228,7 +229,7 @@ class Project(BaseResource):
         ids = set()
         for sr in self.resource['source-repositories']:
             if isinstance(sr, dict):
-                ids.add(sr.keys()[0])
+                ids.add(list(sr)[0])
             else:
                 ids.add(sr)
         return {'repos': ids}
@@ -242,7 +243,7 @@ class Project(BaseResource):
             if key == 'source-repositories':
                 srs = []
                 for sr in data:
-                    if isinstance(sr, basestring):
+                    if isinstance(sr, (str, bytes)):
                         srs.append({sr: {}})
                     else:
                         srs.append(sr)
