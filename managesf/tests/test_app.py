@@ -33,6 +33,10 @@ from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit import user as g_user
 from managesf.services.storyboard.user import StoryboardUserManager
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+
 
 def raiseexc(*args, **kwargs):
     raise Exception('FakeExcMsg')
@@ -633,17 +637,17 @@ class TestManageSFServicesUserController(FunctionalTest):
                                          payload,
                                          extra_environ=environ, status="*")
                 self.assertEqual(400, resp.status_int)
-                self.assertTrue('Nothing to do' in resp.body)
+                self.assertTrue(b'Nothing to do' in resp.body)
                 resp = self.app.put_json(
                     '/services_users/?email=jojo@starplatinum.dom',
                     payload, extra_environ=environ, status="*")
                 self.assertEqual(400, resp.status_int)
-                self.assertTrue('Nothing to do' in resp.body)
+                self.assertTrue(b'Nothing to do' in resp.body)
                 resp = self.app.put_json(
                     '/services_users/?id=%s' % jojo_id,
                     payload, extra_environ=environ, status="*")
                 self.assertEqual(400, resp.status_int)
-                self.assertTrue('Nothing to do' in resp.body)
+                self.assertTrue(b'Nothing to do' in resp.body)
             # try doing it right
             c = 0
             for i in ('admin', infos_jojo['username']):

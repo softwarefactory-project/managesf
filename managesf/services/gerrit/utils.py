@@ -22,7 +22,10 @@ import logging
 import tempfile
 import subprocess
 import json
-import urllib
+try:
+    from urllib import quote_plus, unquote_plus
+except ImportError:
+    from urllib.parse import quote_plus, unquote_plus
 
 import requests
 
@@ -59,7 +62,7 @@ def _exec(cmd, cwd=None, env=None):
 def ssh_wrapper_setup(filename):
     ssh_wrapper = "ssh -o StrictHostKeyChecking=no -i %s \"$@\"" % filename
     wrapper_path = os.path.join(tempfile.mkdtemp(), 'ssh_wrapper.sh')
-    file(wrapper_path, 'w').write(ssh_wrapper)
+    open(wrapper_path, 'w').write(ssh_wrapper)
     os.chmod(wrapper_path, stat.S_IRWXU)
     return wrapper_path
 
@@ -68,7 +71,7 @@ def set_gitssh_wrapper_from_str(ssh_key):
     tmpf = tempfile.NamedTemporaryFile(delete=False)
     tmpf.close()
     path = tmpf.name
-    os.chmod(path, 0600)
+    os.chmod(path, 0o600)
     with open(path, "wb") as f:
         f.write(ssh_key)
     wrapper_path = ssh_wrapper_setup(path)
@@ -122,13 +125,13 @@ class GerritRepo(object):
 
     def add_file(self, path, content):
         logger.info("[gerrit] Add file %s to index" % path)
-        if path.split('/') > 1:
+        if len(path.split('/')) > 1:
             d = re.sub(os.path.basename(path), '', path)
             try:
                 os.makedirs(os.path.join(self.infos['localcopy_path'], d))
             except OSError:
                 pass
-        file(os.path.join(self.infos['localcopy_path'],
+        open(os.path.join(self.infos['localcopy_path'],
              path), 'w').write(content)
         cmd = "git add %s" % path
         self._exec(cmd)
@@ -352,42 +355,42 @@ class GerritClient:
     # Accounts API
     def create_account(self, user, data):
         self.log.info(u"%s: creating account with %s", user, data)
-        user = urllib.quote_plus(user)
+        user = quote_plus(user)
         return self.put("accounts/%s" % user, data)
 
     def get_account(self, user, details=False):
-        user = urllib.quote_plus(user)
+        user = quote_plus(user)
         if details:
             user = user + "/detail"
         return self.get('accounts/%s' % user)
 
     def update_account_name(self, user, full_name):
         self.log.debug(u"%s: updating name to %s", user, full_name)
-        user = urllib.quote_plus(user)
+        user = quote_plus(user)
         self.put("accounts/%s/name" % user, {"name": full_name})
 
     def delete_account_email(self, user, email):
         self.log.info(u"%s: deleting email %s", user, email)
-        user = urllib.quote_plus(user)
-        email = urllib.quote_plus(email)
+        user = quote_plus(user)
+        email = quote_plus(email)
         self.delete("accounts/%s/emails/%s" % (user, email))
 
     def update_account_preferred_email(self, user, email):
         self.log.info(u"%s: setting preffered email %s", user, email)
-        user = urllib.quote_plus(user)
-        email = urllib.quote_plus(email)
+        user = quote_plus(user)
+        email = quote_plus(email)
         self.put("accounts/%s/emails/%s/preferred" % (user, email))
 
     def add_account_email(self, user, email):
         self.log.info(u"%s: adding email %s", user, email)
-        user = urllib.quote_plus(user)
-        email = urllib.quote_plus(email)
+        user = quote_plus(user)
+        email = quote_plus(email)
         self.put("accounts/%s/emails/%s" % (user, email),
                  {"preferred": True, "no_confirmation": True})
 
     def is_account_active(self, user):
         try:
-            user = urllib.quote_plus(user)
+            user = quote_plus(user)
             if self.get("accounts/%s/active" % user) == "ok":
                 return True
         except NotFound:
@@ -396,23 +399,23 @@ class GerritClient:
 
     # Pub keys
     def get_pubkeys(self, user):
-        user = urllib.quote_plus(user)
+        user = quote_plus(user)
         return self.get("accounts/%s/sshkeys" % user)
 
     def del_pubkey(self, index, user='self'):
         self.log.debug("%s: removing pubkey %s", user, index)
-        user = urllib.quote_plus(user)
+        user = quote_plus(user)
         self.delete('accounts/%s/sshkeys/%s' % (user, index))
 
     def add_pubkey(self, pubkey, user='self'):
         self.log.debug("%s: adding pubkey %s", user, pubkey)
-        user = urllib.quote_plus(user)
+        user = quote_plus(user)
         response = self.post('accounts/%s/sshkeys' % user, raw_data=pubkey)
         return response['seq']
 
     # Groups
     def get_user_groups(self, user):
-        user = urllib.quote_plus(user)
+        user = quote_plus(user)
         try:
             return self.get("accounts/%s/groups/" % user)
         except NotFound:
@@ -423,48 +426,48 @@ class GerritClient:
 
     def get_group_id(self, name):
         try:
-            name = urllib.quote_plus(name)
+            name = quote_plus(name)
             gid = self.get('groups/%s/detail' % name)['id']
-            return urllib.unquote_plus(gid)
+            return unquote_plus(gid)
         except NotFound:
             return False
 
     def get_group_members(self, name):
-        name = urllib.quote_plus(name)
+        name = quote_plus(name)
         return self.get('groups/%s/members/' % name)
 
     def get_group_group_members(self, group):
-        group = urllib.quote_plus(group)
+        group = quote_plus(group)
         return self.get('groups/%s/groups/' % group)
 
     def create_group(self, name, description):
         self.log.info(u"%s: creating group (%s)", name, description)
-        name = urllib.quote_plus(name)
+        name = quote_plus(name)
         return self.put("groups/%s" % name, {"description": description})
 
     def add_group_group_member(self, targetgroup, groupname):
-        targetgroup = urllib.quote_plus(targetgroup)
-        groupname = urllib.quote_plus(groupname)
+        targetgroup = quote_plus(targetgroup)
+        groupname = quote_plus(groupname)
         self.put('groups/%s/groups/%s' % (targetgroup, groupname))
 
     def delete_group_group_member(self, targetgroup, groupname):
         self.log.info(
             u"%s: deleting group group member %s", targetgroup, groupname)
-        targetgroup = urllib.quote_plus(targetgroup)
-        groupname = urllib.quote_plus(groupname)
+        targetgroup = quote_plus(targetgroup)
+        groupname = quote_plus(groupname)
         self.delete('groups/%s/groups/%s' % (targetgroup, groupname))
 
     def delete_group_member(self, name, member):
         self.log.info(u"%s: deleting group member %s", name, member)
-        name = urllib.quote_plus(name)
-        member = urllib.quote_plus(member)
+        name = quote_plus(name)
+        member = quote_plus(member)
         return self.delete("groups/%s/members/%s" % (name, member))
 
     def add_group_member(self, members, name):
         self.log.info(u"%s: adding group member %s", name, members)
         if not isinstance(members, list):
             members = [members]
-        name = urllib.quote_plus(name)
+        name = quote_plus(name)
         return self.post("groups/%s/members" % name, {"members": members})
 
     # Projects
@@ -473,7 +476,7 @@ class GerritClient:
 
     def create_project(self, name, description, owners):
         self.log.info(u"%s: creating project (%s)", name, description)
-        name = urllib.quote_plus(name)
+        name = quote_plus(name)
         return self.put("projects/%s" % name, {"description": description,
                                                "owners": owners,
                                                "create_empty_commit": True})
@@ -483,12 +486,12 @@ class GerritClient:
         data = {}
         if force:
             data = {'force': True}
-        name = urllib.quote_plus(name)
+        name = quote_plus(name)
         return self.delete("projects/%s" % name, data)
 
     def project_exists(self, name):
         try:
-            name = urllib.quote_plus(name)
+            name = quote_plus(name)
             self.get("projects/%s" % name)
             return True
         except NotFound:

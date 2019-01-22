@@ -34,6 +34,12 @@ from managesf.controllers.api.v2 import configurations as v2_configurations
 
 from managesf.api.v2.managers import resource_manager
 
+# py2/py3 compat
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+
+
 logger = logging.getLogger(__name__)
 
 LOGERRORMSG = "Unable to process client request, failed with "\
@@ -182,8 +188,7 @@ class LocalUserBindController(RestController):
         if not authorization:
             abort(401, detail="Authentication header missing")
         try:
-            username, password = localuser.decode(authorization)
-            username = unicode(username, encoding='utf8')
+            username, password = localuser.decode(authorization.decode())
         except localuser.DecodeError:
             self.log.warning("Authorization decoding error")
             abort(401, detail="Wrong authorization header")

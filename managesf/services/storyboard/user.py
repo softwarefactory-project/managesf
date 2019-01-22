@@ -26,6 +26,10 @@ try:
     import storyboardclient.openstack.common.apiclient.exceptions as sbexc
 except ImportError:
     import storyboardclient._apiclient.exceptions as sbexc
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+    basestring = (str, bytes)
 
 
 logger = logging.getLogger(__name__)
