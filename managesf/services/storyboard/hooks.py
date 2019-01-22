@@ -95,7 +95,7 @@ def generic_storyboard_hook(kwargs, task_status,
                 client.tasks.update(id=task, status=task_status)
                 logger.info("Updated task %s status to '%s'" % (task,
                                                                 task_status))
-        except Exception, e:
+        except Exception as e:
             errors.append(str(e))
     for story in stories:
         try:
@@ -109,7 +109,7 @@ def generic_storyboard_hook(kwargs, task_status,
                 story.comments.create(content=message)
                 logger.info("Commented on story %s '%s'" % (story.id,
                                                             story.title))
-        except Exception, e:
+        except Exception as e:
             errors.append(str(e))
     if not tasks and not related_tasks and not stories:
         return "No issue found in the commit message, nothing to do."
