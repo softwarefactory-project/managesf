@@ -19,6 +19,10 @@ import sqlalchemy
 
 from managesf.services import base
 from managesf.services.gerrit import utils
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+    basestring = (str, bytes)
 
 
 class SFGerritUserManager(base.UserManager):
