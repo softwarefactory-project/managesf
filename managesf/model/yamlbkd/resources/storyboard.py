@@ -57,7 +57,7 @@ class StoryboardOps(object):
         sources_repositories = kwargs['source-repositories']
         for name in sources_repositories:
             if isinstance(name, dict):
-                name = name.keys()[0]
+                name = list(name)[0]
             if len(name) < NAME_MIN_LEN:
                 logs.append(
                     "Storyboard project name %s length is invalid"
@@ -105,14 +105,14 @@ class StoryboardOps(object):
             self.client.project_groups.get(id=pg.id).projects.get_all()]
         for sr_name in sources_repositories:
             if isinstance(sr_name, dict):
-                sr_name = sr_name.keys()[0]
+                sr_name = list(sr_name)[0]
             sr = self.new['resources']['repos'].get(sr_name)
             if not sr:
                 continue
             try:
                 self.update_project(name=sr_name,
                                     description=sr['description'])
-            except Exception, e:
+            except Exception as e:
                 # If a storyboard project update/create fails
                 # just report in service logs and pass to the next one
                 logger.exception("update_project failed %s" % e)
@@ -120,7 +120,7 @@ class StoryboardOps(object):
         wanted_included = []
         for sr_name in sources_repositories:
             if isinstance(sr_name, dict):
-                sr_name = sr_name.keys()[0]
+                sr_name = list(sr_name)[0]
             project = [p for p in projects if p.name == sr_name]
             if project:
                 wanted_included.append(project[0].id)
