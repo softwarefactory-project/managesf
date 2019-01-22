@@ -105,7 +105,6 @@ def get_user(username):
 def bind_user(authorization):
     try:
         username, password = decode(authorization)
-        username = unicode(username, encoding='utf8')
     except DecodeError:
         raise BindForbidden("Wrong authorization header")
     ret = model.get_user(username)
