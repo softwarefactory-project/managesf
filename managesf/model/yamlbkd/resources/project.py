@@ -17,6 +17,10 @@ import logging
 
 from managesf.model.yamlbkd.resource import BaseResource
 from managesf.model.yamlbkd.resources.storyboard import StoryboardOps
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+    basestring = (str, bytes)
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,7 @@ class ProjectOps(object):
         if self.stb_ops.is_activated(**kwargs):
             try:
                 self.stb_ops.update_project_groups(**kwargs)
-            except Exception, e:
+            except Exception as e:
                 msg = "Create Storyboard project group : err: %s" % e
                 logger.exception(msg)
                 logs.append(msg)
@@ -45,7 +49,7 @@ class ProjectOps(object):
         if self.stb_ops.is_activated(**kwargs):
             try:
                 self.stb_ops.update_project_groups(**kwargs)
-            except Exception, e:
+            except Exception as e:
                 msg = "Update Storyboard project group: err: %s" % e
                 logger.exception(msg)
                 logs.append(msg)
@@ -56,7 +60,7 @@ class ProjectOps(object):
         if self.stb_ops.is_activated(**kwargs):
             try:
                 self.stb_ops.delete_project_groups(**kwargs)
-            except Exception, e:
+            except Exception as e:
                 msg = "Delete Storyboard project group: err: %s" % e
                 logger.exception(msg)
                 logs.append(msg)

@@ -15,6 +15,10 @@
 
 
 import re
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+    basestring = (str, bytes)
 
 
 class ModelInvalidException(Exception):
@@ -292,7 +296,7 @@ class BaseResource(object):
                                         key))
                             if not re.match(
                                     self.__class__.MODEL[key][1][1],
-                                    v.keys()[0]):
+                                    list(v.keys())[0]):
                                 raise ResourceInvalidException(
                                     "Resource [type: %s, ID: %s] has an "
                                     "invalid key (%s) data content (expected "

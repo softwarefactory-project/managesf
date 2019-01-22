@@ -19,6 +19,9 @@ from managesf import model
 from basicauth import decode, DecodeError
 from passlib.hash import pbkdf2_sha256
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
 
 log = logging.getLogger(__name__)
 

@@ -33,6 +33,10 @@ from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit import user as g_user
 from managesf.services.storyboard.user import StoryboardUserManager
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+
 
 def raiseexc(*args, **kwargs):
     raise Exception('FakeExcMsg')

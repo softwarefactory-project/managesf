@@ -16,7 +16,10 @@
 import os
 import git
 import logging
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import yaml
 
 try:
@@ -79,14 +82,14 @@ class YAMLBackend(object):
         return repo_hash
 
     def _get_cache_hash(self):
-        return file(self.cache_path_hash).read().strip()
+        return open(self.cache_path_hash).read().strip()
 
     def _update_cache(self):
         repo_hash = self._get_repo_hash()
         self.hash = repo_hash
-        yaml.dump(self.data, file(self.cache_path, 'w'),
+        yaml.dump(self.data, open(self.cache_path, 'w'),
                   Dumper=YDumper)
-        file(self.cache_path_hash, 'w').write(repo_hash)
+        open(self.cache_path_hash, 'w').write(repo_hash)
         logger.info("Cache file has been updated.")
 
     def _load_from_cache(self):
@@ -97,7 +100,7 @@ class YAMLBackend(object):
             cached_repo_hash = self._get_cache_hash()
             if cached_repo_hash == repo_hash:
                 self.hash = repo_hash
-                self.data = yaml.load(file(self.cache_path),
+                self.data = yaml.load(open(self.cache_path),
                                       Loader=YLoader)
                 logger.info("Load data from the cache.")
             else:
@@ -132,7 +135,7 @@ class YAMLBackend(object):
             logger.info("Reading %s ..." % f)
             try:
                 yaml_data = yaml.load(
-                    file(os.path.join(self.db_path, f)),
+                    open(os.path.join(self.db_path, f)),
                     Loader=YLoader)
             except Exception:
                 raise YAMLDBException(
@@ -159,7 +162,7 @@ class YAMLBackend(object):
         try:
             for rtype, resources in data['resources'].items():
                 assert isinstance(
-                    rtype, type(RESOURCES_STRUCT['resources'].keys()[0]))
+                    rtype, type(list(RESOURCES_STRUCT['resources'].keys())[0]))
                 assert isinstance(
                     resources, type(RESOURCES_STRUCT['resources']['rtype']))
         except AssertionError:
@@ -247,7 +250,7 @@ class MemoryYAMLBackend(YAMLBackend):
             logger.info("Reading buffer %s ..." % k)
             try:
                 yaml_data = yaml.load(
-                    StringIO.StringIO(v),
+                    StringIO(v),
                     Loader=YLoader)
             except Exception:
                 raise YAMLDBException(
