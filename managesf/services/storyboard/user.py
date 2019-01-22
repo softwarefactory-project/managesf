@@ -66,7 +66,7 @@ class StoryboardUserManager(base.UserManager):
 
     def sql_execute(self, stm):
         # SQL session execute wrappper
-        logger.debug(u"Storyboard sql: [%s]" % unicode(stm))
+        logger.debug(u"Storyboard sql: [%s]" % str(stm))
         try:
             self.sql_session.execute(stm)
             self.sql_session.commit()
@@ -126,7 +126,7 @@ class StoryboardUserManager(base.UserManager):
         self.create_update_user(cauth_id, email, full_name)
         user = self.create_update_user_token(cauth_id, username)
         logger.info(u'[%s] uid=%d username=%s created %s' % (
-            self.plugin.service_name, cauth_id, username, unicode(user)))
+            self.plugin.service_name, cauth_id, username, str(user)))
         return user.id
 
     def update(self, uid, username=None, full_name=None, email=None, **kwargs):

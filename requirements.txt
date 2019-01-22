@@ -1,16 +1,11 @@
--e git+https://github.com/openstack-infra/python-storyboardclient.git#egg=python-storyboardclient
 pbr
 pecan
 WebOb
-gerritlib
-python-ldap
 requests
 passlib
-basicauth==0.3
+basicauth==0.4.1
 sqlalchemy
 urllib3
-paramiko
-pycrypto
 sphinx
 PyYAML
 stevedore
@@ -19,3 +14,4 @@ six
 oslo.policy
 deepdiff==3.3.0
 GitPython
+python-storyboardclient
