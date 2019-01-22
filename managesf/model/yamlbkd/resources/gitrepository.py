@@ -13,7 +13,10 @@
 # under the License.
 
 import re
-import urllib
+try:
+    from urllib import quote_plus
+except ImportError:
+    from urllib.parse import quote_plus
 import hashlib
 import logging
 
@@ -94,7 +97,7 @@ class GitRepositoryOps(object):
 
         try:
             repos = self.client.get_projects()
-        except Exception, e:
+        except Exception as e:
             logger.exception("get_projects failed")
             logs.append("Repo list: err API returned %s" % e)
 
@@ -119,7 +122,7 @@ class GitRepositoryOps(object):
                     if r:
                         acl_groups.add(r.groups()[0].strip())
 
-            _acl = file(acl_path).read()
+            _acl = open(acl_path).read()
             acl = ""
             # Clean the ACL file to avoid issue at YAML multiline
             # serialization. Remove the description and as a good
@@ -132,7 +135,7 @@ class GitRepositoryOps(object):
                     continue
                 acl += l.replace('\t', '    ').rstrip() + '\n'
             m = hashlib.md5()
-            m.update(acl)
+            m.update(acl.encode())
             acl_id = m.hexdigest()
             gitrepos[name]['name'] = name
             gitrepos[name]['acl'] = acl_id
@@ -154,14 +157,14 @@ class GitRepositoryOps(object):
 
         try:
             self.client.create_project(name, description, ['Administrators'])
-        except Exception, e:
+        except Exception as e:
             logger.exception("create_project failed")
             logs.append("Repo create: err API returned %s" % e)
 
         try:
             r = utils.GerritRepo(name, self.conf)
             r.clone()
-        except Exception, e:
+        except Exception as e:
             logger.exception("GerritRepo create repo checkout failed")
             logs.append("Repo create fails to checkout the repo %s" % e)
             return logs
@@ -180,7 +183,7 @@ class GitRepositoryOps(object):
 
         try:
             self.client.delete_project(name, True)
-        except Exception, e:
+        except Exception as e:
             logger.exception("delete_project failed")
             logs.append("Repo delete: err API returned %s" % e)
 
@@ -194,7 +197,7 @@ class GitRepositoryOps(object):
         try:
             r = utils.GerritRepo(kwargs['name'], self.conf)
             r.clone()
-        except Exception, e:
+        except Exception as e:
             logger.exception("GerritRepo update repo checkout failed")
             logs.append("Repo update fails to checkout the repo %s" % e)
             return logs
@@ -225,7 +228,7 @@ defaultbranch=%(branch)s
         # Clone the master branch and push the .gitreview file
         try:
             r.push_branch(branch, paths)
-        except Exception, e:
+        except Exception as e:
             logger.exception("GerritRepo push_branch failed")
             logs.append(str(e))
 
@@ -284,13 +287,13 @@ global:Registered-Users\tRegistered Users"""
             paths['project.config'] = acl_data
             paths['groups'] = groups_file
             r.push_config(paths)
-        except Exception, e:
+        except Exception as e:
             logger.exception("GerritRepo push_config failed")
             logs.append(str(e))
         return logs
 
     def set_default_branch(self, name, branch):
-        endpoint = "projects/%s/HEAD" % urllib.quote_plus(name)
+        endpoint = "projects/%s/HEAD" % quote_plus(name)
         data = {"ref": "refs/heads/%s" % branch}
         return self.client.put(endpoint, data)
 
@@ -302,7 +305,7 @@ global:Registered-Users\tRegistered Users"""
 
         try:
             refs = r.list_remote_branches()
-        except Exception, e:
+        except Exception as e:
             logger.exception("GerritRepo create_branches failed")
             logs.append("Get repo branches failed %s" % e)
             return logs
@@ -328,7 +331,7 @@ global:Registered-Users\tRegistered Users"""
                 r.create_remote_branch(branch, sha)
                 logs.extend(self.install_git_review_file(
                     r, name, branch))
-            except Exception, e:
+            except Exception as e:
                 logger.exception("GerritRepo create_branch/create %s "
                                  "from sha %s failed" % (branch, sha))
                 logs.append("Create branch %s from sha %s failed %s" % (
@@ -338,7 +341,7 @@ global:Registered-Users\tRegistered Users"""
         if refs['HEAD'] != dbranch and dbranch != "":
             try:
                 self.set_default_branch(name, dbranch)
-            except Exception, e:
+            except Exception as e:
                 logger.exception("set_default_branch failed")
                 logs.append("Set default branch %s err API returned %s" % (
                             dbranch, e))
@@ -347,7 +350,7 @@ global:Registered-Users\tRegistered Users"""
         for branch in to_delete:
             try:
                 r.delete_remote_branch(branch)
-            except Exception, e:
+            except Exception as e:
                 logger.exception("GerritRepo create_branch/delete %s "
                                  "failed" % branch)
                 logs.append("Delete branch %s failed %s" % (branch, e))

@@ -56,7 +56,7 @@ def add_yaml_data(repo_path, data, free_style=False):
                       default_flow_style=False,
                       Dumper=YDumper)
     else:
-        file(os.path.join(db_path, filename), 'w').write(data)
+        open(os.path.join(db_path, filename), 'w').write(data)
     repo.execute(['git', 'add', sub_dir])
     repo.update_environment(GIT_AUTHOR_EMAIL='test@test.com')
     repo.update_environment(GIT_AUTHOR_NAME='test')
