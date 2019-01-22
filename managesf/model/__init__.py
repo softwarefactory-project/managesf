@@ -24,6 +24,11 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
 
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+    basestring = (str, bytes)
+
 
 Base = declarative_base()
 engine = None

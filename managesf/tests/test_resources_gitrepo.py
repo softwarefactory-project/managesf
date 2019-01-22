@@ -22,8 +22,6 @@ from unittest import TestCase
 
 from mock import patch, call, Mock
 
-from contextlib import nested
-
 from managesf.tests import dummy_conf
 from managesf.model.yamlbkd.resources.gitrepository import GitRepositoryOps
 
@@ -40,14 +38,15 @@ class GitRepositoryOpsTest(TestCase):
                   'description': 'A description',
                   'acl': 'a1'}
 
-        patches = [
-            patch('managesf.services.gerrit.utils.'
-                  'GerritClient.create_project'),
-            patch('managesf.services.gerrit.utils.GerritRepo.clone'),
-            patch.object(GitRepositoryOps, 'install_acl'),
-            patch.object(GitRepositoryOps, 'create_branches'),
-            patch.object(GitRepositoryOps, 'install_git_review_file')]
-        with nested(*patches) as (cp, c, ia, cb, ig):
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.create_project') as cp, \
+            patch('managesf.services.gerrit.utils.GerritRepo.clone'), \
+            patch.object(GitRepositoryOps,
+                         'install_acl') as ia, \
+            patch.object(GitRepositoryOps,
+                         'create_branches') as cb, \
+            patch.object(GitRepositoryOps,
+                         'install_git_review_file') as ig:
             ia.return_value = []
             cb.return_value = []
             ig.return_value = []
@@ -58,14 +57,15 @@ class GitRepositoryOpsTest(TestCase):
                                   ['Administrators']))
             self.assertEqual(len(logs), 0)
 
-        patches = [
-            patch('managesf.services.gerrit.utils.'
-                  'GerritClient.create_project'),
-            patch('managesf.services.gerrit.utils.GerritRepo.clone'),
-            patch.object(GitRepositoryOps, 'install_acl'),
-            patch.object(GitRepositoryOps, 'create_branches'),
-            patch.object(GitRepositoryOps, 'install_git_review_file')]
-        with nested(*patches) as (cp, c, ia, cb, ig):
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.create_project') as cp, \
+            patch('managesf.services.gerrit.utils.GerritRepo.clone'), \
+            patch.object(GitRepositoryOps,
+                         'install_acl') as ia, \
+            patch.object(GitRepositoryOps,
+                         'create_branches') as cb, \
+            patch.object(GitRepositoryOps,
+                         'install_git_review_file') as ig:
             ia.return_value = []
             cb.return_value = []
             ig.return_value = []
@@ -121,17 +121,16 @@ class GitRepositoryOpsTest(TestCase):
                       'dev': '123',
                       'dev2': '124',
                       'dev3': '0'}}
-        patches = [
-            patch.object(GitRepositoryOps, 'set_default_branch'),
-            patch.object(GitRepositoryOps, 'install_git_review_file')]
-
-        with nested(*patches) as (sdb, igrf):
+        with patch.object(GitRepositoryOps,
+                          'set_default_branch') as sdb, \
+            patch.object(GitRepositoryOps,
+                         'install_git_review_file') as igrf:
             logs = o.create_branches(MGR, **kwargs)
-        self.assertTrue(MGR.list_remote_branches.called)
-        self.assertTrue(MGR.create_remote_branch.called)
-        self.assertTrue(igrf.called)
-        self.assertTrue(not sdb.called)
-        self.assertTrue(MGR.delete_remote_branch.called)
+        MGR.list_remote_branches.assert_called()
+        MGR.create_remote_branch.assert_called()
+        igrf.assert_called()
+        sdb.assert_not_called()
+        MGR.delete_remote_branch.assert_called()
         self.assertEqual(len(logs), 0)
         self.assertIn(call('dev2', '124'),
                       MGR.create_remote_branch.call_args_list)
@@ -154,18 +153,17 @@ class GitRepositoryOpsTest(TestCase):
                   'default-branch': 'dev',
                   'branches': {
                       'dev': '123'}}
-        patches = [
-            patch.object(GitRepositoryOps, 'set_default_branch'),
-            patch.object(GitRepositoryOps, 'install_git_review_file')]
-
-        with nested(*patches) as (sdb, igrf):
+        with patch.object(GitRepositoryOps,
+                          'set_default_branch') as sdb, \
+            patch.object(GitRepositoryOps,
+                         'install_git_review_file') as igrf:
             logs = o.create_branches(MGR, **kwargs)
 
-        self.assertTrue(MGR.list_remote_branches.called)
-        self.assertTrue(MGR.create_remote_branch.called)
-        self.assertTrue(sdb.called)
-        self.assertTrue(igrf.called)
-        self.assertTrue(not MGR.delete_remote_branch.called)
+        MGR.list_remote_branches.assert_called()
+        MGR.create_remote_branch.assert_called()
+        sdb.assert_called()
+        igrf.assert_called()
+        MGR.delete_remote_branch.assert_not_called()
         self.assertEqual(len(logs), 0)
         self.assertIn(call('dev', '123'),
                       MGR.create_remote_branch.call_args_list)
@@ -183,18 +181,18 @@ class GitRepositoryOpsTest(TestCase):
         kwargs = {'name': 'space/g1',
                   'default-branch': 'rpm-master',
                   'branches': {}}
-        patches = [
-            patch.object(GitRepositoryOps, 'set_default_branch'),
-            patch.object(GitRepositoryOps, 'install_git_review_file')]
+        with patch.object(GitRepositoryOps,
+                          'set_default_branch') as sdb, \
+            patch.object(GitRepositoryOps,
+                         'install_git_review_file') as igrf:
 
-        with nested(*patches) as (sdb, igrf):
             logs = o.create_branches(MGR, **kwargs)
 
-        self.assertTrue(MGR.list_remote_branches.called)
-        self.assertTrue(MGR.create_remote_branch.called)
-        self.assertTrue(sdb.called)
-        self.assertTrue(igrf.called)
-        self.assertTrue(not MGR.delete_remote_branch.called)
+        MGR.list_remote_branches.assert_called()
+        MGR.create_remote_branch.assert_called()
+        sdb.assert_called()
+        igrf.assert_called()
+        not MGR.delete_remote_branch.assert_not_called()
         self.assertEqual(len(logs), 0)
         self.assertIn(call('rpm-master', 'HEAD'),
                       MGR.create_remote_branch.call_args_list)
@@ -371,10 +369,10 @@ class GitRepositoryOpsTest(TestCase):
 """
 
         m = hashlib.md5()
-        m.update(clean_a1)
+        m.update(clean_a1.encode())
         a1_id = m.hexdigest()
         m = hashlib.md5()
-        m.update(a2)
+        m.update(a2.encode())
         a2_id = m.hexdigest()
 
         def fake_get_projects():
@@ -393,7 +391,7 @@ class GitRepositoryOpsTest(TestCase):
                     }
                     f, p = tempfile.mkstemp()
                     os.close(f)
-                    file(p, 'w').write(data[self.name])
+                    open(p, 'w').write(data[self.name])
                     return p
             return FakeGerritRepo(name, conf)
 
