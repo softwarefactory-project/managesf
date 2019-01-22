@@ -141,7 +141,7 @@ class BaseResource(object):
                         val_re = re.compile(constraints[1][1])
                         for k, v in constraints[3].items():
                             assert key_re.match(k)
-                            if isinstance(v, basestring):
+                            if isinstance(v, (str, bytes)):
                                 assert val_re.match(v)
                             else:
                                 if (not isinstance(v, bool) and
@@ -152,7 +152,7 @@ class BaseResource(object):
                     if constraints[0] is list:
                         # Constraints[1] is string (a regexp) in case of list
                         # of str only
-                        if isinstance(constraints[1], basestring):
+                        if isinstance(constraints[1], (str, bytes)):
                             assert all([re.match(constraints[1], c) for
                                         c in constraints[3]]) is True
                         # If constraints[1] is a tuple then constraints[1][0]
@@ -170,12 +170,12 @@ class BaseResource(object):
                                     # Make sure default value only have dict
                                     # with a key matching the regexp
                                     assert re.match(
-                                        constraints[1][1], c.keys()[0])
-                                if isinstance(c, basestring):
+                                        constraints[1][1], list(c)[0])
+                                if isinstance(c, (str, bytes)):
                                     assert re.match(constraints[1][1], c)
                         else:
                             # Unsuported case constraints[1] can be only a
-                            # basestring or tuple
+                            # (str, bytes) or tuple
                             assert False
         except Exception:
             raise ModelInvalidException(
@@ -200,7 +200,7 @@ class BaseResource(object):
                     self.__class__.MODEL_TYPE))
 
     def val_validate(self, v, val_re):
-        return val_re.match(v) if isinstance(v, basestring) else True
+        return val_re.match(v) if isinstance(v, (str, bytes)) else True
 
     def validate(self):
         """ Validate the data MODEL of the resource
@@ -245,9 +245,9 @@ class BaseResource(object):
             # expect a string if MODEL[key][1] is a string. But the list will
             # contain dictionaries or string if MODEL[key][1] is a tuple
             if self.__class__.MODEL[key][0] is list:
-                if isinstance(self.__class__.MODEL[key][1], basestring):
+                if isinstance(self.__class__.MODEL[key][1], (str, bytes)):
                     # List values can be only string
-                    if not all([isinstance(v, basestring) for v in value]):
+                    if not all([isinstance(v, (str, bytes)) for v in value]):
                         raise ResourceInvalidException(
                             "Resource [type: %s, ID: %s] has an "
                             "invalid key (%s) data content (expected "
@@ -269,7 +269,7 @@ class BaseResource(object):
                     # We assume self.__class__.MODEL[key][1] is tuple. List
                     # values can be dict or list
                     for v in value:
-                        if isinstance(v, basestring):
+                        if isinstance(v, (str, bytes)):
                             if not re.match(
                                     self.__class__.MODEL[key][1][1], v):
                                 raise ResourceInvalidException(
@@ -292,7 +292,7 @@ class BaseResource(object):
                                         key))
                             if not re.match(
                                     self.__class__.MODEL[key][1][1],
-                                    v.keys()[0]):
+                                    list(v.keys())[0]):
                                 raise ResourceInvalidException(
                                     "Resource [type: %s, ID: %s] has an "
                                     "invalid key (%s) data content (expected "
