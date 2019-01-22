@@ -62,7 +62,7 @@ class GroupOps(object):
 
         try:
             all_groups = self.client.get_groups()
-        except Exception, e:
+        except Exception as e:
             logger.exception("get_groups failed")
             logs.append("Group list: err API returned %s" % e)
             return logs, groups
@@ -78,7 +78,7 @@ class GroupOps(object):
                 members = self.client.get_group_members(str(data['group_id']))
                 groups[gname]['members'] = [
                     m['email'] for m in members if 'email' in m.keys()]
-            except Exception, e:
+            except Exception as e:
                 logger.exception("get_group_members failed")
                 logs.append(
                     "Group list members [%s]: err API "
@@ -95,7 +95,7 @@ class GroupOps(object):
 
         try:
             self.client.create_group(name, description)
-        except Exception, e:
+        except Exception as e:
             logger.exception("create_group failed")
             logs.append("Group create: err API returned %s" % e)
 
@@ -104,7 +104,7 @@ class GroupOps(object):
             self.client.delete_group_member(name, "admin")
         except utils.NotFound:
             pass
-        except Exception, e:
+        except Exception as e:
             logger.exception("delete_group_member failed")
             logs.append("Group create [del member: admin]: "
                         "err API returned %s" % e)
@@ -113,7 +113,7 @@ class GroupOps(object):
             for member in members:
                 try:
                     self.client.add_group_member(member, name)
-                except Exception, e:
+                except Exception as e:
                     logger.exception("add_group_member failed")
                     logs.append("Group create [add member: %s]: "
                                 "err API returned %s" % (member, e))
@@ -146,7 +146,7 @@ class GroupOps(object):
         for member in current_members:
             try:
                 self.client.delete_group_member(name, member)
-            except Exception, e:
+            except Exception as e:
                 logger.exception("delete_group_member failed")
                 logs.append("Group delete [del member: %s]: "
                             "err API returned %s" % (member, e))
@@ -157,7 +157,7 @@ class GroupOps(object):
         for grp in grps:
             try:
                 self.client.delete_group_group_member(gid, grp)
-            except Exception, e:
+            except Exception as e:
                 logger.exception("delete_group_group_member failed")
                 logs.append("Group delete [del included group %s]: "
                             "err API returned %s" % (grp, e))
@@ -193,7 +193,7 @@ class GroupOps(object):
         for mb in to_del:
             try:
                 self.client.delete_group_member(name, mb)
-            except Exception, e:
+            except Exception as e:
                 logger.exception("delete_group_member failed")
                 logs.append("Group update [del member: %s]: "
                             "err API returned %s" % (mb, e))
@@ -201,14 +201,14 @@ class GroupOps(object):
         for mb in to_add:
             try:
                 self.client.add_group_member(mb, name)
-            except Exception, e:
+            except Exception as e:
                 logger.exception("add_group_member failed")
                 logs.append("Group update [add member: %s]: "
                             "err API returned %s" % (mb, e))
 
         try:
             self.group_update_description(name, description)
-        except Exception, e:
+        except Exception as e:
             logger.exception("group_update_description failed")
             logs.append("Group update [update description]: "
                         "err API returned %s" % e)
@@ -219,7 +219,7 @@ class GroupOps(object):
         for grp in grps:
             try:
                 self.client.delete_group_group_member(gid, grp)
-            except Exception, e:
+            except Exception as e:
                 logger.exception("delete_group_group_member failed")
                 logs.append("Group update [del included group %s]: "
                             "err API returned %s" % (grp, e))
