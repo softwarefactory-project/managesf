@@ -1,0 +1,13 @@
+- project:
+    check:
+      jobs:
+        # This is part of our job template. We'll remove it when all our
+        # python projects are py3x ready
+        - tox-py27:
+            voting: false
+        - tox-py36:
+            nodeset: fedora-latest-runc
+            voting: true
+        - tox-pep8-py36:
+            nodeset: fedora-latest-runc
+            voting: true

@@ -19,7 +19,10 @@ import yaml
 import deepdiff
 import logging
 
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from pecan import conf
 
 from managesf.model.yamlbkd.yamlbackend import YAMLBackend
@@ -35,6 +38,7 @@ from managesf.model.yamlbkd.resources.gitacls import ACL
 from managesf.model.yamlbkd.resources.project import Project
 from managesf.model.yamlbkd.resources.tenant import Tenant
 from managesf.model.yamlbkd.resources.connection import Connection
+
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +293,7 @@ class SFResourceBackendEngine(object):
                             _data = r.get_resource()
                             logs = MAPPING[rtype].CALLBACKS[ctype](
                                 conf, new, _data)
-                    except Exception, e:
+                    except Exception as e:
                         logger.exception("apply_changes failed %s" % e)
                         logs.append(
                             "Resource [type: %s, ID: %s] %s op error (%s)." % (
@@ -347,7 +351,7 @@ class SFResourceBackendEngine(object):
                                     'data': data}
         logs = []
         # Do it 3 times to resolv deps of max 3 depths
-        for _ in xrange(3):
+        for _ in range(3):
             scan(logs)
         return logs
 
@@ -451,7 +455,7 @@ class SFResourceBackendEngine(object):
                     continue
                 rdeps = r.get_deps()
                 resolved_rdeps = []
-                drtype = rdeps.keys()[0]
+                drtype = list(rdeps)[0]
                 dids = rdeps[drtype]
                 if dids:
                     for did in dids:
@@ -495,8 +499,8 @@ class SFResourceBackendEngine(object):
                 ModelInvalidException,
                 ResourceInvalidException,
                 ResourceUnicityException,
-                ResourceDepsException), e:
-            validation_logs.append(unicode(e))
+                ResourceDepsException) as e:
+            validation_logs.append(str(e))
             for l in validation_logs:
                 logger.info(l)
             return False, validation_logs
@@ -528,8 +532,8 @@ class SFResourceBackendEngine(object):
                 ModelInvalidException,
                 ResourceInvalidException,
                 ResourceUnicityException,
-                ResourceDepsException), e:
-            validation_logs.append(unicode(e))
+                ResourceDepsException) as e:
+            validation_logs.append(str(e))
             for l in validation_logs:
                 logger.info(l)
             return False, validation_logs
@@ -553,8 +557,8 @@ class SFResourceBackendEngine(object):
             logs = self._resolv_resources_need_refresh(changes, new)
             apply_logs.extend(logs)
             partial = self._apply_changes(changes, apply_logs, new)
-        except YAMLDBException, e:
-            apply_logs.append(unicode(e))
+        except YAMLDBException as e:
+            apply_logs.append(str(e))
             for l in apply_logs:
                 logger.info(l)
             return False, apply_logs
@@ -631,8 +635,8 @@ class SFResourceBackendEngine(object):
                 ModelInvalidException,
                 ResourceInvalidException,
                 ResourceUnicityException,
-                ResourceDepsException), e:
-            direct_apply_logs.append(unicode(e))
+                ResourceDepsException) as e:
+            direct_apply_logs.append(str(e))
             for l in direct_apply_logs:
                 logger.info(l)
             return False, direct_apply_logs
