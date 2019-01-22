@@ -360,6 +360,8 @@ class ZuulTenantsLoad:
             if not tenant_resources:
                 continue
 
+            default_conn = tenant_conf["default-connection"]
+
             # Finally we add Repos not listed in sr with an include: [] to Zuul
             skip_missing_resources = False
             if tenant_conf["url"] == self.main_resources["public-url"]:
