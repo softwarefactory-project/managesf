@@ -228,9 +228,7 @@ class TestManageSFAppLocaluserController(FunctionalTest):
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
 
-            auth = encode("john", "secret")
-            if isinstance(auth, unicode):
-                auth = auth.encode('utf-8')
+            auth = encode(u"john", "secret")
             response = self.app.get(
                 '/bind', headers={"Authorization": auth}, status="*")
             self.assertEqual(response.status_int, 200)
@@ -238,16 +236,12 @@ class TestManageSFAppLocaluserController(FunctionalTest):
                              response.json,
                              response.json)
 
-            auth = encode("john", "badsecret")
-            if isinstance(auth, unicode):
-                auth = auth.encode('utf-8')
+            auth = encode(u"john", "badsecret")
             response = self.app.get(
                 '/bind', headers={"Authorization": auth}, status="*")
             self.assertEqual(response.status_int, 401)
 
-            auth = encode("boss", "secret")
-            if isinstance(auth, unicode):
-                auth = auth.encode('utf-8')
+            auth = encode(u"boss", "secret")
             response = self.app.get(
                 '/bind', headers={"Authorization": auth}, status="*")
             self.assertEqual(response.status_int, 401)
@@ -633,17 +627,17 @@ class TestManageSFServicesUserController(FunctionalTest):
                                          payload,
                                          extra_environ=environ, status="*")
                 self.assertEqual(400, resp.status_int)
-                self.assertTrue('Nothing to do' in resp.body)
+                self.assertTrue(b'Nothing to do' in resp.body)
                 resp = self.app.put_json(
                     '/services_users/?email=jojo@starplatinum.dom',
                     payload, extra_environ=environ, status="*")
                 self.assertEqual(400, resp.status_int)
-                self.assertTrue('Nothing to do' in resp.body)
+                self.assertTrue(b'Nothing to do' in resp.body)
                 resp = self.app.put_json(
                     '/services_users/?id=%s' % jojo_id,
                     payload, extra_environ=environ, status="*")
                 self.assertEqual(400, resp.status_int)
-                self.assertTrue('Nothing to do' in resp.body)
+                self.assertTrue(b'Nothing to do' in resp.body)
             # try doing it right
             c = 0
             for i in ('admin', infos_jojo['username']):

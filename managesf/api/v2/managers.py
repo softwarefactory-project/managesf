@@ -16,7 +16,7 @@
 
 import logging
 
-import base
+from managesf.api.v2 import base
 
 
 logger = logging.getLogger(__name__)
