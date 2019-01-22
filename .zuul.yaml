@@ -1,0 +1,11 @@
+- project:
+    check:
+      jobs:
+        - tox-py27:
+            voting: false
+        - tox-py36:
+            nodeset: fedora-latest-runc
+            voting: false
+        - tox-pep8-py36:
+            nodeset: fedora-latest-runc
+            voting: false

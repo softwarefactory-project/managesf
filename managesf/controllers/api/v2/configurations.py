@@ -164,7 +164,7 @@ class ZuulTenantsLoad:
                 if isinstance(kp, dict) and 'projects' in kp.keys():
                     sanitized_project_names.extend(kp['projects'])
                 elif isinstance(kp, dict):
-                    sanitized_project_names.append(kp.keys()[0])
+                    sanitized_project_names.append(list(kp)[0])
                 else:
                     sanitized_project_names.append(kp)
             projects_list[tenant] = sanitized_project_names
@@ -251,7 +251,7 @@ class ZuulTenantsLoad:
                 if project['tenant'] != tenant_name:
                     continue
             for sr in project['source-repositories']:
-                sr_name = sr.keys()[0]
+                sr_name = list(sr)[0]
                 if (tenant_name in projects_list and
                         sr_name in projects_list[tenant_name]):
                     # already defined in flat zuul tenant file

@@ -19,6 +19,10 @@ from managesf import model
 from basicauth import decode, DecodeError
 from passlib.hash import pbkdf2_sha256
 
+import sys
+PY3 = False
+if sys.version_info[0] >= 3:
+    PY3 = True
 
 log = logging.getLogger(__name__)
 
@@ -105,7 +109,11 @@ def get_user(username):
 def bind_user(authorization):
     try:
         username, password = decode(authorization)
-        username = unicode(username, encoding='utf8')
+        if not PY3:
+            import locale
+            _, loc = locale.getdefaultlocale()
+            username = username.encode(loc).decode('utf8')
+            raise Exception(username)
     except DecodeError:
         raise BindForbidden("Wrong authorization header")
     ret = model.get_user(username)
