@@ -504,7 +504,7 @@ class RepoXplorerConf():
 
         # Add the groups
         for group, data in self.main_resources[
-                'resources']['groups'].items():
+                'resources'].get('groups', {}).items():
             grp = {}
             grp['description'] = data.get('description', '')
             grp['emails'] = dict((member, None) for
@@ -541,7 +541,9 @@ class RepoXplorerConf():
                     for repo in missing_repos:
                         self.default['projects'][default_project][
                             'repos'][repo] = {'template': 'default'}
-
+        # Remove unneeded default template
+        if 'uri' not in self.default['project-templates']['default']:
+            del self.default['project-templates']['default']
         return yaml.safe_dump(self.default)
 
 
