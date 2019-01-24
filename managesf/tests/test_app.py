@@ -233,22 +233,28 @@ class TestManageSFAppLocaluserController(FunctionalTest):
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
 
-            headers = {"Authorization": encode("john", "secret")}
-            response = self.app.get('/bind', headers=headers,
-                                    status="*")
+            auth = encode("john", "secret")
+            if isinstance(auth, unicode):
+                auth = auth.encode('utf-8')
+            response = self.app.get(
+                '/bind', headers={"Authorization": auth}, status="*")
             self.assertEqual(response.status_int, 200)
             self.assertEqual(public_infos,
                              response.json,
                              response.json)
 
-            headers = {"Authorization": encode("john", "badsecret")}
-            response = self.app.get('/bind', headers=headers,
-                                    status="*")
+            auth = encode("john", "badsecret")
+            if isinstance(auth, unicode):
+                auth = auth.encode('utf-8')
+            response = self.app.get(
+                '/bind', headers={"Authorization": auth}, status="*")
             self.assertEqual(response.status_int, 401)
 
-            headers = {"Authorization": encode("boss", "secret")}
-            response = self.app.get('/bind', headers=headers,
-                                    status="*")
+            auth = encode("boss", "secret")
+            if isinstance(auth, unicode):
+                auth = auth.encode('utf-8')
+            response = self.app.get(
+                '/bind', headers={"Authorization": auth}, status="*")
             self.assertEqual(response.status_int, 401)
 
 
