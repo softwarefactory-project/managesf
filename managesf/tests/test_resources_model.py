@@ -185,6 +185,13 @@ class ResourcesTest(TestCase):
                         ]})
         self.assertRaises(ResourceInvalidException,
                           res.validate)
+        res = R1('id', {'key': 1,
+                        'key4': {
+                            'subk1': '123',
+                            'subk2': True,
+                            'subk3': 123
+                            }})
+        res.validate()
 
     def test_resource_model_callbacks(self):
         class R1(BaseResource):
