@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b2c9fd1_b8f16ebc",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 433,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-02-19T16:08:19Z",
+      "side": 1,
+      "message": "I think for both gerrit and gerrithub the uri is:\nuri \u003d base_url + \u0027/%(name)s\u0027",
+      "revId": "c89eaa064e4513c119a23b08bd25231b02a67f56",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
