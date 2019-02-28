@@ -18,6 +18,7 @@ from unittest import TestCase
 
 from managesf.controllers.api.v2.configurations import ZuulTenantsLoad
 from managesf.controllers.api.v2.configurations import RepoXplorerConf
+from managesf.controllers.api.v2.configurations import HoundConf
 
 
 class ZuulTenantsLoadTests(TestCase):
@@ -497,5 +498,179 @@ class RepoXplorerConfTests(TestCase):
                     }
                 },
             }
+        }
+        self.assertDictEqual(ret, expected_ret)
+
+
+class HoundConfTests(TestCase):
+
+    def test_load(self):
+        rpc = HoundConf(utests=True)
+        self.maxDiff = None
+        resources = {
+            'resources': {
+                'tenants': {
+                    'local': {
+                        'url': 'https://sftests.com/manage',
+                        'default-connection': 'gerrit',
+                    },
+                    'tenant2': {
+                        'url': 'https://sftests.com/manage',
+                    }
+                },
+                'connections': {
+                    'gerrit': {
+                        'base-url': 'https://sftests.com/r',
+                        'type': 'gerrit'
+                    },
+                    'github': {
+                        'base-url': 'https://github.com/',
+                        'type': 'github'
+                    },
+                    'gerrithub': {
+                        'base-url': 'https://review.gerrithub.io/',
+                        'type': 'gerrit'
+                    }
+                },
+                'projects': {
+                    'project1': {
+                        'tenant': 'local',
+                        'source-repositories': [
+                            {'repo1': {}},
+                        ]
+                    },
+                    'project2': {
+                        'tenant': 'tenant2',
+                        'source-repositories': [
+                            {'repo3': {}},
+                            {'repo4': {
+                                'connection': 'gerrit'
+                            }},
+                            {'repo5': {
+                                'private': True
+                            }},
+                        ]
+                    },
+                    'project3': {
+                        'tenant': 'local',
+                        'source-repositories': [
+                            {'repo6': {}},
+                            {'repo7': {
+                                'hound/skip': True,
+                            }},
+                        ]
+                    },
+                    'project4': {
+                        'tenant': 'local',
+                        'options': [
+                            'hound/skip',
+                        ],
+                        'source-repositories': [
+                            {'repo7': {}},
+                        ]
+                    },
+                    'project5': {
+                        'tenant': 'local',
+                        'source-repositories': [
+                            {'repo8': {
+                                'connection': 'github'
+                            }},
+                            {'repo9': {
+                                'connection': 'gerrithub'
+                            }},
+                        ]
+                    },
+                },
+                'repos': {
+                    'repo2': {},
+                    'repo5': {},
+                },
+            }
+        }
+        rpc.main_resources = resources
+        ret = yaml.load(rpc.start())
+        expected_ret = {
+            'repos': {
+                'repo2': {
+                    'ms-between-poll': 43200000,
+                    'url': 'https://sftests.com/r/repo2',
+                    'vcs-config': {
+                        'ref': 'master'
+                     },
+                    'url-pattern': {
+                        'base-url': (
+                            'https://sftests.com/r/gitweb?p=repo2.git;'
+                            'a=blob;f={path}{anchor}'),
+                        'anchor': '#l{line}'
+                    }
+                },
+                'repo1': {
+                    'ms-between-poll': 43200000,
+                    'url': 'https://sftests.com/r/repo1',
+                    'vcs-config': {
+                        'ref': 'master'
+                    },
+                    'url-pattern': {
+                        'base-url': (
+                            'https://sftests.com/r/gitweb?p=repo1.git;'
+                            'a=blob;f={path}{anchor}'),
+                        'anchor': '#l{line}'
+                    }
+                },
+                'repo6': {
+                    'ms-between-poll': 43200000,
+                    'url': 'https://sftests.com/r/repo6',
+                    'vcs-config': {
+                        'ref': 'master'
+                    },
+                    'url-pattern': {
+                        'base-url': (
+                            'https://sftests.com/r/gitweb?p=repo6.git;'
+                            'a=blob;f={path}{anchor}'),
+                        'anchor': '#l{line}'
+                    }
+                },
+                'repo4': {
+                    'ms-between-poll': 43200000,
+                    'url': 'https://sftests.com/r/repo4',
+                    'vcs-config': {
+                        'ref': 'master'
+                    },
+                    'url-pattern': {
+                        'base-url': (
+                            'https://sftests.com/r/gitweb?p=repo4.git;'
+                            'a=blob;f={path}{anchor}'),
+                        'anchor': '#l{line}'
+                    }
+                },
+                'repo8': {
+                    'ms-between-poll': 43200000,
+                    'url': 'http://github.com/repo8',
+                    'vcs-config': {
+                        'ref': 'master'
+                    },
+                    'url-pattern': {
+                        'anchor': '#L{line}',
+                        'base-url': (
+                            'http://github.com/repo8/blob/master/'
+                            '{path}{anchor}')
+                    }
+                },
+                'repo9': {
+                    'ms-between-poll': 43200000,
+                    'url': 'https://review.gerrithub.io/repo9',
+                    'vcs-config': {
+                        'ref': 'master'
+                    },
+                    'url-pattern': {
+                        'base-url': (
+                            'http://github.com/repo9/blob/master/'
+                            '{path}{anchor}'),
+                        'anchor': '#L{line}'
+                    }
+                },
+            },
+            'dbpath': '/var/lib/hound/data',
+            'max-concurrent-indexers': 2
         }
         self.assertDictEqual(ret, expected_ret)

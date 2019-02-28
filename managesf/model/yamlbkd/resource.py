@@ -188,7 +188,7 @@ class BaseResource(object):
         try:
             # Be sure we have only the authorized callbacks
             assert len(set(AUTHORIZED_CALLBACKS).symmetric_difference(
-                set(self.__class__.CALLBACKS))) is 0
+                set(self.__class__.CALLBACKS))) == 0
             # Be sure the callbacks are callable or NotImplemented
             for key, callback in self.__class__.CALLBACKS.items():
                 if (not callable(callback)
