@@ -18,6 +18,7 @@ from unittest import TestCase
 
 from managesf.controllers.api.v2.configurations import ZuulTenantsLoad
 from managesf.controllers.api.v2.configurations import RepoXplorerConf
+from managesf.controllers.api.v2.configurations import HoundConf
 
 
 class ZuulTenantsLoadTests(TestCase):
@@ -498,4 +499,83 @@ class RepoXplorerConfTests(TestCase):
                 },
             }
         }
+        self.assertDictEqual(ret, expected_ret)
+
+
+class HoundConfTests(TestCase):
+
+    def test_load(self):
+        rpc = HoundConf(utests=True)
+        resources = {
+            'resources': {
+                'tenants': {
+                    'local': {
+                        'url': 'https://sftests.com/manage',
+                        'default-connection': 'gerrit',
+                    },
+                    'tenant2': {
+                        'url': 'https://sftests.com/manage',
+                    }
+                },
+                'connections': {
+                    'gerrit': {
+                        'base-url': 'https://sftests.com/r',
+                        'type': 'gerrit'
+                    },
+                    'github': {
+                        'base-url': 'https://github.com/',
+                        'type': 'github'
+                    },
+                    'gerrithub': {
+                        'base-url': 'https://review.gerrithub.io/',
+                        'type': 'gerrit'
+                    }
+                },
+                'projects': {
+                    'project1': {
+                        'tenant': 'local',
+                        'source-repositories': [
+                            {'repo1': {}},
+                        ]
+                    },
+                    'project2': {
+                        'tenant': 'tenant2',
+                        'source-repositories': [
+                            {'repo3': {}},
+                            {'repo4': {
+                                'connection': 'gerrit'
+                            }},
+                            {'repo5': {
+                                'private': True
+                            }},
+                        ]
+                    },
+                    'project3': {
+                        'tenant': 'local',
+                        'source-repositories': [
+                            {'repo6': {}},
+                            {'repo7': {
+                                'hound/skip': True,
+                            }},
+                        ]
+                    },
+                    'project4': {
+                        'tenant': 'local',
+                        'options': [
+                            'hound/skip',
+                        ],
+                        'source-repositories': [
+                            {'repo7': {}},
+                        ]
+                    },
+                },
+                'repos': {
+                    'repo2': {},
+                    'repo5': {},
+                },
+            }
+        }
+        rpc.main_resources = resources
+        ret = yaml.load(rpc.start())
+        expected_ret = {}
         self.assertDictEqual(ret, expected_ret)
