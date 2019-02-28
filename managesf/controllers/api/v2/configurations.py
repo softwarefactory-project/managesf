@@ -49,6 +49,15 @@ class RepoXplorerConfigurationController(BaseConfigurationController):
             ).start()
 
 
+class HoundConfigurationController(BaseConfigurationController):
+    @expose()
+    def get(self, **kwargs):
+        return HoundConf(
+            engine=self.engine,
+            default_tenant_name=conf.resources.get('tenant_name', 'local')
+            ).start()
+
+
 class ConfigurationController:
     def __init__(self):
         self.engine = SFResourceBackendEngine(
@@ -547,6 +556,124 @@ class RepoXplorerConf():
         return yaml.safe_dump(self.default)
 
 
+class HoundConf():
+    log = logging.getLogger("managesf.HoundConf")
+
+    def __init__(self, engine=None,
+                 utests=False,
+                 master_sf_url=None,
+                 default_tenant_name='local'):
+        self.default_tenant_name = default_tenant_name
+        self.master_sf_url = master_sf_url
+        self.privates = set()
+        self.config = {
+            "max-concurrent-indexers": 2,
+            "dbpath": "/var/lib/hound/data",
+            "repos": {},
+        }
+        if utests:
+            # Skip this for unittests
+            return
+        if engine is None:
+            # From cli uses api instead
+            self.main_resources = self.get_resources(
+                "http://localhost:20001/v2/resources")
+        else:
+            self.main_resources = engine.get(
+                conf.resources['master_repo'], 'master')
+
+    def get_resources(self, url, verify_ssl=True):
+        """Get resources and config location from tenant deployment."""
+        ret = requests.get(url, verify=bool(int(verify_ssl)))
+        return ret.json()
+
+    def compute_uri_gitweb(self, conn):
+        conn_type = self.main_resources['resources'][
+            'connections'][conn]['type']
+        base_url = self.main_resources['resources'][
+            'connections'][conn]['base-url'].rstrip('/')
+        if conn_type == 'gerrit':
+            uri = base_url + '/%(name)s'
+            gitweb = (
+                base_url + '/gitweb?p=%(name)s.git;a=blob;f={path}{anchor}')
+            anchor = '#l{line}'
+            if 'https://review.gerrithub.io' in base_url:
+                gitweb = (
+                    'http://github.com/%(name)s/blob/%(branch)s/{path}{anchor}'
+                )
+                anchor = '#L{line}'
+        if conn_type == 'github':
+            uri = 'http://github.com/%(name)s'
+            gitweb = (
+                'http://github.com/%(name)s/blob/%(branch)s/{path}{anchor}')
+            anchor = '#L{line}'
+        return uri, gitweb, anchor
+
+    def add_in_conf(self, repo, conn, branch):
+        conn_type = self.main_resources['resources'][
+            'connections'][conn]['type']
+        if conn_type not in ['gerrit', 'github']:
+            return
+        uri, gitweb, anchor = self.compute_uri_gitweb(conn)
+        self.config["repos"][repo] = {
+            "url": uri % {'name': repo},
+            "ms-between-poll": int(12*60*60*1000),
+            "vcs-config": {
+                "ref": branch
+            },
+            "url-pattern": {
+                "base-url": gitweb % {'name': repo, 'branch': branch},
+                "anchor": anchor,
+            }
+        }
+
+    def start(self):
+        for data in self.main_resources['resources']['projects'].values():
+            if 'hound/skip' in data.get('options', []):
+                continue
+            # Get the connection type to get the gitweb model
+
+        for project, data in self.main_resources.get(
+                "resources", {}).get("projects", {}).items():
+            for sr in data.get('source-repositories', []):
+                repo_name = list(sr.keys())[0]
+                if sr[repo_name].get('private') is True:
+                    self.privates.add(repo_name)
+                    continue
+                if (sr[repo_name].get('hound/skip') is True or
+                        'hound/skip' in data.get('options', [])):
+                    self.privates.add(repo_name)
+                    continue
+                conn = sr[repo_name].get('connection')
+                if not conn:
+                    conn = data.get('connection')
+                if not conn:
+                    tenant_name = data.get('tenant', self.default_tenant_name)
+                    tenant = self.main_resources['resources'][
+                        'tenants'][tenant_name]
+                    conn = tenant.get('default-connection')
+                conn_defined = self.main_resources['resources'].get(
+                    'connections', {}).get(conn)
+                if conn_defined:
+                    branch = sr[repo_name].get('default-branch', 'master')
+                    self.add_in_conf(repo_name, conn, branch)
+                    self.privates.add(repo_name)
+
+        # Add repositories not associated to a project
+        for repo, data in self.main_resources.get(
+                "resources", {}).get("repos", {}).items():
+            if repo in self.privates:
+                continue
+            tenant = self.main_resources['resources'][
+                'tenants'][self.default_tenant_name]
+            conn = tenant.get('default-connection')
+            if conn_defined:
+                branch = data.get('default-branch', 'master')
+                self.add_in_conf(repo, conn, branch)
+
+        return yaml.safe_dump(self.config)
+
+
 def cli():
     import argparse
 
@@ -560,7 +687,7 @@ def cli():
         "--cache-dir", default="/var/lib/software-factory/git-configuration")
     p.add_argument("--debug", action="store_true")
     p.add_argument("--default-tenant-name", default="local")
-    p.add_argument("service", choices=["zuul", "repoxplorer"])
+    p.add_argument("service", choices=["zuul", "repoxplorer", "hound"])
     args = p.parse_args()
 
     logging.basicConfig(
@@ -579,6 +706,12 @@ def cli():
 
     if args.service == "repoxplorer":
         rpc = RepoXplorerConf(
+            master_sf_url=args.master_sf_url,
+            default_tenant_name=args.default_tenant_name)
+        conf = rpc.start()
+
+    if args.service == "hound":
+        rpc = HoundConf(
             master_sf_url=args.master_sf_url,
             default_tenant_name=args.default_tenant_name)
         conf = rpc.start()
