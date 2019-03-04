@@ -139,7 +139,7 @@ class ZuulTenantsLoad:
             # Clone this is the first time
             git.Repo.clone_from(
                 url, tenant_config_project_path, branch='master',
-                depth=1, config='http.sslVerify=%s' % bool(int(ssl_verify)))
+                config='http.sslVerify=%s' % bool(int(ssl_verify)))
         else:
             # Refresh the repository
             repo = git.Repo(tenant_config_project_path)
