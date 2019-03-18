@@ -443,11 +443,14 @@ class RepoXplorerConf():
             'connections'][conn]['base-url'].rstrip('/')
         if conn_type == 'gerrit':
             uri = base_url + '/%(name)s'
-            gitweb = (base_url + '/gitweb?p=%(name)s.git' +
-                      ';a=commitdiff;h=%%(sha)s;ds=sidebyside')
+            if base_url == 'https://review.gerrithub.io':
+                gitweb = 'https://github.com/%(name)s/commit/%%(sha)s'
+            else:
+                gitweb = (base_url + '/gitweb?p=%(name)s.git' +
+                          ';a=commitdiff;h=%%(sha)s;ds=sidebyside')
         elif conn_type == 'github':
-            uri = 'http://github.com/%(name)s'
-            gitweb = 'http://github.com/%(name)s/commit/%%(sha)s'
+            uri = 'https://github.com/%(name)s'
+            gitweb = 'https://github.com/%(name)s/commit/%%(sha)s'
         else:
             uri = base_url + '/%(name)s'
             gitweb = base_url + '/%(name)s' + '/commit/?id=%%(sha)s'
