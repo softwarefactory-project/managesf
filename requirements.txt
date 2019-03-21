@@ -17,5 +17,5 @@ stevedore
 PyMySQL
 six
 oslo.policy
-deepdiff
+deepdiff==3.3.0
 GitPython
