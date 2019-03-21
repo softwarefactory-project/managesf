@@ -59,6 +59,15 @@ class HoundConfigurationController(BaseConfigurationController):
             ).start()
 
 
+class CauthConfigurationController(BaseConfigurationController):
+    @expose()
+    def get(self, **kwargs):
+        return CauthConf(
+            engine=self.engine,
+            default_tenant_name=conf.resources.get('tenant_name', 'local')
+            ).start()
+
+
 class ConfigurationController:
     def __init__(self):
         self.engine = SFResourceBackendEngine(
@@ -68,6 +77,7 @@ class ConfigurationController:
         self.zuul = ZuulConfigurationController(self.engine)
         self.repoxplorer = RepoXplorerConfigurationController(self.engine)
         self.hound = HoundConfigurationController(self.engine)
+        self.cauth = CauthConfigurationController(self.engine)
 
 
 class ZuulTenantsLoad:
@@ -679,6 +689,50 @@ class HoundConf():
         return json.dumps(self.config, indent=True, sort_keys=True)
 
 
+class CauthConf():
+    log = logging.getLogger("managesf.CauthConf")
+
+    def __init__(self, engine=None,
+                 utests=False,
+                 master_sf_url=None,
+                 default_tenant_name='local'):
+        self.default_tenant_name = default_tenant_name
+        self.master_sf_url = master_sf_url
+        self.repos_cache = set()
+        self.default = {
+            'groups': {},
+        }
+        if utests:
+            # Skip this for unittests
+            return
+        if engine is None:
+            # From cli uses api instead
+            self.main_resources = self.get_resources(
+                "http://localhost:20001/v2/resources")
+        else:
+            self.main_resources = engine.get(
+                conf.resources['master_repo'], 'master')
+
+    def get_resources(self, url, verify_ssl=True):
+        """Get resources and config location from tenant deployment."""
+        ret = requests.get(url, verify=bool(int(verify_ssl)))
+        return ret.json()
+
+    def start(self):
+        # Add the groups
+        for group, data in self.main_resources[
+                'resources'].get('groups', {}).items():
+            grp = {}
+            grp['description'] = data.get('description', '')
+            grp['members'] = dict((member, None) for
+                                  member in data.get('members', [])).keys()
+            # Only add groups with members
+            if grp['members']:
+                self.default['groups'][group] = grp
+
+        return yaml.safe_dump(self.default)
+
+
 def cli():
     import argparse
 
@@ -692,7 +746,8 @@ def cli():
         "--cache-dir", default="/var/lib/software-factory/git-configuration")
     p.add_argument("--debug", action="store_true")
     p.add_argument("--default-tenant-name", default="local")
-    p.add_argument("service", choices=["zuul", "repoxplorer", "hound"])
+    p.add_argument("service", choices=["zuul", "repoxplorer",
+                                       "hound", "cauth"])
     args = p.parse_args()
 
     logging.basicConfig(
@@ -717,6 +772,12 @@ def cli():
 
     if args.service == "hound":
         rpc = HoundConf(
+            master_sf_url=args.master_sf_url,
+            default_tenant_name=args.default_tenant_name)
+        conf = rpc.start()
+
+    if args.service == "cauth":
+        rpc = CauthConf(
             master_sf_url=args.master_sf_url,
             default_tenant_name=args.default_tenant_name)
         conf = rpc.start()
