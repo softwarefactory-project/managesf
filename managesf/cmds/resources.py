@@ -113,8 +113,8 @@ def cli():
     p.add_argument(
         "--managesf-config", default="/etc/managesf/config.py")
     p.add_argument(
-        "--zuul-commit",
-        help="SHA of the commit we are going to apply")
+        "--zuul-commit", default='master^1',
+        help="Reference of the last commit applied")
     p.add_argument(
         "--prev-yaml",
         help="Path to the previous yaml (direct-apply)")
@@ -174,24 +174,16 @@ def cli():
             print("Read ZUUL_COMMIT from environment: %s" % (
                 os.environ['ZUUL_COMMIT']))
             args.zuul_commit = os.environ['ZUUL_COMMIT']
-        if not args.zuul_commit:
-            print("ZUUL_COMMIT not set. Skip processing.")
-            sys.exit(0)
         with TemporaryDirectory() as dpath:
             subprocess.call(
                 ["git", "clone", conf.resources.master_repo, dpath])
             os.chdir(dpath)
             print("Checkout at ZUUL COMMIT: %s" % args.zuul_commit)
-            subprocess.call(
-                ["git", "checkout", args.zuul_commit])
             head_commit_msg = subprocess.check_output(
-                ["git", "log", "-1", "--no-merges"])
+                ["git", "log", "%s..master" % args.zuul_commit, "--no-merges"])
             print(head_commit_msg)
-            if not is_resources_changes():
-                print("Nothing to validate on the resources")
-                sys.exit(0)
             status, logs = engine.apply(
-                conf.resources.master_repo, 'master^1',
+                conf.resources.master_repo, args.zuul_commit,
                 dpath, 'master')
             print("")
             print(
