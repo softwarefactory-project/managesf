@@ -52,16 +52,6 @@ def read_data_to_validate():
     return data
 
 
-def is_resources_changes():
-    head_sha = subprocess.check_output(
-        ["git", "--no-pager", "log", "--no-merges",
-         "--format='%H'", "-n", "1", "HEAD"]).strip()
-    head_resources_sha = subprocess.check_output(
-        ["git", "--no-pager", "log", "--no-merges",
-         "--format='%H'", "-n", "1", "HEAD", "--", "resources"]).strip()
-    return head_sha == head_resources_sha
-
-
 def build_auth_cookie(remote_gateway):
     cookie = sfauth.get_cookie(
         remote_gateway, username='SF_SERVICE_USER',
@@ -69,16 +59,19 @@ def build_auth_cookie(remote_gateway):
     return cookie
 
 
-def read_repo_to_validate():
+def read_repo_to_validate(zuul_prev_commit, zuul_commit):
     if not os.path.isdir('.git') or not os.path.isdir('resources'):
         print("Current workding directory must the config repository "
               "to validate")
         sys.exit(1)
-    if not is_resources_changes():
-        print("Nothing to validate on the resources")
-        sys.exit(0)
-    head_commit_msg = subprocess.check_output(
-        ["git", "log", "-1", "--no-merges"])
+    if zuul_commit:
+        subprocess.call(["git", "checkout", zuul_commit])
+    else:
+        zuul_commit = ''
+    if zuul_prev_commit == 'master':
+        zuul_prev_commit = 'origin/master'
+    commit_range = "%s..%s" % (zuul_prev_commit, zuul_commit)
+    head_commit_msg = subprocess.check_output(["git", "log", commit_range])
     print(head_commit_msg)
     structured_data = read_data_to_validate()
     return structured_data, head_commit_msg
@@ -153,14 +146,19 @@ def cli():
             conf.resources.subdir)
 
     if args.action == "read":
+        if not args.zuul_commit:
+            args.zuul_commit = 'master'
         raw = engine.get(
-            conf.resources.master_repo, 'master')
+            conf.resources.master_repo, args.zuul_commits)
         print(json.dumps(raw, indent=2, sort_keys=True))
 
     if args.action == "validate":
-        structured_data, head_commit_msg = read_repo_to_validate()
+        if not args.zuul_prev_commit:
+            args.zuul_prev_commit = "master"
+        structured_data, head_commit_msg = read_repo_to_validate(
+            args.zuul_prev_commit, args.zuul_commit)
         status, logs = engine.validate_from_structured_data(
-            conf.resources.master_repo, 'master', structured_data)
+            conf.resources.master_repo, args.zuul_prev_commit, structured_data)
         print("")
         print(
             "=== Resources actions list that will apply once patch merged ===")
@@ -191,7 +189,7 @@ def cli():
                 ["git", "checkout", args.zuul_commit])
             commit_range = "%s..%s" % (args.zuul_prev_commit, args.zuul_commit)
             head_commit_msg = subprocess.check_output(
-                ["git", "log", commit_range, "--no-merges"])
+                ["git", "log", commit_range])
             print(head_commit_msg)
             status, logs = engine.apply(
                 conf.resources.master_repo, args.zuul_prev_commit,
@@ -229,7 +227,10 @@ def cli():
         if not os.path.isfile('.service_user_password'):
             print("Unable to find .service_user_password")
             sys.exit(1)
-        structured_data, head_commit_msg = read_repo_to_validate()
+        if not args.zuul_prev_commit:
+            args.zuul_prev_commit = "master"
+        structured_data, head_commit_msg = read_repo_to_validate(
+            args.zuul_prev_commit, args.zuul_commit)
         print("=== Remote validation on %s ===" % args.remote_gateway)
         pubtkt_cookie = build_auth_cookie(args.remote_gateway)
         cookies = {'auth_pubtkt': pubtkt_cookie}
@@ -237,7 +238,8 @@ def cli():
         ret = requests.post(
             args.remote_gateway + '/manage/v2/resources/',
             headers=headers, cookies=cookies,
-            json={'data': structured_data})
+            json={'prev_ref': args.zuul_prev_commit,
+                  'data': structured_data})
         logs = ret.json()
         print("")
         print(
