@@ -114,7 +114,10 @@ def cli():
         "--managesf-config", default="/etc/managesf/config.py")
     p.add_argument(
         "--zuul-commit",
-        help="SHA of the commit we are going to apply")
+        help="Reference of the commit to apply")
+    p.add_argument(
+        "--zuul-prev-commit",
+        help="Reference of the previous commit applied")
     p.add_argument(
         "--prev-yaml",
         help="Path to the previous yaml (direct-apply)")
@@ -177,6 +180,8 @@ def cli():
         if not args.zuul_commit:
             print("ZUUL_COMMIT not set. Skip processing.")
             sys.exit(0)
+        if not args.zuul_prev_commit:
+            args.zuul_prev_commit = "%s^1" % args.zuul_commit
         with TemporaryDirectory() as dpath:
             subprocess.call(
                 ["git", "clone", conf.resources.master_repo, dpath])
@@ -184,15 +189,13 @@ def cli():
             print("Checkout at ZUUL COMMIT: %s" % args.zuul_commit)
             subprocess.call(
                 ["git", "checkout", args.zuul_commit])
+            commit_range = "%s..%s" % (args.zuul_prev_commit, args.zuul_commit)
             head_commit_msg = subprocess.check_output(
-                ["git", "log", "-1", "--no-merges"])
+                ["git", "log", commit_range, "--no-merges"])
             print(head_commit_msg)
-            if not is_resources_changes():
-                print("Nothing to validate on the resources")
-                sys.exit(0)
             status, logs = engine.apply(
-                conf.resources.master_repo, 'master^1',
-                dpath, 'master')
+                conf.resources.master_repo, args.zuul_prev_commit,
+                dpath, args.zuul_commit)
             print("")
             print(
                 "=== Resources actions ===")
