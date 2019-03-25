@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "500c1ca8_fddb0720",
+        "filename": "managesf/cmds/resources.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-03-25T10:01:52Z",
+      "side": 1,
+      "message": "If zuul-commit is not master and zuul-prev-commit is not set, then the default of zuul-prev-commit is wrong.",
+      "range": {
+        "startLine": 119,
+        "startChar": 39,
+        "endLine": 119,
+        "endChar": 45
+      },
+      "revId": "16628c2e2d7bfce9ec2fed283027fb92f64d57df",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "919ddb51_986b41fc",
+        "filename": "managesf/cmds/resources.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-03-25T10:01:52Z",
+      "side": 0,
+      "message": "It was there to make sure a sfconfig run does not trigger a apply.",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 23
+      },
+      "revId": "3295c4216c51693fe002a4cce4193d2a500d0814",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "59983bda_1fa1e42f",
+        "filename": "managesf/cmds/resources.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-03-25T10:01:52Z",
+      "side": 0,
+      "message": "What the reason to remove it ?",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 192,
+        "endChar": 27
+      },
+      "revId": "3295c4216c51693fe002a4cce4193d2a500d0814",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
