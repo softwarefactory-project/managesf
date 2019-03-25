@@ -62,10 +62,10 @@ class ResourcesManager(resources.ResourcesManager):
         if kwargs.get('data') is None:
             raise ValueError('Invalid request: missing "data"')
         data = kwargs['data']
+        prev_ref = kwargs.get('prev_ref', 'master')
         engine = self.manager.get_engine('validate')
         status, logs = engine.validate_from_structured_data(
-            self.manager.master_repo,
-            'master', data)
+            self.manager.master_repo, prev_ref, data)
         return status, logs
 
 
