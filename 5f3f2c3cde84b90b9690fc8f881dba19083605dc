@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36bf5b1d_241b51d7",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 727,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2019-03-26T08:58:02Z",
+      "side": 1,
+      "message": "That structure looks odd, why members is a dict?",
+      "range": {
+        "startLine": 727,
+        "startChar": 34,
+        "endLine": 727,
+        "endChar": 48
+      },
+      "revId": "5f3f2c3cde84b90b9690fc8f881dba19083605dc",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
