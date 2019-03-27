@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "98a1f078_d7a90210",
+        "filename": "managesf/cmds/resources.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2019-03-27T09:35:18Z",
+      "side": 0,
+      "message": "This is taken care of by https://softwarefactory-project.io/r/15255 . Though to simplify backward compat, i\u0027ll keep that check in place in next PS",
+      "parentUuid": "b48791e4_2304d035",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 23
+      },
+      "revId": "3295c4216c51693fe002a4cce4193d2a500d0814",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59983bda_1fa1e42f",
         "filename": "managesf/cmds/resources.py",
         "patchSetId": 2
@@ -60,6 +84,30 @@
       "writtenOn": "2019-03-25T10:01:52Z",
       "side": 0,
       "message": "What the reason to remove it ?",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 192,
+        "endChar": 27
+      },
+      "revId": "3295c4216c51693fe002a4cce4193d2a500d0814",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0decd896_9f8ab4cf",
+        "filename": "managesf/cmds/resources.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2019-03-27T09:35:18Z",
+      "side": 0,
+      "message": "The reason is because changes in sf-config are going to take care of that. Otherwise we need to adapt the current logic to take care of prev and zuul commit...",
+      "parentUuid": "59983bda_1fa1e42f",
       "range": {
         "startLine": 190,
         "startChar": 0,
