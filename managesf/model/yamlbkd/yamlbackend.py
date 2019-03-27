@@ -116,19 +116,9 @@ class YAMLBackend(object):
                           'origin', self.git_repo_url])
             logger.info("Update the previous remote origin to %s." % (
                         self.git_repo_url))
-        if self.git_ref != 'master' and not self.git_ref.startswith('refs/'):
-            if self.git_ref == "master^1":
-                # Keep that for compatibility SF < 2.4.0
-                ref = 'FETCH_HEAD^1'
-            else:
-                # Here git_ref is a commit SHA or SHA^1
-                ref = self.git_ref
-            repo.execute(['git', 'fetch', 'origin', 'master'])
-            repo.execute(['git', 'checkout', ref])
-        else:
-            repo.execute(['git', 'fetch', '-f', 'origin',
-                          '%s:refs/remotes/origin/myref' % self.git_ref])
-            repo.execute(['git', 'checkout', 'origin/myref'])
+        repo.execute(['git', 'fetch', 'origin'])
+        repo.execute(['git', 'checkout', '-B', 'master', 'origin/master'])
+        repo.execute(['git', 'reset', '--hard', self.git_ref])
         logger.info("Updated GIT repo %s from %s at ref %s." % (
             self.clone_path, self.git_repo_url, self.git_ref))
 
