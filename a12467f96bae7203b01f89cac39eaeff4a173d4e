@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b4275843_430d0f9b",
+        "filename": "managesf/cmds/resources.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-03-28T14:21:49Z",
+      "side": 1,
+      "message": "I would have removed the --no-merge to not introduce confusion. In a config-update we display the related zuul commit but if it is a merge one then the log displayed here will not include the merge commit itself so the user won\u0027t find the zuul commit in the output.",
+      "range": {
+        "startLine": 194,
+        "startChar": 47,
+        "endLine": 194,
+        "endChar": 57
+      },
+      "revId": "a12467f96bae7203b01f89cac39eaeff4a173d4e",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
