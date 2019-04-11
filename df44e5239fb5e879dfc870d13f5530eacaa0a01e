@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a434a88a_842a27a6",
+        "filename": "managesf/model/yamlbkd/yamlbackend.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 68
+      },
+      "writtenOn": "2019-04-11T08:05:32Z",
+      "side": 1,
+      "message": "^1 rather than ^?",
+      "revId": "df44e5239fb5e879dfc870d13f5530eacaa0a01e",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
