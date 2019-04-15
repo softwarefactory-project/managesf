@@ -123,8 +123,18 @@ class ZuulTenantsLoad:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
 
-    def get_resources(self, url, verify_ssl=True):
+    def get_resources(self, url, verify_ssl=True, clone=False):
         """Get resources and config location from tenant deployment."""
+        if clone:
+            tenant_name = clone
+            eng = SFResourceBackendEngine(
+                os.path.join(self.cache_dir, tenant_name), 'resources')
+            try:
+                return eng.get(
+                    url, 'master',
+                    public_url=self.main_resources["public-url"])
+            except OSError:
+                return {}
         ret = requests.get(url, verify=bool(int(verify_ssl)))
         return ret.json()
 
@@ -336,17 +346,23 @@ class ZuulTenantsLoad:
                tenant_conf["url"] != self.main_resources["public-url"]:
                 # check for v2
                 tenant_url = tenant_conf['url'].rstrip('/')
-                if not tenant_url.endswith('/v2'):
+                if tenant_url.endswith('/manage') and \
+                   not tenant_url.endswith('/v2'):
                     tenant_url = os.path.join(tenant_url, "v2")
-                url = os.path.join(tenant_url, 'resources')
-                if self.tenant_resources:
-                    self.log.debug("%s: loading resources from workspace",
-                                   tenant_name)
-                    tenant_resources = self.tenant_resources
+                if tenant_url.endswith('/manage/v2'):
+                    url = os.path.join(tenant_url, 'resources')
+                    if self.tenant_resources:
+                        self.log.debug("%s: loading resources from workspace",
+                                       tenant_name)
+                        tenant_resources = self.tenant_resources
+                    else:
+                        self.log.debug("%s: loading resources %s",
+                                       tenant_name, url)
+                        tenant_resources = self.get_resources(url)
                 else:
-                    self.log.debug("%s: loading resources %s",
-                                   tenant_name, url)
-                    tenant_resources = self.get_resources(url)
+                    # Url is a repository url, let's clone and load locally
+                    tenant_resources = self.get_resources(
+                        tenant_url, clone=tenant_name)
             else:
                 tenant_resources = self.main_resources
                 # Fallback to default_tenant_name tenant default connection
@@ -361,12 +377,11 @@ class ZuulTenantsLoad:
             path = self.fetch_git_repo(
                 tenant_name, tenant_resources["config-repo"], self.cache_dir)
             tenants_dir = os.path.join(path, 'zuul')
-            if not os.path.isdir(tenants_dir):
-                continue
-            tenants_conf_files = self.discover_yaml_files(tenants_dir)
-            # And we load flat files
-            self.merge_tenant_from_files(
-                tenants, tenants_conf_files, tenant_name, projects_list)
+            if os.path.isdir(tenants_dir):
+                tenants_conf_files = self.discover_yaml_files(tenants_dir)
+                # And we load flat files
+                self.merge_tenant_from_files(
+                    tenants, tenants_conf_files, tenant_name, projects_list)
 
             # We load project from the resources
             default_conn = tenant_conf["default-connection"]
