@@ -164,100 +164,6 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.resources:apply',
                                          {}, credentials))
 
-    def test_jobs_policies(self):
-        """Test the default jobs endpoint policies"""
-        credentials = {}
-        self.assertTrue(policy.authorize('managesf.job:get',
-                                         {}, credentials))
-        self.assertFalse(policy.authorize('managesf.job:run',
-                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.job:stop',
-                                          {}, credentials))
-        credentials = {'username': 'shimajiro'}
-        self.assertTrue(policy.authorize('managesf.job:get',
-                                         {}, credentials))
-        self.assertFalse(policy.authorize('managesf.job:run',
-                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.job:stop',
-                                          {}, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.job:get',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.job:run',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.job:stop',
-                                         {}, credentials))
-        credentials = {'username': 'SF_SERVICE_USER'}
-        self.assertTrue(policy.authorize('managesf.job:get',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.job:run',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.job:stop',
-                                         {}, credentials))
-
-    def test_nodes_policies(self):
-        """Test the default nodes endpoint policies"""
-        credentials = {}
-        self.assertTrue(policy.authorize('managesf.node:get',
-                                         {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:hold',
-                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:delete',
-                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:add_authorized_key',
-                                          {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-get',
-                                         {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-start-update',
-                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-update-status',
-                                          {}, credentials))
-        credentials = {'username': 'shimajiro'}
-        self.assertTrue(policy.authorize('managesf.node:get',
-                                         {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:hold',
-                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:delete',
-                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:add_authorized_key',
-                                          {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-get',
-                                         {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-start-update',
-                                          {}, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-update-status',
-                                          {}, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.node:get',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:hold',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:delete',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:add_authorized_key',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-get',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-start-update',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-update-status',
-                                         {}, credentials))
-        credentials = {'username': 'SF_SERVICE_USER'}
-        self.assertTrue(policy.authorize('managesf.node:get',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:hold',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:delete',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:add_authorized_key',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-get',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-start-update',
-                                         {}, credentials))
-        self.assertTrue(policy.authorize('managesf.node:image-update-status',
-                                         {}, credentials))
-
     def test_default_policies(self):
         """Test the default policies that come with a default deployment"""
         credentials = {}
@@ -377,14 +283,11 @@ class TestPolicyEngineFromFile(TestCase):
                        'sqlalchemy': c.sqlalchemy,
                        'managesf': c.managesf,
                        'storyboard': c.storyboard,
-                       'policy': c.policy,
-                       'nodepool': c.nodepool, }
+                       'policy': c.policy, }
         pol_file = tempfile.mkstemp()[1] + '.yaml'
         with open(pol_file, 'w') as p:
             yaml.dump(
-                {"managesf.node:get": "rule:any",
-                 "managesf.node:create": "rule:any",
-                 "is_morty": "username:morty",
+                {"is_morty": "username:morty",
                  "morty_api": "rule:is_morty"},
                 p, default_flow_style=False)
         self.config['policy']['policy_file'] = pol_file
@@ -404,57 +307,24 @@ class TestPolicyEngineFromFile(TestCase):
         self.assertTrue(policy.authorize('admin_api',
                                          target,
                                          {'username': admin_account}))
-        self.assertTrue(policy.authorize('managesf.node:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.node:get',
-                                         target, credentials))
         self.assertFalse(policy.authorize('morty_api',
                                           target, credentials))
         credentials['username'] = 'Rick'
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertTrue(policy.authorize('managesf.node:create',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.node:get',
-                                         target, credentials))
         self.assertFalse(policy.authorize('morty_api',
                                           target, credentials))
         credentials['username'] = 'morty'
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertTrue(policy.authorize('managesf.node:get',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.node:create',
-                                         target, credentials))
         self.assertTrue(policy.authorize('morty_api',
                                          target, credentials))
-
-    def test_nodes_policies_extra_conditions(self):
-        pol_file = self.config['policy']['policy_file']
-        with open(pol_file, 'w') as p:
-            yaml.dump(
-                {"managesf.node:image-update": ("rule:rick-images or "
-                                                "rule:admin_or_service"),
-                 "rick-images": ("username:rick and image:schwifty "
-                                 "and provider:wub")},
-                p, default_flow_style=False)
-        credentials = {'username': 'rick'}
-        target = {'image': 'schwifty',
-                  'provider': 'wub'}
-        self.assertTrue(policy.authorize("managesf.node:image-update",
-                                         target, credentials))
-        with open(pol_file, 'w') as p:
-            yaml.dump(
-                {"managesf.node:image-update": "rule:admin_or_service"},
-                p, default_flow_style=False)
 
     def test_change_in_file_policies(self):
         pol_file = self.config['policy']['policy_file']
         with open(pol_file, 'w') as p:
             yaml.dump(
-                {"managesf.node:get": "rule:any",
-                 "managesf.node:create": "rule:none",
-                 "is_rick": "username:Rick",
+                {"is_rick": "username:Rick",
                  "rick_api": "rule:is_rick"},
                 p, default_flow_style=False)
         credentials = {}
@@ -466,46 +336,27 @@ class TestPolicyEngineFromFile(TestCase):
         # make sure default rules are there
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-start-update',
-                                          target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))
         credentials['username'] = 'Rick'
         self.assertFalse(policy.authorize('admin_api',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-start-update',
                                           target, credentials))
         self.assertTrue(policy.authorize('rick_api',
                                          target, credentials))
         credentials['username'] = 'morty'
         self.assertFalse(policy.authorize('admin_api',
                                           target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:image-start-update',
-                                          target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))
         credentials['username'] = admin_account
         self.assertTrue(policy.authorize('admin_api',
-                                         target, credentials))
-        self.assertFalse(policy.authorize('managesf.node:create',
-                                          target, credentials))
-        # the default rule should be used here
-        self.assertTrue(policy.authorize('managesf.node:image-start-update',
                                          target, credentials))
         self.assertFalse(policy.authorize('rick_api',
                                           target, credentials))
         # set back to normal
         with open(pol_file, 'w') as p:
             yaml.dump(
-                {"managesf.node:get": "rule:any",
-                 "managesf.node:create": "rule:any",
-                 "is_morty": "username:morty",
+                {"is_morty": "username:morty",
                  "morty_api": "rule:is_morty"},
                 p, default_flow_style=False)
 

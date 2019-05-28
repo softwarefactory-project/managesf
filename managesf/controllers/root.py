@@ -31,10 +31,7 @@ from managesf import policy
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
 from managesf import DEFAULT_SERVICES
-from managesf.controllers.api.v2 import builds as v2_builds
-from managesf.controllers.api.v2 import jobs as v2_jobs
 from managesf.controllers.api.v2 import resources as v2_resources
-from managesf.controllers.api.v2 import zuul as v2_zuul
 from managesf.controllers.api.v2 import configurations as v2_configurations
 
 
@@ -950,15 +947,11 @@ class V2Controller(object):
     if len(AGENTSPROVIDERS) > 0:
         nodes = NodesController()
     # --
-    builds = v2_builds.BuildController()
-    buildsets = v2_builds.BuildSetController()
-    jobs = v2_jobs.JobController()
     resources = v2_resources.ResourcesRootController()
     projects = v2_resources.ProjectsController()
     acl = v2_resources.ACLController()
     groups = v2_resources.GroupsController()
     repositories = v2_resources.RepositoriesController()
-    zuul = v2_zuul.ZuulController()
     configurations = v2_configurations.ConfigurationController()
 
 
@@ -980,6 +973,3 @@ class RootController(object):
         self.services_users = ServicesUsersController()
         self.hooks = HooksController()
         self.resources = ResourcesController()
-        self.jobs = JobsController()
-        if len(AGENTSPROVIDERS) > 0:
-            self.nodes = NodesController()
