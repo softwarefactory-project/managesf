@@ -21,7 +21,6 @@ from pecan.configuration import conf_from_dict
 class dummy_conf():
     services = ['SFGerrit',
                 'SFStoryboard',
-                'SFNodepool',
                 ]
     gerrit = {
         'url': 'http://gerrit.tests.dom',
@@ -35,11 +34,6 @@ class dummy_conf():
         'db_user': 'gerrit_db_user',
         'db_password': 'gerrit_db_password',
     }
-    zuul = conf_from_dict({
-        'status_url': 'http://sftests.com:8082/status.json',
-        'dburi': 'aaaa',
-        'api_root_url': 'http://sftests.com:8082/',
-    })
     storyboard = {
         'base_url': 'http://sftests.com/r/',
         'host': 'storyboard',
@@ -49,11 +43,6 @@ class dummy_conf():
         'db_name': 'gerrit_db',
         'db_user': 'gerrit_db_user',
         'db_password': 'gerrit_db_password',
-    }
-    nodepool = {
-        'host': 'nodepool.tests.dom',
-        'user': 'nodepool',
-        'key': '/path/to/key',
     }
     managesf = {
         'host': 'managesf.tests.dom',
@@ -103,8 +92,6 @@ class dummy_conf():
     }
     api = conf_from_dict({
         'v2': {
-            'builds': ['DummyService', ],
-            'jobs': ['DummyService', ],
             'resources': ['DummyService', ],
         },
     })

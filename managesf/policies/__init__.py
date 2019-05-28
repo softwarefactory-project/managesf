@@ -27,11 +27,6 @@ from managesf.policies import localuser
 from managesf.policies import pages
 from managesf.policies import services_users
 from managesf.policies import resources
-from managesf.policies import job
-from managesf.policies import node
-
-# API proxies
-from managesf.policies import zuul
 
 
 def list_rules():
@@ -43,8 +38,4 @@ def list_rules():
         services_users.list_rules(),
         hooks.list_rules(),
         config.list_rules(),
-        resources.list_rules(),
-        job.list_rules(),
-        node.list_rules(),
-        zuul.list_rules(), )
-# introspection.list_rules(),
+        resources.list_rules(), )
