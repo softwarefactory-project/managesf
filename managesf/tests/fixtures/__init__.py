@@ -18,6 +18,3 @@ from .sf_resources import SAMPLE_RESOURCES_TREE  # noqa
 
 
 root_path = os.path.dirname(os.path.abspath(__file__))
-
-ZUUL_DB_URI = 'sqlite:///%s' % os.path.join(root_path,
-                                            'zuul_sql_reporter.sqlite3')

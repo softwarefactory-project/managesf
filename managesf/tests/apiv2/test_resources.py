@@ -37,9 +37,7 @@ config = {'services': c.services,
           'storyboard': c.storyboard,
           'policy': c.policy,
           'resources': c.resources,
-          'nodepool': c.nodepool,
-          'api': c.api,
-          'zuul': c.zuul, }
+          'api': c.api, }
 
 # App must be loaded before we can import v2 managers
 TestApp(load_app(config))

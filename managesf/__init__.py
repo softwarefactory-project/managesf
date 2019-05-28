@@ -1,2 +1,1 @@
-DEFAULT_SERVICES = ['SFGerrit', 'SFStoryboard', 'SFJenkins',
-                    'SFNodepool', 'SFZuul']
+DEFAULT_SERVICES = ['SFGerrit', ]
