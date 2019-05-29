@@ -33,7 +33,7 @@ class BaseConfigurationController(base.APIv2RestController):
 
 
 class ZuulConfigurationController(BaseConfigurationController):
-    @expose()
+    @expose('json')
     def get(self, **kwargs):
         return ZuulTenantsLoad(
             engine=self.engine,
@@ -42,7 +42,7 @@ class ZuulConfigurationController(BaseConfigurationController):
 
 
 class RepoXplorerConfigurationController(BaseConfigurationController):
-    @expose()
+    @expose('json')
     def get(self, **kwargs):
         return RepoXplorerConf(
             engine=self.engine,
@@ -51,7 +51,7 @@ class RepoXplorerConfigurationController(BaseConfigurationController):
 
 
 class HoundConfigurationController(BaseConfigurationController):
-    @expose()
+    @expose('json')
     def get(self, **kwargs):
         return HoundConf(
             engine=self.engine,
@@ -60,7 +60,7 @@ class HoundConfigurationController(BaseConfigurationController):
 
 
 class CauthConfigurationController(BaseConfigurationController):
-    @expose()
+    @expose('json')
     def get(self, **kwargs):
         return CauthConf(
             engine=self.engine,
