@@ -77,6 +77,10 @@ def read_repo_to_validate(zuul_prev_commit, zuul_commit):
     return structured_data, head_commit_msg
 
 
+def is_commit_exists(commit):
+    return subprocess.Popen(["git", "show", "-q", commit, "--"]).wait() == 0
+
+
 def display_warnings(logs, head_commit_msg):
     if "is going to be deleted" in " ".join(logs):
         if "sf-resources: allow-delete" not in head_commit_msg:
@@ -178,12 +182,16 @@ def cli():
         if not args.zuul_commit:
             print("ZUUL_COMMIT not set. Skip processing.")
             sys.exit(0)
-        if not args.zuul_prev_commit:
-            args.zuul_prev_commit = "%s^1" % args.zuul_commit
         with TemporaryDirectory() as dpath:
             subprocess.call(
                 ["git", "clone", conf.resources.master_repo, dpath])
             os.chdir(dpath)
+
+            # Prev commit may not exists when config repos is not sync push
+            if not args.zuul_prev_commit or not is_commit_exists(
+                    args.zuul_prev_commit):
+                args.zuul_prev_commit = "%s^1" % args.zuul_commit
+
             print("Checkout at ZUUL COMMIT: %s" % args.zuul_commit)
             subprocess.call(
                 ["git", "checkout", args.zuul_commit])
