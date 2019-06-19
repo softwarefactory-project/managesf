@@ -12,13 +12,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import os
+import copy
 import git
 import json
-import yaml
-import copy
-import requests
 import logging
+import os
+import requests
+import yaml
 
 from pecan import conf
 from pecan import expose
@@ -39,6 +39,12 @@ class ZuulConfigurationController(BaseConfigurationController):
             engine=self.engine,
             default_tenant_name=conf.resources.get('tenant_name', 'local')
             ).start()
+
+
+class NodepoolConfigurationController(base.APIv2RestController):
+    @expose()
+    def get(self, **kwargs):
+        return NodepoolConf(via_web=True).start()
 
 
 class RepoXplorerConfigurationController(BaseConfigurationController):
@@ -75,6 +81,7 @@ class ConfigurationController:
             conf.resources['subdir'])
 
         self.zuul = ZuulConfigurationController(self.engine)
+        self.nodepool = NodepoolConfigurationController()
         self.repoxplorer = RepoXplorerConfigurationController(self.engine)
         self.hound = HoundConfigurationController(self.engine)
         self.cauth = CauthConfigurationController(self.engine)
@@ -408,6 +415,123 @@ class ZuulTenantsLoad:
 
         final_data = self.final_tenant_merge(tenants)
         return yaml.safe_dump(final_data)
+
+
+class NodepoolConf():
+    log = logging.getLogger("managesf.NodepoolConf")
+
+    def __init__(self, via_web=None,
+                 cache_dir="/var/lib/managesf/git",
+                 config_dir=None):
+        self.cache_dir = cache_dir
+
+        if via_web:
+            self.config_repo_path = self.fetch_git_repo(
+                conf.resources['tenant_name'],
+                conf.resources["master_repo"],
+                self.cache_dir)
+        else:
+            self.config_repo_path = config_dir or '/root/config'
+
+    def fetch_git_repo(self, tenant, url, store, ssl_verify=True):
+        """Get config repository from tenant deployment"""
+        tenant_config_project_path = os.path.join(
+            store, tenant, os.path.basename(url))
+        if not os.path.isdir(tenant_config_project_path):
+            os.makedirs(tenant_config_project_path)
+        if not os.path.isdir(os.path.join(tenant_config_project_path, '.git')):
+            # Clone this is the first time
+            git.Repo.clone_from(
+                url, tenant_config_project_path, branch='master',
+                depth=1, config='http.sslVerify=%s' % bool(int(ssl_verify)))
+        else:
+            # Refresh the repository
+            repo = git.Repo(tenant_config_project_path)
+            repo.remotes.origin.pull()
+        return tenant_config_project_path
+
+    def yaml_merge_load(self, nodepool_dir, _nodepool_conf):
+        paths = []
+        for root, dirs, files in os.walk(nodepool_dir, topdown=True):
+            if [True for skip in ("elements", "scripts", "runC")
+                    if "/%s/" % skip in root or root.endswith("/%s" % skip)]:
+                continue
+            paths.extend([os.path.join(root, path) for path in files])
+
+        # Keeps only .yaml files
+        paths = filter(lambda x: x.endswith('.yaml') or
+                       x.endswith('.yml'), paths)
+
+        user = {}
+        for path in paths:
+            # Do not load base config
+            if _nodepool_conf in path:
+                continue
+            data = yaml.safe_load(open(path))
+            if not data:
+                continue
+            for key, value in data.items():
+                user.setdefault(key, []).extend(value)
+        return user
+
+    def merge(self):
+        nodepool_dir = '%s/nodepool' % self.config_repo_path
+        _nodepool_conf = '%s/_nodepool.yaml' % nodepool_dir
+
+        user = self.yaml_merge_load(nodepool_dir, _nodepool_conf)
+        conf = yaml.safe_load(open(_nodepool_conf))
+
+        cache_dir = "/var/cache/nodepool"
+
+        for dib in user.get('diskimages', []):
+            self.log.info('dibimage: %s' % dib)
+            dib.setdefault('username', 'zuul-worker')
+            envvars = dib.setdefault('env-vars', {})
+            envvars['TMPDIR'] = "%s/dib_tmp" % cache_dir
+            envvars['DIB_IMAGE_CACHE'] = "%s/dib_cache" % cache_dir
+            envvars['DIB_GRUB_TIMEOUT'] = '0'
+            envvars['DIB_CHECKSUM'] = '1'
+            # Ensure host CA bundle doesn't interfer with dib
+            envvars['REQUESTS_CA_BUNDLE'] = ''
+            # Make sure env-vars are str
+            for k, v in envvars.items():
+                if not isinstance(v, str):
+                    envvars[k] = str(v)
+
+        if 'cron' in user:
+            conf['cron'] = user['cron']
+        conf['labels'] = user.get('labels', [])
+        conf['providers'] = user.get('providers', [])
+        conf['diskimages'] = user.get('diskimages', [])
+        for extra_labels in user.get('extra-labels', []):
+            added = False
+            for provider in conf['providers']:
+                if provider['name'] != extra_labels['provider']:
+                    continue
+                if extra_labels.get('cloud-images'):
+                    provider.setdefault('cloud-images', []).extend(
+                        extra_labels['cloud-images'])
+                for pool in provider.get('pools', []):
+                    if pool['name'] == extra_labels['pool']:
+                        pool['labels'].extend(extra_labels['labels'])
+                        added = True
+                        break
+                if added:
+                    break
+            if not added:
+                raise RuntimeError("%s: couldn't find provider" % extra_labels)
+
+        # Ensure zuul-console-dir is removed from runc provider
+        for provider in conf['providers']:
+            if provider.get("zuul-console-dir"):
+                provider.pop("zuul-console-dir")
+
+        self.log.info('final conf: %s' % conf)
+        return yaml.safe_dump(conf, default_flow_style=False)
+
+    def start(self):
+        """Generate nodepool.yaml file from managesf flat files"""
+        return self.merge()
 
 
 class RepoXplorerConf():
@@ -762,6 +886,12 @@ def cli():
             master_sf_url=args.master_sf_url,
             tenant=args.tenant)
         conf = ztl.start()
+
+    if args.service == "nodepool":
+        rpc = NodepoolConf(
+            cache_dir=args.cache_dir,
+            config_dir=args.config_dir)
+        conf = rpc.start()
 
     if args.service == "repoxplorer":
         rpc = RepoXplorerConf(
