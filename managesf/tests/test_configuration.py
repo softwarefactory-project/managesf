@@ -17,6 +17,7 @@ import yaml
 from unittest import TestCase
 
 from managesf.controllers.api.v2.configurations import ZuulTenantsLoad
+from managesf.controllers.api.v2.configurations import NodepoolConf
 from managesf.controllers.api.v2.configurations import RepoXplorerConf
 from managesf.controllers.api.v2.configurations import HoundConf
 from managesf.controllers.api.v2.configurations import CauthConf
@@ -44,7 +45,7 @@ class ZuulTenantsLoadTests(TestCase):
         """
         final_tenants = {}
         projects_list = {}
-        tenants = yaml.load(tenants_data)
+        tenants = yaml.safe_load(tenants_data)
         for tenant in tenants:
             ztl.merge_tenant_from_data(
                 final_tenants, tenant, '/data', 'local', projects_list)
@@ -85,7 +86,7 @@ class ZuulTenantsLoadTests(TestCase):
         """
         final_tenants = {}
         projects_list = {}
-        tenants = yaml.load(tenant_data)
+        tenants = yaml.safe_load(tenant_data)
         ztl.merge_tenant_from_data(
             final_tenants, tenants[0], '/data', 'local', projects_list)
         projects_list_expected = {'local': ['config']}
@@ -131,9 +132,9 @@ class ZuulTenantsLoadTests(TestCase):
         """
         final_tenants = {}
         projects_list = {}
-        tenant1 = yaml.load(tenant_data_1)[0]
-        tenant2 = yaml.load(tenant_data_2)[0]
-        tenant3 = yaml.load(tenant_data_3)[0]
+        tenant1 = yaml.safe_load(tenant_data_1)[0]
+        tenant2 = yaml.safe_load(tenant_data_2)[0]
+        tenant3 = yaml.safe_load(tenant_data_3)[0]
         ztl.merge_tenant_from_data(
             final_tenants, tenant1, '/t1', 'local', projects_list)
         ztl.merge_tenant_from_data(
@@ -351,6 +352,73 @@ class ZuulTenantsLoadTests(TestCase):
         self.assertEqual(len(up), 3)
 
 
+class NodepoolConfTests(TestCase):
+
+    def test_load(self):
+        nc = NodepoolConf(utests=True)
+        ret = nc.merge(config_dir='managesf/tests/fixtures')
+        expected_ret = {
+            'elements-dir': '/etc/opt/rh/rh-python35/nodepool/elements:/usr/share/sf-elements',  # noqa
+            'images-dir': '/var/opt/rh/rh-python35/lib/nodepool/dib',
+            'providers': [
+                {
+                    'name': 'default',
+                    'image-name-format': '{image_name}-{timestamp}',
+                    'rate': 10.0,
+                    'clean-floating-ips': True,
+                    'pools': [
+                        {
+                            'labels':
+                            [
+                                {
+                                    'min-ram': 1024,
+                                    'name': 'dib-centos-7',
+                                    'diskimage': 'dib-centos-7'
+                                }
+                            ],
+                            'name': 'main',
+                            'max-servers': 5,
+                            'networks': ['slave-net-name']
+                        }
+                    ],
+                    'boot-timeout': 120,
+                    'diskimages': [{'name': 'dib-centos-7'}],
+                    'cloud': 'default'
+                }
+            ],
+            'labels': [{'name': 'dib-centos-7', 'min-ready': 1}],
+            'build-log-retention': 7,
+            'zookeeper-servers': [
+                {
+                    'host': 'managesf.sftests.com',
+                    'port': 2181
+                }
+            ],
+            'webapp': {'port': 8006},
+            'build-log-dir': '/var/www/nodepool-log/',
+            'diskimages': [
+                {
+                    'username': 'zuul-worker',
+                    'env-vars': {
+                        'DIB_GRUB_TIMEOUT': '0',
+                        'DIB_IMAGE_CACHE': '/var/cache/nodepool/dib_cache',
+                        'DIB_CHECKSUM': '1',
+                        'TMPDIR': '/var/cache/nodepool/dib_tmp',
+                        'REQUESTS_CA_BUNDLE': ''
+                    },
+                    'elements': [
+                        'centos-minimal',
+                        'nodepool-minimal',
+                        'zuul-worker-user'
+                    ],
+                    'name': 'dib-centos-7'
+                }
+            ]
+        }
+        self.assertEqual(ret, yaml.safe_dump(expected_ret,
+                                             default_flow_style=False))
+
+
 class RepoXplorerConfTests(TestCase):
 
     def test_load(self):
@@ -424,7 +492,7 @@ class RepoXplorerConfTests(TestCase):
             }
         }
         rpc.main_resources = resources
-        ret = yaml.load(rpc.start())
+        ret = yaml.safe_load(rpc.start())
         expected_ret = {
             'identities': {},
             'groups': {
@@ -576,7 +644,7 @@ class CauthConfTests(TestCase):
             }
         }
         rpc.main_resources = resources
-        ret = yaml.load(rpc.start())
+        ret = yaml.safe_load(rpc.start())
         expected_ret = {
             'groups': {
                 'group1': {
@@ -676,7 +744,7 @@ class HoundConfTests(TestCase):
             }
         }
         rpc.main_resources = resources
-        ret = yaml.load(rpc.start())
+        ret = yaml.safe_load(rpc.start())
         expected_ret = {
             'repos': {
                 'repo2': {
