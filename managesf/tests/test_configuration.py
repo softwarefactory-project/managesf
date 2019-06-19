@@ -17,6 +17,7 @@ import yaml
 from unittest import TestCase
 
 from managesf.controllers.api.v2.configurations import ZuulTenantsLoad
+from managesf.controllers.api.v2.configurations import NodepoolConf
 from managesf.controllers.api.v2.configurations import RepoXplorerConf
 from managesf.controllers.api.v2.configurations import HoundConf
 from managesf.controllers.api.v2.configurations import CauthConf
@@ -349,6 +350,73 @@ class ZuulTenantsLoadTests(TestCase):
         self.assertIn({'repo2': {'include': []}}, up)
         self.assertIn({'repo3': {}}, up)
         self.assertEqual(len(up), 3)
+
+
+class NodepoolConfTests(TestCase):
+
+    def test_load(self):
+        nc = NodepoolConf(utests=True, cache_dir='managesf/tests/fixtures')
+        ret = nc.merge()
+        expected_ret = {
+            'elements-dir': '/etc/opt/rh/rh-python35/nodepool/elements:/usr/share/sf-elements',  # noqa
+            'images-dir': '/var/opt/rh/rh-python35/lib/nodepool/dib',
+            'providers': [
+                {
+                    'name': 'default',
+                    'image-name-format': '{image_name}-{timestamp}',
+                    'rate': 10.0,
+                    'clean-floating-ips': True,
+                    'pools': [
+                        {
+                            'labels':
+                            [
+                                {
+                                    'min-ram': 1024,
+                                    'name': 'dib-centos-7',
+                                    'diskimage': 'dib-centos-7'
+                                }
+                            ],
+                            'name': 'main',
+                            'max-servers': 5,
+                            'networks': ['slave-net-name']
+                        }
+                    ],
+                    'boot-timeout': 120,
+                    'diskimages': [{'name': 'dib-centos-7'}],
+                    'cloud': 'default'
+                }
+            ],
+            'labels': [{'name': 'dib-centos-7', 'min-ready': 1}],
+            'build-log-retention': 7,
+            'zookeeper-servers': [
+                {
+                    'host': 'managesf.sftests.com',
+                    'port': 2181
+                }
+            ],
+            'webapp': {'port': 8006},
+            'build-log-dir': '/var/www/nodepool-log/',
+            'diskimages': [
+                {
+                    'username': 'zuul-worker',
+                    'env-vars': {
+                        'DIB_GRUB_TIMEOUT': '0',
+                        'DIB_IMAGE_CACHE': '/var/cache/nodepool/dib_cache',
+                        'DIB_CHECKSUM': '1',
+                        'TMPDIR': '/var/cache/nodepool/dib_tmp',
+                        'REQUESTS_CA_BUNDLE': ''
+                    },
+                    'elements': [
+                        'centos-minimal',
+                        'nodepool-minimal',
+                        'zuul-worker-user'
+                    ],
+                    'name': 'dib-centos-7'
+                }
+            ]
+        }
+        self.assertEqual(ret, yaml.safe_dump(expected_ret,
+                                             default_flow_style=False))
 
 
 class RepoXplorerConfTests(TestCase):
