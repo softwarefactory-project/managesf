@@ -1,0 +1,15 @@
+elements-dir: /etc/opt/rh/rh-python35/nodepool/elements:/usr/share/sf-elements
+images-dir: /var/opt/rh/rh-python35/lib/nodepool/dib
+build-log-dir: /var/www/nodepool-log/
+build-log-retention: 7
+
+webapp:
+  port: 8006
+
+zookeeper-servers:
+  - host: managesf.sftests.com
+    port: 2181
+
+labels: []
+providers: []
+diskimages: []
