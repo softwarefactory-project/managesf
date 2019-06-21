@@ -948,10 +948,6 @@ class V2Controller(object):
         nodes = NodesController()
     # --
     resources = v2_resources.ResourcesRootController()
-    projects = v2_resources.ProjectsController()
-    acl = v2_resources.ACLController()
-    groups = v2_resources.GroupsController()
-    repositories = v2_resources.RepositoriesController()
     configurations = v2_configurations.ConfigurationController()
 
 

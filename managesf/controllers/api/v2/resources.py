@@ -23,130 +23,6 @@ from managesf.controllers.api.v2 import base
 from managesf.api.v2.managers import resource_manager as manager
 
 
-class ACLController(base.APIv2RestController):
-
-    @expose('json')
-    def get(self, **kwargs):
-        _policy = 'managesf.resources:get'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        target = dict((k, v) for k, v in kwargs.items()
-                      if k not in ['order_by', 'skip', 'limit', ])
-        if not base.authorize(_policy,
-                              target=target):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        response.status = 400
-        try:
-            results = manager.acls.get(**kwargs)
-            if results['total'] == 0:
-                response.status = 404
-            else:
-                response.status = 200
-            return results
-        except NotImplementedError as e:
-            response.status = 404
-            return {'error_description': str(e)}
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
-            return {'error_description': str(e),
-                    'traceback': traceback.format_exc()}
-
-
-class GroupsController(base.APIv2RestController):
-
-    @expose('json')
-    def get(self, **kwargs):
-        _policy = 'managesf.resources:get'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        target = dict((k, v) for k, v in kwargs.items()
-                      if k not in ['order_by', 'skip', 'limit', ])
-        if not base.authorize(_policy,
-                              target=target):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        response.status = 400
-        try:
-            results = manager.groups.get(**kwargs)
-            if results['total'] == 0:
-                response.status = 404
-            else:
-                response.status = 200
-            return results
-        except NotImplementedError as e:
-            response.status = 404
-            return {'error_description': str(e)}
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
-            return {'error_description': str(e),
-                    'traceback': traceback.format_exc()}
-
-
-class ProjectsController(base.APIv2RestController):
-
-    @expose('json')
-    def get(self, **kwargs):
-        _policy = 'managesf.resources:get'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        target = dict((k, v) for k, v in kwargs.items()
-                      if k not in ['order_by', 'skip', 'limit', ])
-        if not base.authorize(_policy,
-                              target=target):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        response.status = 400
-        try:
-            results = manager.projects.get(**kwargs)
-            if results['total'] == 0:
-                response.status = 404
-            else:
-                response.status = 200
-            return results
-        except NotImplementedError as e:
-            response.status = 404
-            return {'error_description': str(e)}
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
-            return {'error_description': str(e),
-                    'traceback': traceback.format_exc()}
-
-
-class RepositoriesController(base.APIv2RestController):
-
-    @expose('json')
-    def get(self, **kwargs):
-        _policy = 'managesf.resources:get'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        target = dict((k, v) for k, v in kwargs.items()
-                      if k not in ['order_by', 'skip', 'limit', ])
-        if not base.authorize(_policy,
-                              target=target):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        response.status = 400
-        try:
-            results = manager.repositories.get(**kwargs)
-            if results['total'] == 0:
-                response.status = 404
-            else:
-                response.status = 200
-            return results
-        except NotImplementedError as e:
-            response.status = 404
-            return {'error_description': str(e)}
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
-            return {'error_description': str(e),
-                    'traceback': traceback.format_exc()}
-
-
 class ResourcesRootController(base.APIv2RestController):
 
     @expose('json')
@@ -180,33 +56,6 @@ class ResourcesRootController(base.APIv2RestController):
                     'traceback': traceback.format_exc()}
 
     @expose('json')
-    def put(self, **kwargs):
-        _policy = 'managesf.resources:apply'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        if not base.authorize(_policy,
-                              target=kwargs):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            status, logs = manager.resources.update(**kwargs)
-            if not status:
-                response.status = 409
-            else:
-                response.status = 201
-            return logs
-        except ValueError as e:
-            response.status = 400
-            return {'error_description': str(e)}
-        except NotImplementedError as e:
-            response.status = 404
-            return {'error_description': str(e)}
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
-            return {'error_description': str(e)}
-
-    @expose('json')
     def post(self, **kwargs):
         _policy = 'managesf.resources:validate'
         if not kwargs:
@@ -222,30 +71,6 @@ class ResourcesRootController(base.APIv2RestController):
             else:
                 response.status = 200
             return logs
-        except ValueError as e:
-            response.status = 400
-            return {'error_description': str(e)}
-        except NotImplementedError as e:
-            response.status = 404
-            return {'error_description': str(e)}
-        except Exception as e:
-            response.status = 500
-            self._logger.exception(e)
-            return {'error_description': str(e)}
-
-    @expose('json')
-    def delete(self, **kwargs):
-        _policy = 'any'
-        if not kwargs:
-            kwargs = request.json if request.content_length else {}
-        if not base.authorize(_policy,
-                              target=kwargs):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-        try:
-            results = manager.resources.delete(**kwargs)
-            response.status = 200
-            return results
         except ValueError as e:
             response.status = 400
             return {'error_description': str(e)}

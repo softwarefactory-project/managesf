@@ -80,37 +80,3 @@ class TestManageSFV2ResourcesController(V2FunctionalTest):
                                      extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 200, response.text)
             self.assertEqual('yo yo', response.json)
-            retval = False, 'yo yo'
-            rm.resources.update.return_value = retval
-            response = self.app.put('/v2/resources/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 409, response.text)
-            self.assertEqual('yo yo', response.json)
-            rm.resources.update.side_effect = ValueError('blop')
-            response = self.app.put('/v2/resources/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 400, response.text)
-            self.assertEqual('blop', response.json.get('error_description'))
-
-    @patch('managesf.controllers.api.v2.resources.manager')
-    def test_apply_resources(self, rm):
-        with patch('managesf.controllers.api.v2.base.authorize'):
-            environ = {'REMOTE_USER': 'user'}
-            # not the real format of the answer here but who cares, it's a test
-            retval = True, 'yo yo'
-            rm.resources.update.return_value = retval
-            response = self.app.put('/v2/resources/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 201, response.text)
-            self.assertEqual('yo yo', response.json)
-            retval = False, 'yo yo'
-            rm.resources.update.return_value = retval
-            response = self.app.put('/v2/resources/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 409, response.text)
-            self.assertEqual('yo yo', response.json)
-            rm.resources.update.side_effect = ValueError('blop')
-            response = self.app.put('/v2/resources/',
-                                    extra_environ=environ, status="*")
-            self.assertEqual(response.status_int, 400, response.text)
-            self.assertEqual('blop', response.json.get('error_description'))
