@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "dad5c578_e32b8b61",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-21T20:17:16Z",
+      "side": 1,
+      "message": "I just found easier to read them in alphabetic order \u003d)",
+      "parentUuid": "5c532995_4678d7b2",
+      "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "704ff244_6d5078ab",
         "filename": "managesf/controllers/api/v2/configurations.py",
         "patchSetId": 1
@@ -65,6 +83,30 @@
     },
     {
       "key": {
+        "uuid": "fc4dc4c7_5d4dadb4",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-21T20:17:16Z",
+      "side": 1,
+      "message": "Yes, I don\u0027t think there are sensitive information, auth data are not stored in this config file.",
+      "parentUuid": "704ff244_6d5078ab",
+      "range": {
+        "startLine": 43,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 55
+      },
+      "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3cdb86f_2d17a3a0",
         "filename": "managesf/controllers/api/v2/configurations.py",
         "patchSetId": 1
@@ -76,6 +118,30 @@
       "writtenOn": "2019-06-21T10:28:15Z",
       "side": 1,
       "message": "Nothing is needed from the resources engine. So you can remove that argument.",
+      "range": {
+        "startLine": 84,
+        "startChar": 56,
+        "endLine": 84,
+        "endChar": 67
+      },
+      "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f9b3bf3e_45b80c10",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-21T20:17:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3cdb86f_2d17a3a0",
       "range": {
         "startLine": 84,
         "startChar": 56,
@@ -111,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "d6e82d9f_fc507659",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-21T20:17:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "325b19a7_de254402",
+      "range": {
+        "startLine": 423,
+        "startChar": 23,
+        "endLine": 423,
+        "endChar": 29
+      },
+      "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a1e042d_862e6058",
         "filename": "managesf/controllers/api/v2/configurations.py",
         "patchSetId": 1
@@ -122,6 +212,30 @@
       "writtenOn": "2019-06-21T10:28:15Z",
       "side": 1,
       "message": "git",
+      "range": {
+        "startLine": 424,
+        "startChar": 46,
+        "endLine": 424,
+        "endChar": 50
+      },
+      "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b58ffd65_d47202cb",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-21T20:17:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a1e042d_862e6058",
       "range": {
         "startLine": 424,
         "startChar": 46,
@@ -174,6 +288,24 @@
     },
     {
       "key": {
+        "uuid": "507d5649_4f53ccb7",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 432,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-21T20:17:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f819ffc0_58bc7210",
+      "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90223cc2_fd74a413",
         "filename": "managesf/controllers/api/v2/configurations.py",
         "patchSetId": 1
@@ -185,6 +317,30 @@
       "writtenOn": "2019-06-21T10:28:15Z",
       "side": 1,
       "message": "self.config_repo_path",
+      "range": {
+        "startLine": 459,
+        "startChar": 39,
+        "endLine": 459,
+        "endChar": 53
+      },
+      "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ab93965_31f5abfe",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-21T20:17:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90223cc2_fd74a413",
       "range": {
         "startLine": 459,
         "startChar": 39,
@@ -231,6 +387,24 @@
       "writtenOn": "2019-06-21T10:28:15Z",
       "side": 1,
       "message": "```\n   if args.service \u003d\u003d \"nodepool\":\n        rpc \u003d NodepoolConf(cache_dir\u003dcache_dir)\n        conf \u003d rpc.start()\n```",
+      "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0b79b908_81dd52e8",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 882,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-21T20:17:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b93a833_2855960f",
       "revId": "28c1e3627b960eef608283f0dfeebd6c5c8d0df5",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
