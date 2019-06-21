@@ -39,25 +39,6 @@ class ResourcesManager(resources.ResourcesManager):
         else:
             return engine.get(self.manager.master_repo, 'master')
 
-    def update(self, **kwargs):
-        engine = self.manager.get_engine('apply')
-        if kwargs.get('COMMIT') or\
-           all(kwargs.get(c) is None for c in ['COMMIT', 'prev', 'new']):
-            commit = kwargs.get('COMMIT', 'master')
-            status, logs = engine.apply(self.manager.master_repo,
-                                        '%s^1' % commit,
-                                        self.manager.master_repo,
-                                        commit)
-        elif (kwargs.get('COMMIT') is None and
-              kwargs.get('prev') is not None and
-              kwargs.get('new') is not None):
-            status, logs = engine.direct_apply(kwargs['prev'], kwargs['new'])
-        else:
-            raise ValueError(
-                'Invalid arguments: either provide a "COMMIT" or the '
-                '"new" and "prev" arguments')
-        return status, logs
-
     def create(self, **kwargs):
         if kwargs.get('data') is None:
             raise ValueError('Invalid request: missing "data"')

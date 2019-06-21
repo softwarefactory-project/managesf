@@ -53,7 +53,7 @@ class BaseTestResourceEndpoint(TestCase):
         repo_path = rtu.prepare_git_repo(cls.db_path)
         rtu.add_yaml_data(repo_path, SAMPLE_RESOURCES_TREE)
         # Init the YAML DB
-        clone_path, cache_path = rtu.prepare_db_env(cls.db_path)
+        rtu.prepare_db_env(cls.db_path)
         c.resources['master_repo'] = 'file://%s' % repo_path
         cls.manager = manageSF.SFResourcesManager(c)
 
@@ -76,7 +76,7 @@ class TestResourcesManager(BaseTestResourceEndpoint):
         repo_path = rtu.prepare_git_repo(self.db_path)
         rtu.add_yaml_data(repo_path, data)
         # Init the YAML DB
-        clone_path, cache_path = rtu.prepare_db_env(self.db_path)
+        rtu.prepare_db_env(self.db_path)
         return repo_path
 
     def test_get(self):
@@ -147,41 +147,3 @@ class TestResourcesManager(BaseTestResourceEndpoint):
         self.assertIn(
             "Resource [type: dummy, ID: idbogus] contains extra keys. "
             "Please check the model.", log)
-
-    def test_update(self):
-        """test apply resources on the resources manager"""
-        data = {'resources': {'dummies': {}}}
-        repo_path = self.prepare_repo(data)
-        new_data = {'resources': {'dummies': {
-                    'id1': {'namespace': 'awesome',
-                            'name': 'p1'}}}}
-        rtu.add_yaml_data(repo_path, new_data)
-        c.resources['master_repo'] = 'file://%s' % repo_path
-        manager = manageSF.SFResourcesManager(c)
-        with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
-                        {'dummies': Dummy}):
-            status, log = manager.resources.update()
-        self.assertIn("Resource [type: dummies, ID: id1] will be "
-                      "created.", log)
-        self.assertIn("Resource [type: dummies, ID: id1] has been "
-                      "created.", log)
-        self.assertEqual(len(log), 2)
-        self.assertTrue(status)
-        # Direct apply
-        prev = "resources: {}"
-        new = """resources:
-  dummies:
-    id1:
-      name: dum
-      namespace: a
-"""
-        kwargs = {'prev': prev, 'new': new}
-        with patch.dict('managesf.model.yamlbkd.engine.MAPPING',
-                        {'dummies': Dummy}):
-            status, log = manager.resources.update(**kwargs)
-        self.assertListEqual(
-            log,
-            ["Resource [type: dummies, ID: id1] is going to be created.",
-             "Resource [type: dummies, ID: id1] will be created.",
-             "Resource [type: dummies, ID: id1] has been created."])
-        self.assertTrue(status)
