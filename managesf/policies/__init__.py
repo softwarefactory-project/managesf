@@ -19,12 +19,10 @@ import itertools
 
 
 from managesf.policies import base
-from managesf.policies import backup
 from managesf.policies import config
 from managesf.policies import hooks
 # from managesf.policies import introspection
 from managesf.policies import localuser
-from managesf.policies import pages
 from managesf.policies import services_users
 from managesf.policies import resources
 
@@ -32,8 +30,6 @@ from managesf.policies import resources
 def list_rules():
     return itertools.chain(
         base.list_rules(),
-        backup.list_rules(),
-        pages.list_rules(),
         localuser.list_rules(),
         services_users.list_rules(),
         hooks.list_rules(),
