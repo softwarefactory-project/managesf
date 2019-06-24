@@ -114,25 +114,6 @@ class TestPolicyEngine(TestCase):
         self.assertTrue(policy.authorize('managesf.localuser:delete',
                                          target, credentials))
 
-    def test_backup_policies(self):
-        """Test the default backup endpoint policies"""
-        credentials = {}
-        target = {}
-        self.assertFalse(policy.authorize('managesf.backup:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.backup:get',
-                                          target, credentials))
-        credentials = {'username': 'RickSanchez'}
-        self.assertFalse(policy.authorize('managesf.backup:create',
-                                          target, credentials))
-        self.assertFalse(policy.authorize('managesf.backup:get',
-                                          target, credentials))
-        credentials = {'username': 'admin'}
-        self.assertTrue(policy.authorize('managesf.backup:get',
-                                         target, credentials))
-        self.assertTrue(policy.authorize('managesf.backup:create',
-                                         target, credentials))
-
     def test_resources_policies(self):
         """Test the default resources endpoint policies"""
         credentials = {}
