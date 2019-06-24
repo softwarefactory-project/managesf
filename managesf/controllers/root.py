@@ -14,7 +14,6 @@
 
 import base64
 import logging
-import os.path
 
 from pecan import conf
 from pecan import expose
@@ -28,12 +27,12 @@ from managesf.controllers import SFuser
 from managesf.services import base
 from managesf.services import exceptions
 from managesf import policy
-from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
 from managesf import DEFAULT_SERVICES
 from managesf.controllers.api.v2 import resources as v2_resources
 from managesf.controllers.api.v2 import configurations as v2_configurations
 
+from managesf.api.v2.managers import resource_manager
 
 logger = logging.getLogger(__name__)
 
@@ -424,6 +423,14 @@ class ServicesUsersController(RestController):
 
 class HooksController(RestController):
 
+    def get_project_by_repo(self, reponame):
+        for _, project in resource_manager.resources.get().get(
+                'resources', {}).get('projects', {}).items():
+            for repo in project.get('source-repositories', []):
+                if reponame in repo:
+                    return project
+        return None
+
     @expose('json')
     def post(self, hook_name):
         """Trigger hook {hook_name}."""
@@ -437,7 +444,7 @@ class HooksController(RestController):
         project_name = change.get('project')
         if not project_name:
             return abort(400, detail=u"Hooks: Invalid change %s" % change)
-        project = ResourcesController().get_project_by_repo(project_name)
+        project = self.get_project_by_repo(project_name)
         if not project:
             logger.info("Hooks: Repository %s is not part of any project" %
                         change.get('project'))
@@ -454,27 +461,6 @@ class HooksController(RestController):
                 hook, hook_name, msg))
         response.status = status
         return {'msg': msg}
-
-
-class ResourcesController(RestController):
-    def check_policy(self, _policy):
-        if not authorize(_policy,
-                         target={}):
-            return abort(401,
-                         detail='Failure to comply with policy %s' % _policy)
-
-    def get_resources(self):
-        return SFResourceBackendEngine(
-            os.path.join(conf.resources['workdir'], 'read'),
-            conf.resources['subdir']).get(conf.resources['master_repo'],
-                                          'master')['resources']
-
-    def get_project_by_repo(self, reponame):
-        for _, project in self.get_resources().get('projects', {}).items():
-            for repo in project.get('source-repositories', []):
-                if reponame in repo:
-                    return project
-        return None
 
 
 class NodesController(RestController):
@@ -943,7 +929,6 @@ class V2Controller(object):
     about = introspection.IntrospectionController()
     services_users = ServicesUsersController()
     hooks = HooksController()
-    resources = ResourcesController()
     if len(AGENTSPROVIDERS) > 0:
         nodes = NodesController()
     # --
@@ -968,4 +953,3 @@ class RootController(object):
         self.about = introspection.IntrospectionController()
         self.services_users = ServicesUsersController()
         self.hooks = HooksController()
-        self.resources = ResourcesController()
