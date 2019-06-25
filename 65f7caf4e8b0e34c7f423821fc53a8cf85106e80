@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "89bbacb6_876d846c",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-25T13:53:09Z",
+      "side": 1,
+      "message": "Yes, I need to do a change in sf-config to ensure _nodepool.yaml is installed in the config repo. I will be easier to manage like that, I don\u0027t want to change /etc/nodepool right to allow managesf to get data from there",
+      "parentUuid": "d779d49a_cf5f4d87",
+      "range": {
+        "startLine": 479,
+        "startChar": 25,
+        "endLine": 479,
+        "endChar": 59
+      },
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3c889bd_c638af03",
         "filename": "managesf/controllers/api/v2/configurations.py",
         "patchSetId": 4
@@ -60,6 +84,30 @@
       "writtenOn": "2019-06-25T07:31:37Z",
       "side": 1,
       "message": "This should be remove. Using via the CLI we see this debug output. Or use self.debug instead.",
+      "range": {
+        "startLine": 487,
+        "startChar": 12,
+        "endLine": 487,
+        "endChar": 47
+      },
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ec5ce469_d95546a2",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-25T13:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3c889bd_c638af03",
       "range": {
         "startLine": 487,
         "startChar": 12,
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "8f3b03b7_876553bf",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-25T13:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0fefed1_5b3b5142",
+      "range": {
+        "startLine": 529,
+        "startChar": 0,
+        "endLine": 529,
+        "endChar": 46
+      },
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17b16518_4d4c97d1",
         "filename": "managesf/controllers/api/v2/configurations.py",
         "patchSetId": 4
@@ -106,6 +178,24 @@
       "writtenOn": "2019-06-25T07:31:37Z",
       "side": 1,
       "message": "Add nodepool here",
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a080401b_6c98d015",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 873,
+      "author": {
+        "id": 22
+      },
+      "writtenOn": "2019-06-25T13:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17b16518_4d4c97d1",
       "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
