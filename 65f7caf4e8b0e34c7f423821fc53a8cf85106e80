@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d779d49a_cf5f4d87",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-06-25T07:31:37Z",
+      "side": 1,
+      "message": "Trying on a real deployment I\u0027ve figured out that the base nodepool config file is located in /etc/nodepool/ and not in the config repo. So here you need /etc/nodepool/_nodepool.yaml",
+      "range": {
+        "startLine": 479,
+        "startChar": 25,
+        "endLine": 479,
+        "endChar": 59
+      },
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a3c889bd_c638af03",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-06-25T07:31:37Z",
+      "side": 1,
+      "message": "This should be remove. Using via the CLI we see this debug output. Or use self.debug instead.",
+      "range": {
+        "startLine": 487,
+        "startChar": 12,
+        "endLine": 487,
+        "endChar": 47
+      },
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b0fefed1_5b3b5142",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-06-25T07:31:37Z",
+      "side": 1,
+      "message": "Could you remove that line, or put it as debug",
+      "range": {
+        "startLine": 529,
+        "startChar": 0,
+        "endLine": 529,
+        "endChar": 46
+      },
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "17b16518_4d4c97d1",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 873,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-06-25T07:31:37Z",
+      "side": 1,
+      "message": "Add nodepool here",
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
