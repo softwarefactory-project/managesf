@@ -125,44 +125,9 @@ class GroupManager(BaseCRUDManager):
 
 
 @six.add_metaclass(abc.ABCMeta)
-class MembershipManager(BaseCRUDManager):
-    """Abstract class handling membership operations between
-    users/standalone groups and projects in Software Factory"""
-
-
-@six.add_metaclass(abc.ABCMeta)
-class ReplicationManager(BaseCRUDManager):
-    """Abstract class handling replication operations if the service can
-    handle them (usually, a repository service)"""
-    def get_config(self, **kwargs):
-        return self.get(**kwargs)
-
-    def apply_config(self, **kwargs):
-        return self.update(**kwargs)
-
-    def trigger(self, **kwargs):
-        """Trigger a replication"""
-        raise exc.UnavailableActionError()
-
-
-@six.add_metaclass(abc.ABCMeta)
-class RepositoryManager(BaseCRUDManager):
-    """Abstract class handling repository creation and other repository
-    related operations"""
-
-
-@six.add_metaclass(abc.ABCMeta)
 class CodeReviewManager(BaseCRUDManager):
     """Abstract class handling code reviews operations for a given
     gerrit-like service."""
-
-    def propose_test_definition(self, **kwargs):
-        """creates a review adding tests in the zuul pipelines for a project"""
-        raise exc.UnavailableActionError()
-
-    def propose_test_scripts(self, **kwargs):
-        """creates a review for template tests scripts on a project"""
-        raise exc.UnavailableActionError()
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -172,80 +137,6 @@ class RoleManager(BaseCRUDManager):
     @staticmethod
     def is_admin(user):
         return user == pconf.admin['name']
-
-
-@six.add_metaclass(abc.ABCMeta)
-class JobManager(BaseCRUDManager):
-    """Abstract class handling jobs for a "job runner"-type service"""
-
-    def get_job(self, job_name, **kwargs):
-        """lists one or several jobs depending on filtering with kwargs"""
-        raise exc.UnavailableActionError()
-
-    def get_job_parameters(self, job_name, job_id):
-        """get parameters used to run a job"""
-        raise exc.UnavailableActionError()
-
-    def get_job_status(self, job_name, job_id):
-        """get parameters used to run a job"""
-        raise exc.UnavailableActionError()
-
-    def get_job_logs(self, job_name, job_id):
-        """get logs of a finished job"""
-        raise exc.UnavailableActionError()
-
-    def run(self, job_name, job_parameters):
-        """run a job"""
-        raise exc.UnavailableActionError()
-
-    def stop(self, job_name, job_id):
-        """stop a running job"""
-        raise exc.UnavailableActionError()
-
-
-@six.add_metaclass(abc.ABCMeta)
-class NodeManager(BaseCRUDManager):
-    """Abstract class handling nodes for an "agent provider"-type service"""
-
-    def get(self, node_id=None, **kwargs):
-        """lists one or several nodes depending on filtering with node's
-        id or kwargs"""
-        raise exc.UnavailableActionError()
-
-    def hold(self, node_id):
-        """prevents node node_id from being deleted after a completed job"""
-        raise exc.UnavailableActionError()
-
-    def delete(self, node_id):
-        """schedules node node_id for deletion"""
-        raise exc.UnavailableActionError()
-
-    def add_authorized_key(self, node_id, public_key, user=None):
-        """adds public_key as an authorized key on user's account on node_id"""
-        raise exc.UnavailableActionError()
-
-
-@six.add_metaclass(abc.ABCMeta)
-class ImageManager(BaseCRUDManager):
-    """Abstract class handling image building tasks for an
-    "agent provider"-type service"""
-
-    def get(self, provider_name=None, image_name=None, **kwargs):
-        """lists one or several images depending on filtering options"""
-        raise exc.UnavailableActionError()
-
-    def start_upload(self, image_name, provider_name=None):
-        """upload the image image_name on provider provider_name"""
-        raise exc.UnavailableActionError()
-
-    def start_update(self, image_name, provider_name=None):
-        """update the image image_name on provider provider_name if relevant"""
-        raise exc.UnavailableActionError()
-
-    def get_action_info(self, id):
-        """fetches relevant info on an image update/upload possibly still
-        in progress"""
-        raise exc.UnavailableActionError()
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -265,7 +156,6 @@ class BaseServicePlugin(object):
         # place holders
         self.project = ProjectManager(self)
         self.user = UserManager(self)
-        self.membership = MembershipManager(self)
         self.role = RoleManager(self)
         self.hooks = BaseHooksManager(self)
 
@@ -284,49 +174,7 @@ class BaseServicePlugin(object):
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseIssueTrackerServicePlugin(BaseServicePlugin):
-    """Base plugin for a service managing issues."""
-
-    def get_open_issues(self):
-        """Return the open issues on the tracker"""
-
-    def get_active_users(self):
-        """Return a list of active users"""
-
-
-@six.add_metaclass(abc.ABCMeta)
-class BaseAgentProviderServicePlugin(BaseServicePlugin):
-    """Base plugin for a service used to provide agents on which to run jobs,
-    for example Nodepool."""
-
-    def __init__(self, conf):
-        super(BaseAgentProviderServicePlugin, self).__init__(conf)
-        self.node = NodeManager(self)
-        self.image = ImageManager(self)
-
-
-@six.add_metaclass(abc.ABCMeta)
-class BaseJobRunnerServicePlugin(BaseServicePlugin):
-    """Base plugin for a service used to execute jobs, for example Jenkins."""
-
-    def __init__(self, conf):
-        super(BaseJobRunnerServicePlugin, self).__init__(conf)
-        self.job = JobManager(self)
-
-
-@six.add_metaclass(abc.ABCMeta)
-class BaseRepositoryServicePlugin(BaseServicePlugin):
-    """Base plugin for a service managing repositories. This adds repository
-    replication and repository operations."""
-
-    def __init__(self, conf):
-        super(BaseRepositoryServicePlugin, self).__init__(conf)
-        self.replication = ReplicationManager(self)
-        self.repository = RepositoryManager(self)
-
-
-@six.add_metaclass(abc.ABCMeta)
-class BaseCodeReviewServicePlugin(BaseRepositoryServicePlugin):
+class BaseCodeReviewServicePlugin(BaseServicePlugin):
     """Base plugin for a service managing code review systems. This adds
     code review operations like submitting a file for review to a project."""
 

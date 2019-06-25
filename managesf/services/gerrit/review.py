@@ -18,7 +18,7 @@
 from managesf.services import base
 
 
-class SFGerritReviewManager(base.CodeReviewManager):
+class SFGerritReviewManager(base.BaseCRUDManager):
     def get(self, **kwargs):
         client = self.plugin.get_client()
         return client.get_open_changes()
