@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b4d47a97_f3ba0409",
+        "filename": "managesf/controllers/api/v2/configurations.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2019-06-25T13:30:26Z",
+      "side": 1,
+      "message": "Ok so maybe %s/nodepool/_nodepool.yaml if sf-config set _nodepool.yaml in the config repo.",
+      "parentUuid": "d779d49a_cf5f4d87",
+      "range": {
+        "startLine": 479,
+        "startChar": 25,
+        "endLine": 479,
+        "endChar": 59
+      },
+      "revId": "65f7caf4e8b0e34c7f423821fc53a8cf85106e80",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3c889bd_c638af03",
         "filename": "managesf/controllers/api/v2/configurations.py",
         "patchSetId": 4
