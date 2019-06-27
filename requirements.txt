@@ -2,15 +2,11 @@
 pbr
 pecan
 WebOb
-gerritlib
-python-ldap
 requests
 passlib
 basicauth==0.3
 sqlalchemy
 urllib3
-paramiko
-pycrypto
 sphinx
 PyYAML
 stevedore

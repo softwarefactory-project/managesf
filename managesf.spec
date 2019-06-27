@@ -14,41 +14,17 @@ Source1:        %{name}.service
 BuildArch:      noarch
 
 Buildrequires:  python2-devel
-Buildrequires:  python-setuptools
 Buildrequires:  python2-pbr
-BuildRequires:  python-pecan
-BuildRequires:  python2-gerritlib
-BuildRequires:  python-ldap
-BuildRequires:  python2-passlib
-BuildRequires:  python2-basicauth
-BuildRequires:  python-sqlalchemy
-BuildRequires:  python2-urllib3
-BuildRequires:  python-paramiko
-BuildRequires:  python-crypto
-BuildRequires:  libyaml-devel
-BuildRequires:  yaml-cpp
-BuildRequires:  PyYAML
-BuildRequires:  python2-stevedore
-BuildRequires:  python2-PyMySQL
-BuildRequires:  python-six
-BuildRequires:  python2-oslo-policy
-BuildRequires:  python2-deepdiff
-BuildRequires:  GitPython
-BuildRequires:  python-requests
+BuildRequires:  python-sphinx
 BuildRequires:  python-sphinx_rtd_theme
-BuildRequires:  python-future
 
 Requires:       python-pecan
 Requires:       python2-pbr
-Requires:       python2-gerritlib
-Requires:       python-ldap
 Requires:       libyaml
 Requires:       python2-passlib
 Requires:       python2-basicauth
 Requires:       python-sqlalchemy
 Requires:       python2-urllib3
-Requires:       python-paramiko
-Requires:       python-crypto
 Requires:       yaml-cpp
 Requires:       PyYAML
 Requires:       python2-stevedore
@@ -131,6 +107,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Tue Jun 27 2019 Fabien Boucher <fboucher@redhat.com> - 0.12.0-8
+- Remove multiple unneeded dependencies
+
 * Tue Dec 11 2018 Tristan Cacqueray <tdecacqu@redhat.com> - 0.12.0-7
 - Remove python-ecdsa requirement
 
