@@ -1,42 +1,42 @@
+%{?scl:%scl_package zuul}
+
 %global         sum A python API used to centralize management of services deployed under Software Factory
 
-Name:           managesf
-Version:        0.12.0
-Release:        8%{?dist}
+Name:           %{?scl_prefix}managesf
+Version:        0.21.0
+Release:        9%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
 URL:            https://softwarefactory-project.io/r/p/%{name}
 Source0:        https://github.com/redhat-cip/managesf/archive/%{version}.tar.gz
 
-Source1:        %{name}.service
+Source1:        managesf.service
 
 BuildArch:      noarch
 
-Buildrequires:  python2-devel
-Buildrequires:  python2-pbr
-BuildRequires:  python-sphinx
-BuildRequires:  python-sphinx_rtd_theme
+Buildrequires:  %{?scl_prefix}python-devel
+Buildrequires:  %{?scl_prefix}python-pbr
 
-Requires:       python-pecan
-Requires:       python2-pbr
 Requires:       libyaml
-Requires:       python2-passlib
-Requires:       python2-basicauth
-Requires:       python-sqlalchemy
-Requires:       python2-urllib3
 Requires:       yaml-cpp
-Requires:       PyYAML
-Requires:       python2-stevedore
-Requires:       python2-PyMySQL
-Requires:       python-six
-Requires:       python2-oslo-policy
-Requires:       python2-deepdiff
-Requires:       GitPython
-Requires:       python-requests
-Requires:       python-gunicorn
-Requires:       python-future
-Requires:       python2-storyboardclient
+Requires:       %{?scl_prefix}python-pecan
+Requires:       %{?scl_prefix}python-pbr
+Requires:       %{?scl_prefix}python-passlib
+Requires:       %{?scl_prefix}python-basicauth
+Requires:       %{?scl_prefix}python-sqlalchemy
+Requires:       %{?scl_prefix}python-urllib3
+Requires:       %{?scl_prefix}PyYAML
+Requires:       %{?scl_prefix}python-stevedore
+Requires:       %{?scl_prefix}python-PyMySQL
+Requires:       %{?scl_prefix}python-six
+Requires:       %{?scl_prefix}python-oslo-policy
+Requires:       %{?scl_prefix}python-deepdiff
+Requires:       %{?scl_prefix}GitPython
+Requires:       %{?scl_prefix}python-requests
+Requires:       %{?scl_prefix}python-gunicorn
+Requires:       %{?scl_prefix}python-future
+Requires:       %{?scl_prefix}python-storyboardclient
 
 %description
 python API used to centralize management of services deployed under Software Factory
@@ -45,30 +45,34 @@ python API used to centralize management of services deployed under Software Fac
 Summary:        Managesf documentation
 
 BuildRequires:  python-sphinx
-Buildrequires:  python-mock
+BuildRequires:  %{?scl_prefix}python-six
 
 %description doc
 Managesf documentation
 
 
 %prep
-%autosetup -n %{name}-%{version}
+%autosetup -n managesf-%{version}
 
 %build
-export PBR_VERSION=%{version}
-%{__python2} setup.py build
-PYTHONPATH=. %{__python2} docs/generate-resources-docs.py > docs/source/resources.rst
+%{?scl:scl enable %{scl} - << \EOF}
+PBR_VERSION=%{version} %{__python3} setup.py build
+PYTHONPATH=. %{__python3} docs/generate-resources-docs.py > docs/source/resources.rst
+%{?scl:EOF}
 sphinx-build -b html -d docs/build/doctrees docs/source docs/build/html
 
-
 %install
-export PBR_VERSION=%{version}
-%{__python2} setup.py install --skip-build --root %{buildroot}
+%{?scl:scl enable %{scl} - << \EOF}
+PBR_VERSION=%{version} %{__python3} setup.py install --skip-build --root %{buildroot}
+%{?scl:EOF}
 mkdir -p %{buildroot}/%{_var}/lib/managesf
 mkdir -p %{buildroot}/%{_var}/log/managesf
-install -p -D -m 644 %{buildroot}/usr/etc/managesf/sf-policy.yaml %{buildroot}/%{_sysconfdir}/managesf/sf-policy.yaml
-rm %{buildroot}/usr/etc/managesf/sf-policy.yaml
-install -p -D -m 644 %{SOURCE1} %{buildroot}/%{_unitdir}/%{name}.service
+mkdir -p %{buildroot}/etc/managesf
+mkdir -p %{buildroot}/usr/bin
+mv %{buildroot}/%{_bindir}/* %{buildroot}/usr/bin/
+install -p -D -m 644 %{buildroot}/opt/rh/rh-python35/root/usr/etc/managesf/sf-policy.yaml %{buildroot}/etc/managesf/sf-policy.yaml
+rm %{buildroot}/opt/rh/rh-python35/root/usr/etc/managesf/sf-policy.yaml
+install -p -D -m 644 %{SOURCE1} %{buildroot}/%{_unitdir}/managesf.service
 mkdir -p %{buildroot}/usr/share/doc/managesf
 mv docs/build/html/* %{buildroot}/usr/share/doc/managesf/
 
@@ -87,19 +91,19 @@ useradd -r -g managesf -G managesf -d /var/lib/managesf -s /sbin/nologin \
 exit 0
 
 %post
-%systemd_post %{name}.service
+%systemd_post managesf.service
 
 %preun
-%systemd_preun %{name}.service
+%systemd_preun managesf.service
 
 %postun
-%systemd_postun %{name}.service
+%systemd_postun managesf.service
 
 %files
-%{python2_sitelib}/*
-%{_bindir}/*
+%{python3_sitelib}/*
+/usr/bin/*
 %{_unitdir}/*
-%config(noreplace) %{_sysconfdir}/*
+%config(noreplace) /etc/managesf/*
 %attr(0750, managesf, managesf) %{_var}/lib/managesf
 %attr(0750, managesf, managesf) %{_var}/log/managesf
 
@@ -107,7 +111,10 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
-* Tue Jun 27 2019 Fabien Boucher <fboucher@redhat.com> - 0.12.0-8
+* Thu Jun 27 2019 Fabien Boucher <fboucher@redhat.com> - 0.12.0-9
+- SCLization
+
+* Thu Jun 27 2019 Fabien Boucher <fboucher@redhat.com> - 0.12.0-8
 - Remove multiple unneeded dependencies
 
 * Tue Dec 11 2018 Tristan Cacqueray <tdecacqu@redhat.com> - 0.12.0-7
