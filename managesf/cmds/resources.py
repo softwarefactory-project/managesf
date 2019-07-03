@@ -29,7 +29,7 @@ from contextlib import contextmanager
 from pecan import conf
 from pecan import configuration
 
-from sfmanager import sfauth
+from managesf import sfauth
 
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
