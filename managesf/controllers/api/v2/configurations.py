@@ -123,9 +123,9 @@ class ZuulTenantsLoad:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
 
-    def get_resources(self, url, verify_ssl=True):
+    def get_resources(self, url):
         """Get resources and config location from tenant deployment."""
-        ret = requests.get(url, verify=bool(int(verify_ssl)))
+        ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
         return ret.json()
 
     # Legacy zuul flat files handling
@@ -441,9 +441,9 @@ class RepoXplorerConf():
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
 
-    def get_resources(self, url, verify_ssl=True):
+    def get_resources(self, url):
         """Get resources and config location from tenant deployment."""
-        ret = requests.get(url, verify=bool(int(verify_ssl)))
+        ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
         return ret.json()
 
     def compute_uri_gitweb(self, conn):
@@ -597,9 +597,9 @@ class HoundConf():
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
 
-    def get_resources(self, url, verify_ssl=True):
+    def get_resources(self, url):
         """Get resources and config location from tenant deployment."""
-        ret = requests.get(url, verify=bool(int(verify_ssl)))
+        ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
         return ret.json()
 
     def compute_uri_gitweb(self, conn):
@@ -713,9 +713,9 @@ class CauthConf():
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
 
-    def get_resources(self, url, verify_ssl=True):
+    def get_resources(self, url):
         """Get resources and config location from tenant deployment."""
-        ret = requests.get(url, verify=bool(int(verify_ssl)))
+        ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
         return ret.json()
 
     def start(self):
