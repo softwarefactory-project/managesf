@@ -450,7 +450,7 @@ class NodepoolConf():
             repo.remotes.origin.pull()
         return tenant_config_project_path
 
-    def yaml_merge_load(self, nodepool_dir, _nodepool_conf):
+    def yaml_merge_load(self, nodepool_dir, nodepool_conf):
         paths = []
         for root, dirs, files in os.walk(nodepool_dir, topdown=True):
             if [True for skip in ("elements", "scripts", "runC")
@@ -465,7 +465,7 @@ class NodepoolConf():
         user = {}
         for path in paths:
             # Do not load base config
-            if _nodepool_conf in path:
+            if nodepool_conf in path:
                 continue
             data = yaml.safe_load(open(path))
             if not data:
@@ -474,12 +474,13 @@ class NodepoolConf():
                 user.setdefault(key, []).extend(value)
         return user
 
-    def merge(self):
+    def merge(
+            self,
+            nodepool_conf='/var/lib/software-factory/conf/nodepool.yaml'):
         nodepool_dir = '%s/nodepool' % self.config_repo_path
-        _nodepool_conf = '%s/_nodepool.yaml' % nodepool_dir
 
-        user = self.yaml_merge_load(nodepool_dir, _nodepool_conf)
-        conf = yaml.safe_load(open(_nodepool_conf))
+        user = self.yaml_merge_load(nodepool_dir, nodepool_conf)
+        conf = yaml.safe_load(open(nodepool_conf))
 
         cache_dir = "/var/cache/nodepool"
 
