@@ -361,7 +361,8 @@ class NodepoolConfTests(TestCase):
 
     def test_load(self):
         nc = NodepoolConf(config_dir='managesf/tests/fixtures')
-        ret = nc.merge()
+        ret = nc.merge(
+            nodepool_conf='managesf/tests/fixtures/nodepool/_nodepool.yaml')
         expected_ret = {
             'elements-dir': '/etc/opt/rh/rh-python35/nodepool/elements:/usr/share/sf-elements',  # noqa
             'images-dir': '/var/opt/rh/rh-python35/lib/nodepool/dib',
