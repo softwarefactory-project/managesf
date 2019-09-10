@@ -1,6 +1,15 @@
 - project:
+    templates:
+      - sf-ci-jobs
+      - sf-ci-packages-publish
+      - sf-ci-python-jobs
     check:
       jobs:
+        - swagger-lint:
+            vars:
+              swagger_file: "docs/swagger/managesf.v2.yaml"
+            files:
+              - "docs/swagger/managesf.v2.yaml"
         # This is part of our job template. We'll remove it when all our
         # python projects are py3x ready
         - tox-py27:
@@ -23,3 +32,16 @@
         - tox-pep8-py36:
             nodeset: fedora-latest-runc
             voting: true
+        - swagger-lint:
+            vars:
+              swagger_file: "docs/swagger/nanagesf.v2.yaml"
+            files:
+              - "docs/swagger/managesf.v2.yaml"
+        - swagger-publish:
+            dependencies:
+              - swagger-lint
+            vars:
+              swagger_api: manageSF
+              swagger_file: "docs/swagger/managesf.v2.yaml"
+            files:
+              - "docs/swagger/managesf.v2.yaml"
