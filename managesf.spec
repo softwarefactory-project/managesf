@@ -1,10 +1,8 @@
-%{?scl:%scl_package zuul}
-
 %global         sum A python API used to centralize management of services deployed under Software Factory
 
-Name:           %{?scl_prefix}managesf
+Name:           managesf
 Version:        0.21.0
-Release:        9%{?dist}
+Release:        10%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -15,28 +13,27 @@ Source1:        managesf.service
 
 BuildArch:      noarch
 
-Buildrequires:  %{?scl_prefix}python-devel
-Buildrequires:  %{?scl_prefix}python-pbr
+Buildrequires:  python3-devel
+Buildrequires:  python3-pbr
 
-Requires:       libyaml
 Requires:       yaml-cpp
-Requires:       %{?scl_prefix}python-pecan
-Requires:       %{?scl_prefix}python-pbr
-Requires:       %{?scl_prefix}python-passlib
-Requires:       %{?scl_prefix}python-basicauth
-Requires:       %{?scl_prefix}python-sqlalchemy
-Requires:       %{?scl_prefix}python-urllib3
-Requires:       %{?scl_prefix}PyYAML
-Requires:       %{?scl_prefix}python-stevedore
-Requires:       %{?scl_prefix}python-PyMySQL
-Requires:       %{?scl_prefix}python-six
-Requires:       %{?scl_prefix}python-oslo-policy
-Requires:       %{?scl_prefix}python-deepdiff
-Requires:       %{?scl_prefix}GitPython
-Requires:       %{?scl_prefix}python-requests
-Requires:       %{?scl_prefix}python-gunicorn
-Requires:       %{?scl_prefix}python-future
-Requires:       %{?scl_prefix}python-storyboardclient
+Requires:       python3-pecan
+Requires:       python3-pbr
+Requires:       python3-passlib
+Requires:       python3-basicauth
+Requires:       python3-sqlalchemy
+Requires:       python3-urllib3
+Requires:       python3-pyyaml
+Requires:       python3-stevedore
+Requires:       python3-PyMySQL
+Requires:       python3-six
+Requires:       python3-oslo-policy
+Requires:       python3-deepdiff
+Requires:       python3-GitPython
+Requires:       python3-requests
+Requires:       python3-gunicorn
+Requires:       python3-future
+Requires:       python3-storyboardclient
 
 %description
 python API used to centralize management of services deployed under Software Factory
@@ -44,8 +41,8 @@ python API used to centralize management of services deployed under Software Fac
 %package doc
 Summary:        Managesf documentation
 
-BuildRequires:  python-sphinx
-BuildRequires:  %{?scl_prefix}python-six
+BuildRequires:  python3-sphinx
+BuildRequires:  python3-six
 
 %description doc
 Managesf documentation
@@ -55,24 +52,18 @@ Managesf documentation
 %autosetup -n managesf-%{version}
 
 %build
-%{?scl:scl enable %{scl} - << \EOF}
 PBR_VERSION=%{version} %{__python3} setup.py build
 PYTHONPATH=. %{__python3} docs/generate-resources-docs.py > docs/source/resources.rst
-%{?scl:EOF}
-sphinx-build -b html -d docs/build/doctrees docs/source docs/build/html
+sphinx-build-3 -b html -d docs/build/doctrees docs/source docs/build/html
 
 %install
-%{?scl:scl enable %{scl} - << \EOF}
 PBR_VERSION=%{version} %{__python3} setup.py install --skip-build --root %{buildroot}
-%{?scl:EOF}
-mkdir -p %{buildroot}/%{_var}/lib/managesf
-mkdir -p %{buildroot}/%{_var}/log/managesf
+mkdir -p %{buildroot}/var/lib/managesf
+mkdir -p %{buildroot}/var/log/managesf
 mkdir -p %{buildroot}/etc/managesf
 mkdir -p %{buildroot}/usr/bin
-mv %{buildroot}/%{_bindir}/* %{buildroot}/usr/bin/
-install -p -D -m 644 %{buildroot}/opt/rh/rh-python35/root/usr/etc/managesf/sf-policy.yaml %{buildroot}/etc/managesf/sf-policy.yaml
-rm %{buildroot}/opt/rh/rh-python35/root/usr/etc/managesf/sf-policy.yaml
 install -p -D -m 644 %{SOURCE1} %{buildroot}/%{_unitdir}/managesf.service
+mv %{buildroot}/usr/etc/managesf/* %{buildroot}/etc/managesf
 mkdir -p %{buildroot}/usr/share/doc/managesf
 mv docs/build/html/* %{buildroot}/usr/share/doc/managesf/
 
@@ -111,6 +102,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Tue Sep 24 2019 Tristan Cacqueray <tdecacqu@redhat.com> - 0.21.0-10
+- Switch to system python3
+
 * Thu Jun 27 2019 Fabien Boucher <fboucher@redhat.com> - 0.12.0-9
 - SCLization
 
