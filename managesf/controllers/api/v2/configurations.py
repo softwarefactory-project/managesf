@@ -452,15 +452,10 @@ class NodepoolConf():
 
     def yaml_merge_load(self, nodepool_dir, _nodepool_conf):
         paths = []
-        for root, dirs, files in os.walk(nodepool_dir, topdown=True):
-            if [True for skip in ("elements", "scripts", "runC")
-                    if "/%s/" % skip in root or root.endswith("/%s" % skip)]:
-                continue
-            paths.extend([os.path.join(root, path) for path in files])
-
-        # Keeps only .yaml files
-        paths = filter(lambda x: x.endswith('.yaml') or
-                       x.endswith('.yml'), paths)
+        for file in filter(
+                lambda x: x.endswith('.yaml') or x.endswith('.yml'),
+                os.listdir(nodepool_dir)):
+            paths.append(os.path.join(nodepool_dir, file))
 
         user = {}
         for path in paths:
