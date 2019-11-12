@@ -453,7 +453,7 @@ class NodepoolConf():
     def yaml_merge_load(self, nodepool_dir, _nodepool_conf):
         paths = []
         for root, dirs, files in os.walk(nodepool_dir, topdown=True):
-            if [True for skip in ("elements", "scripts", "runC")
+            if [True for skip in ("elements", "scripts", "runC", "virt_images")
                     if "/%s/" % skip in root or root.endswith("/%s" % skip)]:
                 continue
             paths.extend([os.path.join(root, path) for path in files])
