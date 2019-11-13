@@ -28,3 +28,6 @@ providers:
           - name: dib-centos-7
             min-ram: 1024
             diskimage: dib-centos-7
+  - name: k1s
+    driver: openshift
+    launcher-host: nl02

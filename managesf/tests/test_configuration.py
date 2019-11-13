@@ -360,7 +360,8 @@ class ZuulTenantsLoadTests(TestCase):
 class NodepoolConfTests(TestCase):
 
     def test_load(self):
-        nc = NodepoolConf(config_dir='managesf/tests/fixtures')
+        nc = NodepoolConf(
+            config_dir='managesf/tests/fixtures', hostname='nl01')
         ret = nc.merge()
         expected_ret = {
             'elements-dir': '/etc/opt/rh/rh-python35/nodepool/elements:/usr/share/sf-elements',  # noqa
@@ -420,6 +421,25 @@ class NodepoolConfTests(TestCase):
                 }
             ]
         }
+        self.assertEqual(ret, yaml.safe_dump(expected_ret,
+                                             default_flow_style=False))
+
+        # nl02 should only have the extra provider
+        old_provider = expected_ret['providers'][0]
+        expected_ret['providers'] = [{
+            'name': 'k1s',
+            'driver': 'openshift',
+        }]
+        nc = NodepoolConf(config_dir='managesf/tests/fixtures', hostname='nl02')
+        ret = nc.merge()
+        self.assertEqual(ret, yaml.safe_dump(expected_ret,
+                                             default_flow_style=False))
+
+        # builder host should have all the providers
+        expected_ret['providers'].insert(0, old_provider)
+        nc = NodepoolConf(
+            config_dir='managesf/tests/fixtures', hostname='nb01', builder=True)
+        ret = nc.merge()
         self.assertEqual(ret, yaml.safe_dump(expected_ret,
                                              default_flow_style=False))
 
