@@ -422,8 +422,12 @@ class NodepoolConf():
 
     def __init__(self, via_web=None,
                  cache_dir="/var/lib/managesf/git",
-                 config_dir=None):
+                 config_dir=None,
+                 builder=False,
+                 hostname=None):
         self.cache_dir = cache_dir
+        self.hostname = hostname
+        self.builder = builder
 
         if via_web:
             self.config_repo_path = self.fetch_git_repo(
@@ -474,12 +478,26 @@ class NodepoolConf():
                 user.setdefault(key, []).extend(value)
         return user
 
+    def is_catchall(self, user):
+        """Check if this host is a catch-all"""
+        for provider in user.get("providers", []):
+            # If this host match a launcher_host, then only those
+            # provider will be included
+            if provider.get("launcher-host", "") == self.hostname:
+                return False
+        # If this host didn't match any launcher_host, then all
+        # providers without a launcher-host will be included
+        return True
+
     def merge(self):
         nodepool_dir = '%s/nodepool' % self.config_repo_path
         _nodepool_conf = '%s/_nodepool.yaml' % nodepool_dir
 
         user = self.yaml_merge_load(nodepool_dir, _nodepool_conf)
         conf = yaml.safe_load(open(_nodepool_conf))
+
+        # Builder service always catch all
+        catchall = self.is_catchall(user) if not self.builder else True
 
         cache_dir = "/var/cache/nodepool"
 
@@ -501,11 +519,11 @@ class NodepoolConf():
         if 'cron' in user:
             conf['cron'] = user['cron']
         conf['labels'] = user.get('labels', [])
-        conf['providers'] = user.get('providers', [])
+        providers = user.get('providers', [])
         conf['diskimages'] = user.get('diskimages', [])
         for extra_labels in user.get('extra-labels', []):
             added = False
-            for provider in conf['providers']:
+            for provider in providers:
                 if provider['name'] != extra_labels['provider']:
                     continue
                 if extra_labels.get('cloud-images'):
@@ -522,9 +540,19 @@ class NodepoolConf():
                 raise RuntimeError("%s: couldn't find provider" % extra_labels)
 
         # Ensure zuul-console-dir is removed from runc provider
-        for provider in conf['providers']:
+        for provider in providers:
             if provider.get("zuul-console-dir"):
                 provider.pop("zuul-console-dir")
+
+        # Add providers
+        conf['providers'] = []
+        for provider in providers:
+            if provider.get("launcher-host") is not None:
+                if self.builder or provider["launcher-host"] == self.hostname:
+                    conf['providers'].append(provider)
+                provider.pop("launcher-host")
+            elif catchall:
+                conf['providers'].append(provider)
 
         self.log.debug('final conf: %s' % conf)
         return yaml.safe_dump(conf, default_flow_style=False)
@@ -864,6 +892,9 @@ def cli():
     p.add_argument("--config-dir")
     p.add_argument("--gateway-url")
     p.add_argument("--master-sf-url")
+    p.add_argument("--builder", action='store_true')
+    p.add_argument("--hostname", help="Get configuration for a dedicated host "
+                   "(only for nodepool services)")
     p.add_argument("--tenant", action='store_true')
     p.add_argument(
         "--cache-dir", default="/var/lib/software-factory/git-configuration")
@@ -890,7 +921,9 @@ def cli():
     if args.service == "nodepool":
         rpc = NodepoolConf(
             cache_dir=args.cache_dir,
-            config_dir=args.config_dir)
+            config_dir=args.config_dir,
+            builder=args.builder,
+            hostname=args.hostname)
         conf = rpc.start()
 
     if args.service == "repoxplorer":
