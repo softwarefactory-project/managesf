@@ -424,10 +424,12 @@ class NodepoolConf():
                  cache_dir="/var/lib/managesf/git",
                  config_dir=None,
                  builder=False,
+                 catchall=False,
                  hostname=None):
         self.cache_dir = cache_dir
         self.hostname = hostname
         self.builder = builder
+        self.catchall = catchall
 
         if via_web:
             self.config_repo_path = self.fetch_git_repo(
@@ -473,17 +475,6 @@ class NodepoolConf():
                 user.setdefault(key, []).extend(value)
         return user
 
-    def is_catchall(self, user):
-        """Check if this host is a catch-all"""
-        for provider in user.get("providers", []):
-            # If this host match a launcher_host, then only those
-            # provider will be included
-            if provider.get("launcher-host", "") == self.hostname:
-                return False
-        # If this host didn't match any launcher_host, then all
-        # providers without a launcher-host will be included
-        return True
-
     def merge(self):
         nodepool_dir = '%s/nodepool' % self.config_repo_path
         _nodepool_conf = '%s/_nodepool.yaml' % nodepool_dir
@@ -492,7 +483,8 @@ class NodepoolConf():
         conf = yaml.safe_load(open(_nodepool_conf))
 
         # Builder service always catch all
-        catchall = self.is_catchall(user) if not self.builder else True
+        if self.builder:
+            self.catchall = True
 
         cache_dir = "/var/cache/nodepool"
 
@@ -546,7 +538,7 @@ class NodepoolConf():
                 if self.builder or provider["launcher-host"] == self.hostname:
                     conf['providers'].append(provider)
                 provider.pop("launcher-host")
-            elif catchall:
+            elif self.catchall:
                 conf['providers'].append(provider)
 
         self.log.debug('final conf: %s' % conf)
@@ -887,7 +879,10 @@ def cli():
     p.add_argument("--config-dir")
     p.add_argument("--gateway-url")
     p.add_argument("--master-sf-url")
-    p.add_argument("--builder", action='store_true')
+    p.add_argument("--catchall", action='store_true', default=False,
+                   help="This host is the first nodepool-launcher")
+    p.add_argument("--builder", action='store_true',
+                   help="This host is a nodepool-builder")
     p.add_argument("--hostname", help="Get configuration for a dedicated host "
                    "(only for nodepool services)")
     p.add_argument("--tenant", action='store_true')
@@ -918,6 +913,7 @@ def cli():
             cache_dir=args.cache_dir,
             config_dir=args.config_dir,
             builder=args.builder,
+            catchall=args.catchall,
             hostname=args.hostname)
         conf = rpc.start()
 
