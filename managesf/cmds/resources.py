@@ -73,7 +73,7 @@ def read_repo_to_validate(zuul_prev_commit, zuul_commit):
     commit_range = "%s..%s" % (zuul_prev_commit, zuul_commit)
     head_commit_msg = subprocess.check_output(
         ["git", "log", commit_range]).decode()
-    print(head_commit_msg)
+    print(head_commit_msg.encode('ascii', errors='ignore').decode('ascii'))
     structured_data = read_data_to_validate()
     return structured_data, head_commit_msg
 
