@@ -14,4 +14,3 @@ six
 oslo.policy
 deepdiff==3.3.0
 GitPython
-python-storyboardclient

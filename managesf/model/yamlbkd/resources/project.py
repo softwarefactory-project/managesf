@@ -16,7 +16,6 @@
 import logging
 
 from managesf.model.yamlbkd.resource import BaseResource
-from managesf.model.yamlbkd.resources.storyboard import StoryboardOps
 
 
 logger = logging.getLogger(__name__)
@@ -28,47 +27,22 @@ class ProjectOps(object):
         self.conf = conf
         self.new = new
         self.client = None
-        self.stb_ops = StoryboardOps(conf, new)
 
     def create(self, **kwargs):
         logs = []
-        if self.stb_ops.is_activated(**kwargs):
-            try:
-                self.stb_ops.update_project_groups(**kwargs)
-            except Exception as e:
-                msg = "Create Storyboard project group : err: %s" % e
-                logger.exception(msg)
-                logs.append(msg)
         return logs
 
     def update(self, **kwargs):
         logs = []
-        if self.stb_ops.is_activated(**kwargs):
-            try:
-                self.stb_ops.update_project_groups(**kwargs)
-            except Exception as e:
-                msg = "Update Storyboard project group: err: %s" % e
-                logger.exception(msg)
-                logs.append(msg)
         return logs
 
     def delete(self, **kwargs):
         logs = []
-        if self.stb_ops.is_activated(**kwargs):
-            try:
-                self.stb_ops.delete_project_groups(**kwargs)
-            except Exception as e:
-                msg = "Delete Storyboard project group: err: %s" % e
-                logger.exception(msg)
-                logs.append(msg)
         return logs
 
     def extra_validations(self, **kwargs):
         logs = []
         name = kwargs['name']
-
-        if self.stb_ops.is_activated(**kwargs):
-            logs.extend(self.stb_ops.extra_validations(**kwargs))
 
         project = self.new['resources']['projects'][name]
         for sr in project['source-repositories']:
