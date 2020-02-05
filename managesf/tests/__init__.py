@@ -20,7 +20,6 @@ from pecan.configuration import conf_from_dict
 
 class dummy_conf():
     services = ['SFGerrit',
-                'SFStoryboard',
                 ]
     gerrit = {
         'url': 'http://gerrit.tests.dom',
@@ -29,16 +28,6 @@ class dummy_conf():
         'top_domain': 'tests.dom',
         'ssh_port': 2929,
         'sshkey_priv_path': tempfile.mkstemp()[1],
-        'db_host': 'db.tests.dom',
-        'db_name': 'gerrit_db',
-        'db_user': 'gerrit_db_user',
-        'db_password': 'gerrit_db_password',
-    }
-    storyboard = {
-        'base_url': 'http://sftests.com/r/',
-        'host': 'storyboard',
-        'url': 'http://storyboard:20000/v1/',
-        'service_token': 'SECRET',
         'db_host': 'db.tests.dom',
         'db_name': 'gerrit_db',
         'db_user': 'gerrit_db_user',

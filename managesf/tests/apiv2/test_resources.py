@@ -34,7 +34,6 @@ config = {'services': c.services,
           'admin': c.admin,
           'sqlalchemy': c.sqlalchemy,
           'managesf': c.managesf,
-          'storyboard': c.storyboard,
           'policy': c.policy,
           'resources': c.resources,
           'api': c.api, }

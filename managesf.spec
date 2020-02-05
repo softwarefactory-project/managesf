@@ -2,7 +2,7 @@
 
 Name:           managesf
 Version:        0.21.0
-Release:        10%{?dist}
+Release:        11%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -33,7 +33,6 @@ Requires:       python3-GitPython
 Requires:       python3-requests
 Requires:       python3-gunicorn
 Requires:       python3-future
-Requires:       python3-storyboardclient
 
 %description
 python API used to centralize management of services deployed under Software Factory
@@ -102,6 +101,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Wed Feb  5 2020 Matthieu Huin <mhuin@redhat.com> - 0.21.0-11
+- Remove Storyboard support
+
 * Tue Sep 24 2019 Tristan Cacqueray <tdecacqu@redhat.com> - 0.21.0-10
 - Switch to system python3
 
