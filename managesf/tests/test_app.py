@@ -31,7 +31,6 @@ from managesf.services import exceptions as exc
 
 from managesf.services.gerrit.project import SFGerritProjectManager
 from managesf.services.gerrit import user as g_user
-from managesf.services.storyboard.user import StoryboardUserManager
 
 
 def raiseexc(*args, **kwargs):
@@ -48,7 +47,6 @@ class FunctionalTest(TestCase):
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
                        'managesf': c.managesf,
-                       'storyboard': c.storyboard,
                        'policy': c.policy,
                        'resources': c.resources,
                        'api': c.api, }
@@ -297,16 +295,12 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos3 = {'email': 'john@joestar.dom',
                   'ssh_keys': ['ora', 'oraora'],
                   'full_name': 'Jonathan Joestar', 'username': 'Jon'}
-        with patch.object(StoryboardUserManager, 'create') as sb_create, \
-                patch.object(g_user.SFGerritUserManager,
-                             'create') as gerrit_create, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
+        with patch.object(g_user.SFGerritUserManager,
+                          'create') as gerrit_create, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch.object(SFGerritProjectManager,
                              'get_user_groups'):
-            s_get.return_value = None
             g_get.return_value = None
-            sb_create.return_value = sb_user.id
             gerrit_create.return_value = gerrit_created["_account_id"]
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
@@ -322,73 +316,57 @@ class TestManageSFServicesUserController(FunctionalTest):
             self.assertTrue("cauth_id" in gerrit_args)
             # TODO(mhu) test if mapping is set correctly
         # mock at a lower level
-        with patch.object(StoryboardUserManager, 'create') as s_create, \
-                patch('managesf.services.gerrit.utils.'
-                      'GerritClient.add_pubkey'), \
+        with patch('managesf.services.gerrit.utils.'
+                   'GerritClient.add_pubkey'), \
                 patch.object(g_user.SFGerritUserManager,
                              '_add_account_as_external'), \
                 patch('managesf.services.gerrit.utils.'
                       'GerritClient.create_account') \
                 as create_account, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
-                patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
-            s_create.return_value = sb_user2.id
             create_account.return_value = gerrit2_created
-            s_get.return_value = None
             g_get.return_value = None
             response = self.app.post_json('/services_users/', infos2,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
 
-        with patch.object(StoryboardUserManager, 'create') as sb_create, \
-                patch.object(g_user.SFGerritUserManager,
-                             'create') as gerrit_create, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
+        with patch.object(g_user.SFGerritUserManager,
+                          'create') as gerrit_create, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch.object(SFGerritProjectManager,
                              'get_user_groups'):
             # assert that raising UnavailableActionError won't fail
             def unavailable(*args, **kwargs):
                 raise exc.UnavailableActionError
-            s_get.side_effect = unavailable
-            g_get.return_value = 14
+            g_get.side_effect = unavailable
             gerrit_create.return_value = 14
             response = self.app.post_json('/services_users/', infos3,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
 
-        with patch.object(StoryboardUserManager, 'create') as s_create, \
-                patch.object(g_user.SFGerritUserManager,
-                             '_add_account_as_external'), \
+        with patch.object(g_user.SFGerritUserManager,
+                          '_add_account_as_external'), \
                 patch('managesf.services.gerrit.utils.'
                       'GerritClient.create_account') \
                 as create_account, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
-                patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
 
-            s_get.return_value = sb_user.id
             g_get.return_value = gerrit_created["_account_id"]
             create_account.return_value = gerrit_created
             response = self.app.post_json('/services_users/', infos,
                                           extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 201)
 
-        with patch.object(StoryboardUserManager, 'create') as s_create, \
-                patch.object(g_user.SFGerritUserManager,
-                             '_add_account_as_external'), \
+        with patch.object(g_user.SFGerritUserManager,
+                          '_add_account_as_external'), \
                 patch('managesf.services.gerrit.utils.'
                       'GerritClient.create_account') \
                 as create_account, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
-                patch.object(StoryboardUserManager, 'update'), \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
             # assert that user found in backend will skip gracefully
-            s_get.return_value = sb_user.id
             g_get.return_value = gerrit_created["_account_id"]
             create_account.return_value = gerrit_created
             response = self.app.post_json('/services_users/', infos,
@@ -409,14 +387,10 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos = {'email': 'iggy@stooges.dom',
                  'ssh_keys': ['ora', 'oraora'],
                  'full_name': 'iggy the fool', 'username': 'iggy'}
-        with patch.object(StoryboardUserManager, 'delete') as sb_delete, \
-                patch.object(g_user.SFGerritUserManager,
-                             'delete') as gerrit_delete, \
-                patch.object(StoryboardUserManager,
-                             'create') as sb_create, \
+        with patch.object(g_user.SFGerritUserManager,
+                          'delete') as gerrit_delete, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as gerrit_create, \
-                patch.object(StoryboardUserManager, 'get') as sb_get, \
                 patch.object(g_user.SFGerritUserManager,
                              'get') as gerrit_get, \
                 patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
@@ -426,16 +400,13 @@ class TestManageSFServicesUserController(FunctionalTest):
                                        extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 404)
             # test deletion of existing user
-            sb_create.return_value = 99
             gerrit_create.return_value = 99
-            sb_get.return_value = None
             gerrit_get.return_value = None
             self.app.post_json('/services_users/', infos,
                                extra_environ=environ, status="*")
             response = self.app.delete('/services_users/?username=iggy',
                                        extra_environ=environ, status="*")
             self.assertEqual(response.status_int, 204)
-            sb_delete.assert_called_with(username='iggy')
             gerrit_delete.assert_called_with(username='iggy')
 
     def test_all(self):
@@ -443,18 +414,13 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos_kira = {'email': 'kira@jojolion.dom',
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'yoshikage kira', 'username': 'kira'}
-        with patch.object(StoryboardUserManager, 'delete'), \
-                patch.object(g_user.SFGerritUserManager, 'delete'), \
-                patch.object(StoryboardUserManager, 'create') as s_create, \
+        with patch.object(g_user.SFGerritUserManager, 'delete'), \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as g_create, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager, 'get') as g_get, \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
 
-            s_get.return_value = None
             g_get.return_value = None
-            s_create.return_value = 12
             g_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_kira,
                                           extra_environ=environ, status="*")
@@ -474,20 +440,14 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos_poln = {'email': 'polnareff@chariot.dom',
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Polnareff', 'username': 'chariot'}
-        with patch.object(StoryboardUserManager, 'delete'), \
-                patch.object(g_user.SFGerritUserManager, 'delete'), \
-                patch.object(StoryboardUserManager,
-                             'create') as s_create, \
+        with patch.object(g_user.SFGerritUserManager, 'delete'), \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as g_create, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager,
                              'get') as g_get, \
                 patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
 
-            s_get.return_value = None
             g_get.return_value = None
-            s_create.return_value = 12
             g_create.return_value = 13
             gug.return_value = []
             response = self.app.post_json('/services_users/', infos_jojo,
@@ -539,19 +499,14 @@ class TestManageSFServicesUserController(FunctionalTest):
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Jotaro Kujoh', 'username': 'jojo',
                       'external_id': 42}
-        with patch.object(StoryboardUserManager, 'update') as s_up, \
-                patch.object(g_user.SFGerritUserManager, 'update') as g_up, \
-                patch.object(StoryboardUserManager,
-                             'create') as s_create, \
+        with patch.object(g_user.SFGerritUserManager, 'update') as g_up, \
                 patch.object(g_user.SFGerritUserManager,
                              'create') as g_create, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
                 patch.object(g_user.SFGerritUserManager,
                              'get') as g_get, \
                 patch.object(SFGerritProjectManager, 'get_user_groups'):
-            for mock in (s_up, g_up, s_get, g_get):
+            for mock in (g_up, g_get):
                 mock.return_value = None
-            s_create.return_value = 12
             g_create.return_value = 13
 
             # User logs in
@@ -583,11 +538,8 @@ class TestManageSFServicesUserController(FunctionalTest):
         infos_jojo = {'email': 'jojo@starplatinum.dom',
                       'ssh_keys': ['ora', 'oraora'],
                       'full_name': 'Jotaro Kujoh', 'username': 'jojo'}
-        with patch.object(StoryboardUserManager, 'create') as s_create, \
-                patch.object(StoryboardUserManager, 'update') as s_update, \
-                patch.object(StoryboardUserManager, 'get') as s_get, \
-                patch.object(g_user.SFGerritUserManager,
-                             'create') as g_create, \
+        with patch.object(g_user.SFGerritUserManager,
+                          'create') as g_create, \
                 patch.object(g_user.SFGerritUserManager,
                              'update') as g_update, \
                 patch.object(g_user.SFGerritUserManager,
@@ -595,9 +547,8 @@ class TestManageSFServicesUserController(FunctionalTest):
                 patch.object(SFGerritProjectManager, 'get_user_groups') as gug:
 
             gug.return_value = []
-            for mock in (s_get, s_update, g_get, g_update):
+            for mock in (g_get, g_update):
                 mock.return_value = None
-            s_create.return_value = 12
             g_create.return_value = 13
             response = self.app.post_json('/services_users/', infos_jojo,
                                           extra_environ=environ, status="*")

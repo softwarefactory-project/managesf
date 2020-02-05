@@ -39,7 +39,6 @@ class TestPolicyEngine(TestCase):
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
                        'managesf': c.managesf,
-                       'storyboard': c.storyboard,
                        'policy': c.policy,
                        'api': c.api, }
         self.app = TestApp(load_app(self.config))
@@ -263,7 +262,6 @@ class TestPolicyEngineFromFile(TestCase):
                        'admin': c.admin,
                        'sqlalchemy': c.sqlalchemy,
                        'managesf': c.managesf,
-                       'storyboard': c.storyboard,
                        'policy': c.policy, }
         pol_file = tempfile.mkstemp()[1] + '.yaml'
         with open(pol_file, 'w') as p:
