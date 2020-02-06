@@ -29,7 +29,7 @@ from contextlib import contextmanager
 from pecan import conf
 from pecan import configuration
 
-from managesf import sfauth
+from managesf.lib.auth import AuthEngine
 
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
@@ -50,13 +50,6 @@ def read_data_to_validate():
          for f in os.listdir('resources')
             if f.endswith('.yaml') or f.endswith('.yml')])
     return data
-
-
-def build_auth_cookie(remote_gateway):
-    cookie = sfauth.get_cookie(
-        remote_gateway, username='SF_SERVICE_USER',
-        password=open('.service_user_password').read().strip())
-    return cookie
 
 
 def read_repo_to_validate(zuul_prev_commit, zuul_commit):
@@ -241,14 +234,15 @@ def cli():
         structured_data, head_commit_msg = read_repo_to_validate(
             args.zuul_prev_commit, args.zuul_commit)
         print("=== Remote validation on %s ===" % args.remote_gateway)
-        pubtkt_cookie = build_auth_cookie(args.remote_gateway)
-        cookies = {'auth_pubtkt': pubtkt_cookie}
-        headers = {'X-Remote-User': "SF_SERVICE_USER"}
+        req_args = AuthEngine.get_request_args(
+            args.remote_gateway, username='SF_SERVICE_USER',
+            password=open('service_user_password').read().strip(),
+        )
         ret = requests.post(
             args.remote_gateway + '/manage/v2/resources/',
-            headers=headers, cookies=cookies,
             json={'prev_ref': args.zuul_prev_commit,
-                  'data': structured_data})
+                  'data': structured_data},
+            **req_args)
         logs = ret.json()
         print("")
         print(
