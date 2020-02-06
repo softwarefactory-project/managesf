@@ -70,8 +70,6 @@ def get_cookie(auth_server,
 def _get_service_info(url, verify=True):
     resp = requests.get(url, allow_redirects=False,
                         verify=verify)
-    if resp.status_code > 399:
-        raise IntrospectionNotAvailableError()
     return resp.json()
 
 
