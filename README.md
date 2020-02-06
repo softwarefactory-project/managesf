@@ -30,3 +30,5 @@ Update config.py and execute the following commands if you want to run managesf 
 To run it in production please refer to the Pecan documentation:
 
 * Refer to pecan [doc](http://pecan.readthedocs.org/en/latest/deployment.html#deployment)
+
+end
