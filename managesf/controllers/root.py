@@ -109,14 +109,22 @@ def authorize(rule_name, target):
     if not request.remote_user:
         request.remote_user = request.headers.get('X-Remote-User')
     credentials = {'username': request.remote_user, 'groups': []}
-    # TODO(mhu) this must be independent from gerrit
-    if request.remote_user:
-        code_reviews = [s for s in SF_SERVICES
-                        if isinstance(s, base.BaseCodeReviewServicePlugin)]
-        if code_reviews:
-            user_groups = code_reviews[0].project.get_user_groups(
-                request.remote_user)
-            credentials['groups'] = [grp['name'] for grp in user_groups]
+    # OpenID Connect authentication
+    if request.headers.get("OIDC_CLAIM_groups", None) is not None:
+        for group in request.headers.get('OIDC_CLAIM_groups').split(','):
+            if group.startswith('/'):
+                credentials['groups'].append(group[1:])
+            else:
+                credentials['groups'].append(group)
+    # gerrit based
+    else:
+        if request.remote_user:
+            code_reviews = [s for s in SF_SERVICES
+                            if isinstance(s, base.BaseCodeReviewServicePlugin)]
+            if code_reviews:
+                user_groups = code_reviews[0].project.get_user_groups(
+                    request.remote_user)
+                credentials['groups'] = [grp['name'] for grp in user_groups]
     return policy.authorize(rule_name, target, credentials)
 
 
