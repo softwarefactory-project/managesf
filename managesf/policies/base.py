@@ -32,6 +32,7 @@ RULE_CONTRIBUTOR_API = 'rule:contributor_api'
 RULE_AUTHENTICATED_API = 'rule:authenticated_api'
 
 # TODO this value should be in the conf
+# TODO keycloak stores usernames in lowercase ...
 SERVICE_USER = 'SF_SERVICE_USER'
 
 try:
@@ -68,8 +69,12 @@ class GroupCheck(policy.Check):
 
 rules = [
     policy.RuleDefault('is_admin', 'username:%s' % admin_account),
-    policy.RuleDefault('is_service',
+    policy.RuleDefault('is_service_upper',
                        'username:%s' % SERVICE_USER),
+    policy.RuleDefault('is_service_lower',
+                       'username:%s' % SERVICE_USER.lower()),
+    policy.RuleDefault('is_service',
+                       'rule:is_service_lower or rule:is_service_upper'),
     policy.RuleDefault('admin_or_service',
                        'rule:is_admin or rule:is_service'),
     policy.RuleDefault('admin_api', 'rule:is_admin'),
