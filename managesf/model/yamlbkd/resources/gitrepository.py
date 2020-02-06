@@ -128,12 +128,12 @@ class GitRepositoryOps(object):
             # serialization. Remove the description and as a good
             # practice description should never appears in a ACL rtype
             # TODO(fbo): extra_validation of acl must deny the description
-            for l in _acl.splitlines():
-                if remove_project_section and l.find('[project]') != -1:
+            for line in _acl.splitlines():
+                if remove_project_section and line.find('[project]') != -1:
                     continue
-                if l.find('description') != -1:
+                if line.find('description') != -1:
                     continue
-                acl += l.replace('\t', '    ').rstrip() + '\n'
+                acl += line.replace('\t', '    ').rstrip() + '\n'
             m = hashlib.md5()
             m.update(acl.encode())
             acl_id = m.hexdigest()

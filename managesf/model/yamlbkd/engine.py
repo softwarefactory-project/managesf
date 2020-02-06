@@ -501,11 +501,11 @@ class SFResourceBackendEngine(object):
                 ResourceUnicityException,
                 ResourceDepsException) as e:
             validation_logs.append(str(e))
-            for l in validation_logs:
-                logger.info(l)
+            for line in validation_logs:
+                logger.info(line)
             return False, validation_logs
-        for l in validation_logs:
-            logger.info(l)
+        for line in validation_logs:
+            logger.info(line)
         return True, validation_logs
 
     def validate_from_structured_data(self, repo_prev_uri, prev_ref, data):
@@ -534,11 +534,11 @@ class SFResourceBackendEngine(object):
                 ResourceUnicityException,
                 ResourceDepsException) as e:
             validation_logs.append(str(e))
-            for l in validation_logs:
-                logger.info(l)
+            for line in validation_logs:
+                logger.info(line)
             return False, validation_logs
-        for l in validation_logs:
-            logger.info(l)
+        for line in validation_logs:
+            logger.info(line)
         return True, validation_logs
 
     def apply(self, repo_prev_uri, prev_ref,
@@ -559,11 +559,11 @@ class SFResourceBackendEngine(object):
             partial = self._apply_changes(changes, apply_logs, new)
         except YAMLDBException as e:
             apply_logs.append(str(e))
-            for l in apply_logs:
-                logger.info(l)
+            for line in apply_logs:
+                logger.info(line)
             return False, apply_logs
-        for l in apply_logs:
-            logger.info(l)
+        for line in apply_logs:
+            logger.info(line)
         return not partial, apply_logs
 
     def get(self, cur_uri, cur_ref, public_url=None):
@@ -637,11 +637,11 @@ class SFResourceBackendEngine(object):
                 ResourceUnicityException,
                 ResourceDepsException) as e:
             direct_apply_logs.append(str(e))
-            for l in direct_apply_logs:
-                logger.info(l)
+            for line in direct_apply_logs:
+                logger.info(line)
             return False, direct_apply_logs
-        for l in direct_apply_logs:
-            logger.info(l)
+        for line in direct_apply_logs:
+            logger.info(line)
         if partial:
             return False, direct_apply_logs
         return True, direct_apply_logs
@@ -667,6 +667,6 @@ class SFResourceBackendEngine(object):
             reality['resources'].update(ret[1])
         # Get diff between reality and config
         self._get_missing_resources_diff(current, reality, ret_tree)
-        for l in logs:
-            logger.info(l)
+        for line in logs:
+            logger.info(line)
         return logs, ret_tree
