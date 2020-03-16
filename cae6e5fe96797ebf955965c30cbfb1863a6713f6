@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b944f8f5_6f900ad6",
+        "filename": "managesf/controllers/root.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 385
+      },
+      "writtenOn": "2020-03-16T15:49:19Z",
+      "side": 1,
+      "message": "is not better to set elif and on else set unauthorized?",
+      "revId": "cae6e5fe96797ebf955965c30cbfb1863a6713f6",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
