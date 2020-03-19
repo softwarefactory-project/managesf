@@ -35,6 +35,7 @@ from managesf.model.yamlbkd.resource import KEY_RE_CONSTRAINT
 from managesf.model.yamlbkd.resources.gitrepository import GitRepository
 from managesf.model.yamlbkd.resources.group import Group
 from managesf.model.yamlbkd.resources.gitacls import ACL
+from managesf.model.yamlbkd.resources.gerritpluginconfig import GerritPluginConfig  # noqa
 from managesf.model.yamlbkd.resources.project import Project
 from managesf.model.yamlbkd.resources.tenant import Tenant
 from managesf.model.yamlbkd.resources.connection import Connection
@@ -46,6 +47,7 @@ MAPPING = {'repos': GitRepository,
            'groups': Group,
            'projects': Project,
            'acls': ACL,
+           'gerrit-plugin-config': GerritPluginConfig,
            'tenants': Tenant,
            'connections': Connection}
 

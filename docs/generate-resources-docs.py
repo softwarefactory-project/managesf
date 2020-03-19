@@ -31,6 +31,7 @@ from managesf.model.yamlbkd.resources.gitrepository import GitRepository
 from managesf.model.yamlbkd.resources.project import Project
 from managesf.model.yamlbkd.resources.gitacls import ACL
 from managesf.model.yamlbkd.resources.group import Group
+from managesf.model.yamlbkd.resources.gerritpluginconfig import GerritPluginConfig  # noqa
 
 from managesf.model.yamlbkd.engine import MAPPING
 
@@ -92,5 +93,5 @@ if __name__ == '__main__':
           " want to specify the name then please make sure to have"
           " the resource ID equals to the resource name.")
     print()
-    for cls in (Project, ACL, GitRepository, Group):
+    for cls in (Project, ACL, GitRepository, Group, GerritPluginConfig):
         render_resource(cls)
