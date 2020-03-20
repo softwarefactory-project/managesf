@@ -87,6 +87,15 @@ class ConfigurationController:
         self.cauth = CauthConfigurationController(self.engine)
 
 
+def get_resources(url):
+    """Get resources and config location from tenant deployment."""
+    ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
+    res = ret.json()
+    if res.get('error_description'):
+        raise RuntimeError("%s: failed %s" % (url, res))
+    return res
+
+
 class ZuulTenantsLoad:
     log = logging.getLogger("managesf.ZuulTenantsLoad")
 
@@ -117,23 +126,18 @@ class ZuulTenantsLoad:
                'file://%s' % config_dir,
                'master', '%s/manage' % gateway_url.rstrip('/'))
             if tenant and master_sf_url:
-                self.main_resources = self.get_resources(
+                self.main_resources = get_resources(
                     "%s/manage/v2/resources" % master_sf_url)
                 self.tenant_resources = resources
             else:
                 self.main_resources = resources
         elif engine is None:
             # From cli uses api instead
-            self.main_resources = self.get_resources(
+            self.main_resources = get_resources(
                 "http://localhost:20001/v2/resources")
         else:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
-
-    def get_resources(self, url):
-        """Get resources and config location from tenant deployment."""
-        ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
-        return ret.json()
 
     # Legacy zuul flat files handling
     def fetch_git_repo(self, tenant, url, store, ssl_verify=True):
@@ -353,7 +357,7 @@ class ZuulTenantsLoad:
                 else:
                     self.log.debug("%s: loading resources %s",
                                    tenant_name, url)
-                    tenant_resources = self.get_resources(url)
+                    tenant_resources = get_resources(url)
             else:
                 tenant_resources = self.main_resources
                 # Fallback to default_tenant_name tenant default connection
@@ -573,16 +577,11 @@ class RepoXplorerConf():
             return
         if engine is None:
             # From cli uses api instead
-            self.main_resources = self.get_resources(
+            self.main_resources = get_resources(
                 "http://localhost:20001/v2/resources")
         else:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
-
-    def get_resources(self, url):
-        """Get resources and config location from tenant deployment."""
-        ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
-        return ret.json()
 
     def compute_uri_gitweb(self, conn):
         conn_type = self.main_resources['resources'][
@@ -729,16 +728,11 @@ class HoundConf():
             return
         if engine is None:
             # From cli uses api instead
-            self.main_resources = self.get_resources(
+            self.main_resources = get_resources(
                 "http://localhost:20001/v2/resources")
         else:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
-
-    def get_resources(self, url):
-        """Get resources and config location from tenant deployment."""
-        ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
-        return ret.json()
 
     def compute_uri_gitweb(self, conn):
         conn_type = self.main_resources['resources'][
@@ -845,16 +839,11 @@ class CauthConf():
             return
         if engine is None:
             # From cli uses api instead
-            self.main_resources = self.get_resources(
+            self.main_resources = get_resources(
                 "http://localhost:20001/v2/resources")
         else:
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
-
-    def get_resources(self, url):
-        """Get resources and config location from tenant deployment."""
-        ret = requests.get(url, verify='/etc/ssl/certs/ca-bundle.crt')
-        return ret.json()
 
     def start(self):
         # Add the groups
