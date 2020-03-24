@@ -21,6 +21,36 @@ from managesf.model.yamlbkd.resources.gitacls import ACLOps
 
 class TestACLOps(TestCase):
 
+    def test_gerrit_plugin_config(self):
+        """Test that adding extra plugin config options in project.config
+        does not break validation"""
+        new = {
+            'resources': {
+                'groups': {
+                    'mygid': {
+                        'name': 'coders',
+                        'namespace': '',
+                        'members': ['body@sftests.com'],
+                    }
+                }
+            }
+        }
+        kwargs = {'file': """[project]
+\tdescription = "My awesome project"
+[access "refs/*"]
+\tread = group coders
+\tlabel-Code-Review = -2..+2 group coders
+[plugin "reviewers-by-blame"]
+\tmaxReviewers = 2
+\tignoreDrafts = true
+\tignoreSubjectRegEx = WIP(.*)
+""",
+                  'groups': ['mygid'],
+                  'name': 'myacl'}
+        o = ACLOps(None, new)
+        logs = o.extra_validations(**kwargs)
+        self.assertEqual(len(logs), 0)
+
     def test_extra_validations(self):
         kwargs = {'file': 'invalid ACLs !',
                   'groups': [],
