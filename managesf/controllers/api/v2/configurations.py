@@ -714,7 +714,8 @@ class HoundConf():
     def __init__(self, engine=None,
                  utests=False,
                  master_sf_url=None,
-                 default_tenant_name='local'):
+                 default_tenant_name='local',
+                 external_projects=None):
         self.default_tenant_name = default_tenant_name
         self.master_sf_url = master_sf_url
         self.privates = set()
@@ -723,6 +724,7 @@ class HoundConf():
             "dbpath": "/var/lib/hound/data",
             "repos": {},
         }
+        self.external_projects = external_projects
         if utests:
             # Skip this for unittests
             return
@@ -734,11 +736,10 @@ class HoundConf():
             self.main_resources = engine.get(
                 conf.resources['master_repo'], 'master')
 
-    def compute_uri_gitweb(self, conn):
-        conn_type = self.main_resources['resources'][
-            'connections'][conn]['type']
-        base_url = self.main_resources['resources'][
-            'connections'][conn]['base-url'].rstrip('/')
+    def compute_uri_gitweb(self, conn, conn_type=None, base_url=None):
+        if not base_url:
+            base_url = self.main_resources['resources'][
+                'connections'][conn]['base-url'].rstrip('/')
         if conn_type == 'gerrit':
             uri = base_url + '/%(name)s'
             gitweb = (
@@ -750,18 +751,20 @@ class HoundConf():
                 )
                 anchor = '#L{line}'
         if conn_type == 'github':
-            uri = 'http://github.com/%(name)s'
+            uri = base_url + '/%(name)s'
             gitweb = (
-                'http://github.com/%(name)s/blob/%(branch)s/{path}{anchor}')
+                base_url + '/%(name)s/blob/%(branch)s/{path}{anchor}')
             anchor = '#L{line}'
         return uri, gitweb, anchor
 
-    def add_in_conf(self, repo, conn, branch):
-        conn_type = self.main_resources['resources'][
-            'connections'][conn]['type']
+    def add_in_conf(self, repo, conn, branch, conn_type=None, base_url=None):
+        if not conn_type:
+            conn_type = self.main_resources['resources'][
+                'connections'][conn]['type']
         if conn_type not in ['gerrit', 'github']:
             return
-        uri, gitweb, anchor = self.compute_uri_gitweb(conn)
+        uri, gitweb, anchor = self.compute_uri_gitweb(conn, conn_type,
+                                                      base_url=base_url)
         self.config["repos"][repo] = {
             "url": uri % {'name': repo},
             "ms-between-poll": int(12*60*60*1000),
@@ -817,6 +820,27 @@ class HoundConf():
             if conn_defined:
                 branch = data.get('default-branch', 'master')
                 self.add_in_conf(repo, conn, branch)
+
+        if self.external_projects:
+            data = yaml.safe_load(open(self.external_projects))
+            if not data:
+                self.log.warning('External projects file provided: %s, but it'
+                                 'seems to be empty' % self.external_projects)
+
+            for project in data:
+                if ('repos' not in data[project] or
+                    'main-repo-url' not in data[project]):
+                    self.log.warning('There are missing values in '
+                                     'external-projects file: repos or '
+                                     'main-repo-url is absent!')
+                for repo in data[project]['repos']:
+                    branch = data[project]['repos'][repo].get('default-branch',
+                                                              'master')
+                    repo_name = repo
+                    conn = 'github'
+                    base_url = data[project]['main-repo-url']
+                    self.add_in_conf(repo_name, conn, branch, conn_type=conn,
+                                     base_url=base_url)
 
         return json.dumps(self.config, indent=True, sort_keys=True)
 
@@ -880,6 +904,9 @@ def cli():
     p.add_argument("--default-tenant-name", default="local")
     p.add_argument("service", choices=["zuul", "nodepool", "repoxplorer",
                                        "hound", "cauth"])
+    p.add_argument("--external-projects",
+                   help="Add file with external projects that will be compute"
+                        "by hound service")
     args = p.parse_args()
 
     logging.basicConfig(
@@ -914,7 +941,8 @@ def cli():
     if args.service == "hound":
         rpc = HoundConf(
             master_sf_url=args.master_sf_url,
-            default_tenant_name=args.default_tenant_name)
+            default_tenant_name=args.default_tenant_name,
+            external_projects=args.external_projects)
         conf = rpc.start()
 
     if args.service == "cauth":
