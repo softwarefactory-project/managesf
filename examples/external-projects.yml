@@ -1,0 +1,14 @@
+---
+rdo-common:
+  main-repo-url: https://github.com/rdo-common
+  repos:
+    puppet:
+      default-branch: common-rdo
+    subunit:
+      default-branch: common-rdo
+
+rdo-packages:
+  main-repo-url: https://github.com/rdo-packages
+  repos:
+    tempest-distgit:
+      default-branch: rpm-master

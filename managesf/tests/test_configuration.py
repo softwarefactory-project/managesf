@@ -831,14 +831,14 @@ class HoundConfTests(TestCase):
                 },
                 'repo8': {
                     'ms-between-poll': 43200000,
-                    'url': 'http://github.com/repo8',
+                    'url': 'https://github.com/repo8',
                     'vcs-config': {
                         'ref': 'master'
                     },
                     'url-pattern': {
                         'anchor': '#L{line}',
                         'base-url': (
-                            'http://github.com/repo8/blob/master/'
+                            'https://github.com/repo8/blob/master/'
                             '{path}{anchor}')
                     }
                 },
@@ -850,7 +850,7 @@ class HoundConfTests(TestCase):
                     },
                     'url-pattern': {
                         'base-url': (
-                            'http://github.com/repo9/blob/master/'
+                            'https://github.com/repo9/blob/master/'
                             '{path}{anchor}'),
                         'anchor': '#L{line}'
                     }
