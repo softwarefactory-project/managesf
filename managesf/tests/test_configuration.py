@@ -240,6 +240,13 @@ class ZuulTenantsLoadTests(TestCase):
         resources = {
             'resources': {
                 'projects': {
+                    'project2': {
+                        'connection': 'gerrit',
+                        'options': ['zuul/skip'],
+                        'source-repositories': [
+                            {'repo4': {'zuul/include': []}}
+                        ]
+                    },
                     'project1': {
                         'connection': 'gerrit',
                         'source-repositories': [

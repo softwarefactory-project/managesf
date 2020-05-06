@@ -259,6 +259,9 @@ class ZuulTenantsLoad:
                     continue
             for sr in project['source-repositories']:
                 sr_name = list(sr)[0]
+                if (sr[sr_name].get('zuul/skip') is True or
+                        'zuul/skip' in project.get('options', [])):
+                    continue
                 if (tenant_name in projects_list and
                         sr_name in projects_list[tenant_name]):
                     # already defined in flat zuul tenant file
