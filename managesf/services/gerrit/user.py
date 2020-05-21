@@ -114,6 +114,8 @@ class SFGerritUserManager(base.UserManager):
         self.log.debug(u"Updating account %s", uid)
         client = self.plugin.get_client()
         user = client.get_account(uid, details=True)
+        if email and isinstance(email, bytes):
+            email = email.decode('utf-8')
         if full_name is not None and user.get("name") != full_name:
             client.update_account_name(uid, full_name)
         if email is not None and user.get("email") != email:
