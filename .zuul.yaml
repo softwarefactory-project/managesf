@@ -10,15 +10,15 @@
             files:
               - "docs/swagger/managesf.v2.yaml"
         - tox-py36:
-            nodeset: fedora-latest-pod
+            nodeset: python-latest-pod
         - tox-pep8:
-            nodeset: fedora-latest-pod
+            nodeset: python-latest-pod
     gate:
       jobs:
         - tox-py36:
-            nodeset: fedora-latest-pod
+            nodeset: python-latest-pod
         - tox-pep8:
-            nodeset: fedora-latest-pod
+            nodeset: python-latest-pod
         - swagger-lint:
             vars:
               swagger_file: "docs/swagger/managesf.v2.yaml"
