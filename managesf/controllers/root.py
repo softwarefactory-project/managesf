@@ -14,6 +14,7 @@
 
 import base64
 import logging
+from urllib.parse import unquote
 
 from pecan import conf
 from pecan import expose
@@ -266,7 +267,11 @@ class ServicesUsersController(RestController):
         infos = request.json if request.content_length else {}
         # the JSON payload is only for data to update.
         _email = request.GET.get('email')
+        if _email:
+            _email = unquote(_email)
         _username = request.GET.get('username')
+        if username:
+            _username = unquote(_username)
         d_id = request.GET.get('id')
         if not d_id and (_email or _username):
             logger.debug('[update] looking for %s %s ...' % (_email,
