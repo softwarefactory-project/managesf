@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3e07c8d_51a85f05",
+        "filename": "managesf/controllers/root.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2020-06-01T11:30:22Z",
+      "side": 1,
+      "message": "if _username ? instead",
+      "range": {
+        "startLine": 273,
+        "startChar": 8,
+        "endLine": 273,
+        "endChar": 19
+      },
+      "revId": "c03098795045e971f03da2c9972d429f675be956",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
