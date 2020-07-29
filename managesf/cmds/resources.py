@@ -73,7 +73,7 @@ def read_repo_to_validate(zuul_prev_commit, zuul_commit):
 
 
 def is_commit_exists(commit):
-    return subprocess.Popen(["git", "show", "-q", commit, "--"]).wait() == 0
+    return subprocess.Popen(["git", "show", "--quiet", commit]).wait() == 0
 
 
 def display_warnings(logs, head_commit_msg):
