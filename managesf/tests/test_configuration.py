@@ -251,8 +251,10 @@ class ZuulTenantsLoadTests(TestCase):
                         'connection': 'gerrit',
                         'source-repositories': [
                             {'repo3': {
-                                'zuul/exclude-unprotected-branches': True,
-                                'zuul/include': [],
+                                'options': dict(zuul={
+                                    'exclude-unprotected-branches': True,
+                                    'include': [],
+                                })
                             }},
                             {'config2': {
                                 'zuul/config-project': True,
@@ -263,7 +265,9 @@ class ZuulTenantsLoadTests(TestCase):
                                 'zuul/include': [],
                             }},
                             {'repo4': {
-                                'zuul/ignore': True,
+                                'options': dict(zuul={
+                                    'ignore': True,
+                                })
                             }},
                             {'repo5': {
                                 'private': True,
@@ -310,10 +314,10 @@ class ZuulTenantsLoadTests(TestCase):
         tenants = {}
         ztl = ZuulTenantsLoad(utests=True)
         tenant_options = {
-            "tenant-options": {
-                "zuul/default-jobs-timeout": "3600",
-                "zuul/allowed-reporter": "review.openstack.org"
-            }
+            "options": dict(zuul={
+                "default-jobs-timeout": "3600",
+                "allowed-reporter": "review.openstack.org"
+            })
         }
         ztl.merge_tenant_from_resources(
             tenants, {}, "third-party-ci-tenant", {}, {}, 'gerrit',

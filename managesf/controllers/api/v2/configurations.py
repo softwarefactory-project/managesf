@@ -24,6 +24,7 @@ from pecan import conf
 from pecan import expose
 
 from managesf.controllers.api.v2 import base
+from managesf.model.yamlbkd.yamlbackend import YAMLBackend
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
 
 
@@ -243,6 +244,8 @@ class ZuulTenantsLoad:
             local_resources, default_conn, tenant_conf={}):
         self.log.debug('Merge resources for tenant %s' % tenant_name)
         # Set zuul-tenant-option
+        YAMLBackend.transform_options(tenant_conf.get(
+            "tenant-options", {}), tenant_conf)
         tenant_options = tenant_conf.get("tenant-options", {})
         for name, value in tenant_options.items():
             if name.startswith('zuul/'):
@@ -263,6 +266,7 @@ class ZuulTenantsLoad:
                     continue
             for sr in project['source-repositories']:
                 sr_name = list(sr)[0]
+                YAMLBackend.transform_options(sr[sr_name])
                 if (sr[sr_name].get('zuul/skip') is True or
                         'zuul/skip' in project.get('options', [])):
                     continue
