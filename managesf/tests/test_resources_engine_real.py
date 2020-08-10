@@ -1790,11 +1790,11 @@ wrong ! This string won't be accepted by Gerrit !
                 'tenants': {
                     'kimchi': {
                         'url': 'https://kimchi.sftests.com/manage',
-                        'tenant-options': {
-                            'zuul/default-jobs-timeout': 3600,
-                            'zuul/exclude-unprotected-branches': True,
-                            'zuul/default-parent': 'myparent',
-                            }
+                        'options': dict(zuul={
+                            'default-jobs-timeout': 3600,
+                            'exclude-unprotected-branches': True,
+                            'default-parent': 'myparent',
+                            })
                         },
                     'natto': {
                         'url': 'https://natto.sftests.com/manage',

@@ -203,6 +203,15 @@ class YAMLBackend(object):
                         "Duplicated resource ID detected for "
                         "resource type: %s id: %s" % (rtype, rid))
 
+    @staticmethod
+    def _transform_options(dest, obj=None):
+        obj = dest if obj is None else obj
+        for cat, options in obj.get("options", {}).items():
+            for k, v in options.items():
+                dest["%s/%s" % (cat, k)] = v
+        if obj.get("options"):
+            del obj["options"]
+
     def refresh(self):
         """ Reload of the YAML files.
         """
@@ -213,6 +222,14 @@ class YAMLBackend(object):
         if not self.data:
             self._load_db()
             self._update_cache()
+        # Transform tenant.options into tenant.tenant-options
+        for tenant in self.data["resources"].get("tenants", {}).values():
+            self._transform_options(tenant.get("tenant-options", {}), tenant)
+        # Transform project.source-repositories.options
+        for project in self.data["resources"].get("projects", {}).values():
+            for sr in filter(lambda x: isinstance(x, dict),
+                             project.get("source-repositories", [])):
+                self._transform_options(sr)
 
     @staticmethod
     def validate(data, rids):
