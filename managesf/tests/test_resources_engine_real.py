@@ -1960,6 +1960,15 @@ wrong ! This string won't be accepted by Gerrit !
     def test_resources_project_get(self):
         master = {
             'resources': {
+                'tenants': {
+                    'kimchi': {
+                        'url': 'https://kimchi.sftests.com/manage',
+                        'options': dict(zuul={
+                            'default-jobs-timeout': 3600,
+
+                        })
+                    }
+                },
                 'projects': {
                     'p1': {
                         'name': 'p1',
@@ -1987,6 +1996,14 @@ wrong ! This string won't be accepted by Gerrit !
                 'config-repo': None,
                 'public-url': 'http://sftests.com/manage',
                 'resources': {
+                    'tenants': {
+                        'kimchi': {
+                            'url': 'https://kimchi.sftests.com/manage',
+                            'tenant-options': {
+                                'zuul/default-jobs-timeout': 3600,
+                            }
+                        }
+                    },
                     'projects': {
                         'p1': {
                             'source-repositories': [
