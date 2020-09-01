@@ -88,7 +88,8 @@ class GroupOpsTest(TestCase):
                       'get_group_group_members') as gggm, \
                 patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_group_member') as dggm, \
-                patch('sqlalchemy.orm.session.Session.execute') as exe:
+                patch('managesf.services.gerrit.utils.GerritClient.'
+                      'rename_group') as rg:
             ggm.return_value = [{'email': 'body@sftests.com'},
                                 {'email': 'body2@sftests.com'},
                                 {'email': self.conf.admin['email']}]
@@ -99,15 +100,11 @@ class GroupOpsTest(TestCase):
                              call('space/g1'))
             self.assertEqual(len(ggm.call_args_list), 1)
             self.assertEqual(len(dgm.call_args_list), 3)
+            self.assertEqual(len(rg.call_args_list), 1)
             self.assertListEqual([call('space/g1', 'body@sftests.com'),
                                   call('space/g1', 'body2@sftests.com'),
                                   call('space/g1', self.conf.admin['email'])],
                                  dgm.call_args_list)
-            self.assertEqual(call("DELETE FROM account_groups WHERE "
-                                  "name='space/g1';DELETE FROM "
-                                  "account_group_names WHERE "
-                                  "name='space/g1';"),
-                             exe.call_args_list[0])
             self.assertEqual(len(logs), 0)
 
         with patch('managesf.services.gerrit.utils.'
@@ -120,7 +117,8 @@ class GroupOpsTest(TestCase):
                       'get_group_group_members') as gggm, \
                 patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_group_member') as dggm, \
-                patch('sqlalchemy.orm.session.Session.execute') as exe:
+                patch('managesf.services.gerrit.utils.GerritClient.'
+                      'rename_group') as rg:
 
             ggm.return_value = []
             ggi.return_value = '666'
@@ -128,16 +126,12 @@ class GroupOpsTest(TestCase):
             logs = o.delete(**kwargs)
             self.assertEqual(len(ggi.call_args_list), 1)
             self.assertEqual(len(gggm.call_args_list), 1)
+            self.assertEqual(len(rg.call_args_list), 1)
             self.assertEqual(gggm.call_args_list[0],
                              call('666'))
             self.assertEqual(len(dggm.call_args_list), 1)
             self.assertEqual(call('666', 'included_group'),
                              dggm.call_args_list[0])
-            self.assertEqual(call("DELETE FROM account_groups WHERE "
-                                  "name='space/g1';DELETE FROM "
-                                  "account_group_names WHERE "
-                                  "name='space/g1';"),
-                             exe.call_args_list[0])
             self.assertEqual(len(logs), 0)
 
         with patch('managesf.services.gerrit.utils.'
@@ -150,7 +144,8 @@ class GroupOpsTest(TestCase):
                       'get_group_group_members') as gggm, \
                 patch('managesf.services.gerrit.utils.GerritClient.'
                       'delete_group_group_member') as dggm, \
-                patch('sqlalchemy.orm.session.Session.execute') as exe:
+                patch('managesf.services.gerrit.utils.GerritClient.'
+                      'rename_group'):
 
             ggm.return_value = [{'email': 'body@sftests.com'},
                                 {'email': 'body2@sftests.com'},

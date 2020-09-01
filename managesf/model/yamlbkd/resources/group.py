@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import sqlalchemy
 import logging
 
 from managesf.services.gerrit import SoftwareFactoryGerrit
@@ -38,6 +37,7 @@ from managesf.model.yamlbkd.resource import BaseResource
 logger = logging.getLogger(__name__)
 UNMANAGED_GERRIT_GROUPS = ('Administrators',
                            'Non-Interactive Users')
+DELETED_GROUP_RENAME_PATTERN = "_deleted_group_%s"
 
 
 class GroupOps(object):
@@ -126,18 +126,6 @@ class GroupOps(object):
 
         self._set_client()
 
-        # Needed for the final group delete
-        db_uri = 'mysql+pymysql://%s:%s@%s/%s?charset=utf8' % (
-            self.conf.gerrit['db_user'],
-            self.conf.gerrit['db_password'],
-            self.conf.gerrit['db_host'],
-            self.conf.gerrit['db_name'],
-        )
-        engine = sqlalchemy.create_engine(db_uri, echo=False,
-                                          pool_recycle=600)
-        Session = sqlalchemy.orm.sessionmaker(bind=engine)
-        ses = Session()
-
         # Remove all group members to avoid left overs in the DB
         gid = self.client.get_group_id(name)
         current_members = [u['email'] for u in
@@ -162,16 +150,15 @@ class GroupOps(object):
                 logs.append("Group delete [del included group %s]: "
                             "err API returned %s" % (grp, e))
 
-        # Final group delete (Gerrit API does not provide such action)
-        sql = (u"DELETE FROM account_groups WHERE name='%s';"
-               u"DELETE FROM account_group_names WHERE name='%s';" %
-               (name, name))
+        # Rename the group / Gerrit does not provide an API to delete a
+        # group. Instead we rename it.
         try:
-            ses.execute(sql)
-            ses.commit()
+            self.client.rename_group(
+                gid, DELETED_GROUP_RENAME_PATTERN % name)
         except Exception as e:
-            logger.exception("DELETE FROM account_group failed")
-            logs.append("Group delete: err SQL returned %s" % e)
+            logger.exception("rename_group failed")
+            logs.append("Group delete [rename deleted group: %s]: "
+                        "err API returned %s" % (name, e))
 
         return logs
 
