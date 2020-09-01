@@ -16,6 +16,7 @@ BuildArch:      noarch
 Buildrequires:  python3-devel
 Buildrequires:  python3-pbr
 
+Requires:       pynotedb
 Requires:       yaml-cpp
 Requires:       python3-pecan
 Requires:       python3-pbr
