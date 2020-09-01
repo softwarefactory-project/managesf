@@ -16,6 +16,7 @@ BuildArch:      noarch
 Buildrequires:  python3-devel
 Buildrequires:  python3-pbr
 
+Requires:       pynotedb
 Requires:       yaml-cpp
 Requires:       python3-pecan
 Requires:       python3-pbr
@@ -51,6 +52,7 @@ Managesf documentation
 %autosetup -n managesf-%{version}
 
 %build
+rm -f *requirements.txt
 PBR_VERSION=%{version} %{__python3} setup.py build
 PYTHONPATH=. %{__python3} docs/generate-resources-docs.py > docs/source/resources.rst
 sphinx-build-3 -b html -d docs/build/doctrees docs/source docs/build/html
