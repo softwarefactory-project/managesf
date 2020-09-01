@@ -28,10 +28,6 @@ class dummy_conf():
         'top_domain': 'tests.dom',
         'ssh_port': 2929,
         'sshkey_priv_path': tempfile.mkstemp()[1],
-        'db_host': 'db.tests.dom',
-        'db_name': 'gerrit_db',
-        'db_user': 'gerrit_db_user',
-        'db_password': 'gerrit_db_password',
     }
     managesf = {
         'host': 'managesf.tests.dom',

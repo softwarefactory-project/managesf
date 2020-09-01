@@ -11,12 +11,16 @@
               - "docs/swagger/managesf.v2.yaml"
         - tox-py36:
             nodeset: python-latest-pod
+            required-projects:
+              - software-factory/pynotedb
         - tox-pep8:
             nodeset: python-latest-pod
     gate:
       jobs:
         - tox-py36:
             nodeset: python-latest-pod
+            required-projects:
+              - software-factory/pynotedb
         - tox-pep8:
             nodeset: python-latest-pod
         - swagger-lint:
