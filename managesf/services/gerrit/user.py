@@ -14,8 +14,8 @@
 
 
 import logging
-
-import sqlalchemy
+import pynotedb
+import threading
 
 from managesf.services import base
 from managesf.services.gerrit import utils
@@ -27,31 +27,23 @@ class SFGerritUserManager(base.UserManager):
 
     def __init__(self, plugin):
         super(SFGerritUserManager, self).__init__(plugin)
-        db_uri = 'mysql+pymysql://%s:%s@%s/%s?charset=utf8' % (
-            self.plugin.conf['db_user'],
-            self.plugin.conf['db_password'],
-            self.plugin.conf['db_host'],
-            self.plugin.conf['db_name'],
-        )
-        engine = sqlalchemy.create_engine(db_uri, echo=False,
-                                          pool_recycle=600)
-        Session = sqlalchemy.orm.sessionmaker(bind=engine)
-        self.session = Session()
+        self.fqdn = self.plugin.conf["top_domain"]
+        self.repo = None
+        self.repo_lock = threading.Lock()
 
     def _add_account_as_external(self, account_id, username):
         """Inject username as external_ids.
-           This will be replaced by All-Users ref update with gerrit-2.15
         """
-        sql = (u"INSERT IGNORE INTO account_external_ids VALUES"
-               u"(%d, NULL, NULL, 'gerrit:%s');" %
-               (account_id, username))
-        try:
-            self.session.execute(sql)
-            self.session.commit()
-        except Exception:
-            self.log.exception("Couldn't insert user %s external_ids %s",
-                               account_id, username)
-            raise
+        with self.repo_lock:
+            if self.repo is None:
+                self.repo = pynotedb.mk_clone("ssh://gerrit/All-Users")
+            try:
+                pynotedb.add_account_external_id(
+                    self.repo, username, str(account_id))
+            except Exception:
+                self.log.exception("Couldn't insert user %s external_ids %s",
+                                   account_id, username)
+                raise
 
     def create(self, username, email, full_name, ssh_keys, cauth_id):
         self.log.debug(u"Creating account %s", username)
