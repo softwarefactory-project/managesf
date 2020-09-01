@@ -14,11 +14,73 @@
 
 
 import logging
-
-import sqlalchemy
+import subprocess
+from pathlib import Path
+from hashlib import sha1
+import threading
 
 from managesf.services import base
 from managesf.services.gerrit import utils
+
+
+def execute(argv, cwd=None):
+    if subprocess.Popen(argv, cwd=cwd).wait():
+        raise RuntimeError("%s: failed" % ' '.join(argv))
+    return True
+
+
+def ignore_error(cmd):
+    try:
+        return cmd()
+    except RuntimeError:
+        pass
+
+
+def git(gitdir):
+    def func(*argv):
+        if argv[0] == "file":
+            # Fake "file" command that return a file Path inside the checkout
+            return gitdir / argv[1]
+        return execute(["git"] + list(argv), cwd=str(gitdir))
+    return func
+
+
+def clone(url, dest, fqdn):
+    if not dest.exists():
+        execute(["git", "clone", url, str(dest)])
+    gitrepo = git(dest)
+    for (k, v) in [("user.name", "SF initial configurator"),
+                   ("user.email", "admin@" + fqdn)]:
+        gitrepo("config", k, v)
+    return gitrepo
+
+
+def checkout(repo, branch, ref):
+    repo("fetch", "origin", ref)
+    repo("checkout", "-B", branch, "FETCH_HEAD")
+
+
+def sha1sum(strdata):
+    m = sha1()
+    m.update(strdata.encode('utf8'))
+    return m.hexdigest()
+
+
+def commit_and_push(repo, message, ref):
+    ignore_error(lambda: repo("commit", "-a", "-m", message))
+    # TODO: check if ref is already pushed
+    ignore_error(lambda: repo("push", "origin", "HEAD:" + ref))
+
+
+def add_account_external_id(repo, username, account_id):
+    repo("file", sha1sum("username:" + username)).write_text("\n".join([
+        "[externalId \"username:" + username + "\"]",
+        "\taccountId = " + str(account_id),
+        ""
+    ]))
+    repo("add", ".")
+    commit_and_push(
+        repo, "Add externalId for user " + username, "refs/meta/external-ids")
 
 
 class SFGerritUserManager(base.UserManager):
@@ -27,30 +89,26 @@ class SFGerritUserManager(base.UserManager):
 
     def __init__(self, plugin):
         super(SFGerritUserManager, self).__init__(plugin)
-        db_uri = 'mysql+pymysql://%s:%s@%s/%s?charset=utf8' % (
-            self.plugin.conf['db_user'],
-            self.plugin.conf['db_password'],
-            self.plugin.conf['db_host'],
-            self.plugin.conf['db_name'],
-        )
-        engine = sqlalchemy.create_engine(db_uri, echo=False,
-                                          pool_recycle=600)
-        Session = sqlalchemy.orm.sessionmaker(bind=engine)
-        self.session = Session()
+        self.fqdn = self.plugin.conf["top_domain"]
+        self.repo = None
+        self.repo_lock = threading.Lock()
 
     def _add_account_as_external(self, account_id, username):
         """Inject username as external_ids.
-           This will be replaced by All-Users ref update with gerrit-2.15
         """
-        sql = (u"INSERT IGNORE INTO account_external_ids VALUES"
-               u"(%d, NULL, NULL, 'gerrit:%s');" %
-               (account_id, username))
-        try:
-            self.session.execute(sql)
-            self.session.commit()
-        except Exception:
-            self.log.exception("Couldn't insert user %s external_ids %s",
-                               account_id, username)
+        with self.repo_lock:
+            if self.repo is None:
+                self.repo = clone(
+                    "ssh://gerrit/All-Users",
+                    Path("~/All-Users").expanduser(),
+                    self.fqdn
+                )
+                checkout(self.repo, "extid", "refs/meta/external-ids")
+            try:
+                add_account_external_id(self.repo, username, account_id)
+            except Exception:
+                self.log.exception("Couldn't insert user %s external_ids %s",
+                                   account_id, username)
             raise
 
     def create(self, username, email, full_name, ssh_keys, cauth_id):
