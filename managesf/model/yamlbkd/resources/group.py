@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import sqlalchemy
 import logging
 
 from managesf.services.gerrit import SoftwareFactoryGerrit
@@ -126,18 +125,6 @@ class GroupOps(object):
 
         self._set_client()
 
-        # Needed for the final group delete
-        db_uri = 'mysql+pymysql://%s:%s@%s/%s?charset=utf8' % (
-            self.conf.gerrit['db_user'],
-            self.conf.gerrit['db_password'],
-            self.conf.gerrit['db_host'],
-            self.conf.gerrit['db_name'],
-        )
-        engine = sqlalchemy.create_engine(db_uri, echo=False,
-                                          pool_recycle=600)
-        Session = sqlalchemy.orm.sessionmaker(bind=engine)
-        ses = Session()
-
         # Remove all group members to avoid left overs in the DB
         gid = self.client.get_group_id(name)
         current_members = [u['email'] for u in
@@ -162,17 +149,12 @@ class GroupOps(object):
                 logs.append("Group delete [del included group %s]: "
                             "err API returned %s" % (grp, e))
 
-        # Final group delete (Gerrit API does not provide such action)
-        sql = (u"DELETE FROM account_groups WHERE name='%s';"
-               u"DELETE FROM account_group_names WHERE name='%s';" %
-               (name, name))
+        # Remove description
         try:
-            ses.execute(sql)
-            ses.commit()
+            self.client.delete("groups/%s/description" % name)
         except Exception as e:
-            logger.exception("DELETE FROM account_group failed")
-            logs.append("Group delete: err SQL returned %s" % e)
-
+            logger.exception("delete_group description failed")
+            logs.append("Group description delete: err %s" % e)
         return logs
 
     def update(self, **kwargs):

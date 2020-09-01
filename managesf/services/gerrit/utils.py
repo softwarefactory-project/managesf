@@ -488,7 +488,7 @@ class GerritClient:
         if force:
             data = {'force': True}
         name = quote_plus(name)
-        return self.delete("projects/%s" % name, data)
+        return self.post("projects/%s/delete-project~delete" % name, data)
 
     def project_exists(self, name):
         try:

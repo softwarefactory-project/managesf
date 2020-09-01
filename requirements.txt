@@ -14,3 +14,4 @@ six
 oslo.policy
 deepdiff==3.3.0
 GitPython
+-e git+https://softwarefactory-project.io/cgit/software-factory/pynotedb#egg=pynotedb
