@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "994908b6_1300cb43",
+        "filename": "managesf/services/gerrit/utils.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 491,
+      "author": {
+        "id": 6
+      },
+      "writtenOn": "2020-09-16T16:43:57Z",
+      "side": 1,
+      "message": "?",
+      "revId": "5cd5a189c6db605c13b6bedee9f89eb5f9f84c5d",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
+    }
+  ]
+}
