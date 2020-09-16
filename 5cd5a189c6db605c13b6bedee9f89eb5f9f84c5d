@@ -16,6 +16,24 @@
       "revId": "5cd5a189c6db605c13b6bedee9f89eb5f9f84c5d",
       "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "13f44f1f_03b9b9e5",
+        "filename": "managesf/services/gerrit/utils.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 491,
+      "author": {
+        "id": 7
+      },
+      "writtenOn": "2020-09-16T20:10:40Z",
+      "side": 1,
+      "message": "i agree, this is `?` :-) Couldn\u0027t find another way to delete a project...",
+      "parentUuid": "994908b6_1300cb43",
+      "revId": "5cd5a189c6db605c13b6bedee9f89eb5f9f84c5d",
+      "serverId": "6c1dc8ef-8b94-40e4-bd83-c2359d45ecc0",
+      "unresolved": false
     }
   ]
 }
