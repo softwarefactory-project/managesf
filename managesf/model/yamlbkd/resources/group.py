@@ -37,6 +37,7 @@ from managesf.model.yamlbkd.resource import BaseResource
 logger = logging.getLogger(__name__)
 UNMANAGED_GERRIT_GROUPS = ('Administrators',
                            'Non-Interactive Users')
+DELETED_GROUP_RENAME_PATTERN = "_deleted_group_%s"
 
 
 class GroupOps(object):
@@ -148,6 +149,17 @@ class GroupOps(object):
                 logger.exception("delete_group_group_member failed")
                 logs.append("Group delete [del included group %s]: "
                             "err API returned %s" % (grp, e))
+
+        # Rename the group / Gerrit does not provide an API to delete a
+        # group. Instead we rename it.
+        try:
+            self.client.rename_group(
+                gid, DELETED_GROUP_RENAME_PATTERN % name)
+        except Exception as e:
+            logger.exception("rename_group failed")
+            logs.append("Group delete [rename deleted group: %s]: "
+                        "err API returned %s" % (name, e))
+
         return logs
 
     def update(self, **kwargs):

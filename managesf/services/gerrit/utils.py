@@ -471,6 +471,13 @@ class GerritClient:
         name = quote_plus(name)
         return self.post("groups/%s/members" % name, {"members": members})
 
+    def rename_group(self, name, newname):
+        self.log.info(u"%s: renaming to %s" % (name, newname))
+        return self.put(
+            "groups/%s/name" % quote_plus(name),
+            {"name": newname}
+        )
+
     # Projects
     def get_projects(self):
         return self.get("projects/")
