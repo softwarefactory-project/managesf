@@ -134,14 +134,6 @@ class Project(BaseResource):
             True,
             "The project issue tracker link",
         ),
-        'issue-tracker': (
-            str,
-            '^(SFStoryboard|)$',
-            False,
-            "",
-            True,
-            "The local issue tracker activated for this project",
-        ),
         'review-dashboard': (
             str,
             r'^([a-zA-Z0-9\-_])*$',
