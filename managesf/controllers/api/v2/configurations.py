@@ -664,6 +664,10 @@ class RepoXplorerConf():
                 if tmpl_name:
                     self.default['projects'][project]['repos'][reponame] = {
                         'template': tmpl_name}
+                    branches = repo[reponame].get('repoxplorer/branches')
+                    if branches and isinstance(branches, list):
+                        self.default['projects'][project]['repos'][
+                            reponame]['branches'] = branches
                 self.repos_cache.add(reponame)
 
         # Add the groups
