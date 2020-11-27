@@ -36,12 +36,18 @@ class SFGerritUserManager(base.UserManager):
         with self.repo_lock:
             if self.repo is None:
                 self.repo = pynotedb.mk_clone("ssh://gerrit/All-Users")
+                if 'keycloak' in self.plugin._full_conf['services']:
+                    scheme = pynotedb.scheme_keycloak
+                else:
+                    scheme = pynotedb.scheme_gerrit
             try:
                 pynotedb.add_account_external_id(
-                    self.repo, username, str(account_id))
-            except Exception:
-                self.log.exception("Couldn't insert user %s external_ids %s",
-                                   account_id, username)
+                    self.repo, username, str(account_id),
+                    scheme)
+            except Exception as e:
+                self.log.exception(
+                    "Couldn't insert user %s external_ids %s: %s",
+                    account_id, username, e)
                 raise
 
     def create(self, username, email, full_name, ssh_keys, cauth_id):
