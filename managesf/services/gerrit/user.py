@@ -38,7 +38,8 @@ class SFGerritUserManager(base.UserManager):
                 self.repo = pynotedb.mk_clone("ssh://gerrit/All-Users")
             try:
                 pynotedb.add_account_external_id(
-                    self.repo, username, str(account_id))
+                    self.repo, username, str(account_id),
+                    pynotedb.scheme_gerrit)
             except Exception:
                 self.log.exception("Couldn't insert user %s external_ids %s",
                                    account_id, username)
