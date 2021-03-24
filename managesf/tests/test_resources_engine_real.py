@@ -1967,7 +1967,8 @@ wrong ! This string won't be accepted by Gerrit !
                         'source-repositories': [
                             'r1',
                             {'r2': {
-                                'zuul/config-project': True
+                                'zuul/config-project': True,
+                                'default-branch': 'main'
                             }}
                         ],
                     },
@@ -1991,7 +1992,8 @@ wrong ! This string won't be accepted by Gerrit !
                         'p1': {
                             'source-repositories': [
                                 {'r1': {}},
-                                {'r2': {'zuul/config-project': True}}
+                                {'r2': {'zuul/config-project': True,
+                                        'default-branch': 'main'}}
                             ],
                             'description': 'An awesome project',
                             'name': 'p1'}
