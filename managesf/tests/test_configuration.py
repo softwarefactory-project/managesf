@@ -720,6 +720,14 @@ class HoundConfTests(TestCase):
                         'base-url': 'https://github.com/',
                         'type': 'github'
                     },
+                    'pagure': {
+                        'base-url': 'https://pagure.io/',
+                        'type': 'pagure'
+                    },
+                    'gitlab': {
+                        'base-url': 'https://gitlab.com/',
+                        'type': 'gitlab'
+                    },
                     'gerrithub': {
                         'base-url': 'https://review.gerrithub.io/',
                         'type': 'gerrit'
@@ -770,6 +778,18 @@ class HoundConfTests(TestCase):
                             }},
                             {'repo9': {
                                 'connection': 'gerrithub'
+                            }},
+                        ]
+                    },
+                    'project6': {
+                        'tenant': 'local',
+                        'source-repositories': [
+                            {'repo10': {
+                                'connection': 'pagure',
+                                'default-branch': 'main'
+                            }},
+                            {'repo11': {
+                                'connection': 'gitlab'
                             }},
                         ]
                     },
@@ -858,6 +878,32 @@ class HoundConfTests(TestCase):
                     'url-pattern': {
                         'base-url': (
                             'http://github.com/repo9/blob/master/'
+                            '{path}{anchor}'),
+                        'anchor': '#L{line}'
+                    }
+                },
+                'repo10': {
+                    'ms-between-poll': 43200000,
+                    'url': 'https://pagure.io/repo10',
+                    'vcs-config': {
+                        'ref': 'main'
+                    },
+                    'url-pattern': {
+                        'base-url': (
+                            'https://pagure.io/repo10/blob/main/f/'
+                            '{path}{anchor}'),
+                        'anchor': '#_{line}'
+                    }
+                },
+                'repo11': {
+                    'ms-between-poll': 43200000,
+                    'url': 'https://gitlab.com/repo11',
+                    'vcs-config': {
+                        'ref': 'master'
+                    },
+                    'url-pattern': {
+                        'base-url': (
+                            'https://gitlab.com/repo11/-/blob/master/'
                             '{path}{anchor}'),
                         'anchor': '#L{line}'
                     }

@@ -761,12 +761,22 @@ class HoundConf():
             gitweb = (
                 'http://github.com/%(name)s/blob/%(branch)s/{path}{anchor}')
             anchor = '#L{line}'
+        if conn_type == 'pagure':
+            uri = base_url + '/%(name)s'
+            gitweb = (
+                base_url + '/%(name)s/blob/%(branch)s/f/{path}{anchor}')
+            anchor = '#_{line}'
+        if conn_type == 'gitlab':
+            uri = base_url + '/%(name)s'
+            gitweb = base_url + '/%(name)s/-/blob/%(branch)s/{path}{anchor}'
+            anchor = '#L{line}'
+
         return uri, gitweb, anchor
 
     def add_in_conf(self, repo, conn, branch):
         conn_type = self.main_resources['resources'][
             'connections'][conn]['type']
-        if conn_type not in ['gerrit', 'github']:
+        if conn_type not in ['gerrit', 'github', 'pagure', 'gitlab']:
             return
         uri, gitweb, anchor = self.compute_uri_gitweb(conn)
         self.config["repos"][repo] = {
@@ -782,11 +792,6 @@ class HoundConf():
         }
 
     def start(self):
-        for data in self.main_resources['resources']['projects'].values():
-            if 'hound/skip' in data.get('options', []):
-                continue
-            # Get the connection type to get the gitweb model
-
         for project, data in self.main_resources.get(
                 "resources", {}).get("projects", {}).items():
             for sr in data.get('source-repositories', []):
