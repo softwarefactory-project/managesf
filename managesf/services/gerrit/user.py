@@ -34,11 +34,13 @@ class SFGerritUserManager(base.UserManager):
         """Inject username as external_ids.
         """
         with self.repo_lock:
-            scheme = pynotedb.scheme_gerrit
+            if 'keycloak' in self.plugin._full_conf['services']:
+                scheme = pynotedb.scheme_keycloak
+            else:
+                # This is the scheme used by REMOTE_USER
+                scheme = pynotedb.scheme_gerrit
             if self.repo is None:
                 self.repo = pynotedb.mk_clone("ssh://gerrit/All-Users")
-                if 'keycloak' in self.plugin._full_conf['services']:
-                    scheme = pynotedb.scheme_keycloak
             try:
                 pynotedb.add_account_external_id(
                     self.repo, username, str(account_id),
