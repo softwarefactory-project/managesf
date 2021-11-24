@@ -10,19 +10,31 @@
             files:
               - "docs/swagger/managesf.v2.yaml"
         - tox-py36:
-            nodeset: python-latest-pod
+            nodeset:
+              nodes:
+                - name: testrunner
+                  label: zuul-worker-ubi7
             required-projects:
               - software-factory/pynotedb
         - tox-pep8:
-            nodeset: python-latest-pod
+            nodeset:
+              nodes:
+                - name: testrunner
+                  label: zuul-worker-ubi7
     gate:
       jobs:
         - tox-py36:
-            nodeset: python-latest-pod
+            nodeset:
+              nodes:
+                - name: testrunner
+                  label: zuul-worker-ubi7
             required-projects:
               - software-factory/pynotedb
         - tox-pep8:
-            nodeset: python-latest-pod
+            nodeset:
+              nodes:
+                - name: testrunner
+                  label: zuul-worker-ubi7
         - swagger-lint:
             vars:
               swagger_file: "docs/swagger/managesf.v2.yaml"
@@ -36,3 +48,6 @@
               swagger_file: "docs/swagger/managesf.v2.yaml"
             files:
               - "docs/swagger/managesf.v2.yaml"
+    release:
+      jobs:
+        - upload-pypi
