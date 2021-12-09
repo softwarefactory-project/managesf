@@ -36,7 +36,7 @@ from managesf.model.yamlbkd.resource import BaseResource
 
 logger = logging.getLogger(__name__)
 UNMANAGED_GERRIT_GROUPS = ('Administrators',
-                           'Non-Interactive Users')
+                           'Service Users')
 DELETED_GROUP_RENAME_PATTERN = "_deleted_group_%s"
 
 

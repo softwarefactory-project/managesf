@@ -229,7 +229,7 @@ class GitRepositoryOpsTest(TestCase):
 
         db = {'Administrators': '666',
               'Anonymous Users': '777',
-              'Non-Interactive Users': '888'}
+              'Service Users': '888'}
 
         MGR = Mock()
 
@@ -239,7 +239,7 @@ class GitRepositoryOpsTest(TestCase):
             logs = o.install_acl(MGR, **kwargs)
         self.assertIn(call('Administrators'), ggi.call_args_list)
         self.assertIn(call('Anonymous Users'), ggi.call_args_list)
-        self.assertIn(call('Non-Interactive Users'), ggi.call_args_list)
+        self.assertIn(call('Service Users'), ggi.call_args_list)
         self.assertEqual(len(ggi.call_args_list), 3)
         self.assertGreater(
             int(str(MGR.push_config.call_args).find(
@@ -249,7 +249,7 @@ class GitRepositoryOpsTest(TestCase):
                 "777\\tAnonymous Users")), 0)
         self.assertGreater(
             int(str(MGR.push_config.call_args).find(
-                "888\\tNon-Interactive Users")), 0)
+                "888\\tService Users")), 0)
         self.assertGreater(
             int(str(MGR.push_config.call_args).find(
                 "description = A description")), 0)
@@ -261,7 +261,7 @@ class GitRepositoryOpsTest(TestCase):
 
         db = {'Administrators': '666',
               'Anonymous Users': '777',
-              'Non-Interactive Users': '888',
+              'Service Users': '888',
               'sf/g1': 999}
 
         MGR.reset_mock()
@@ -278,7 +278,7 @@ class GitRepositoryOpsTest(TestCase):
                 "777\\tAnonymous Users")), 0)
         self.assertGreater(
             int(str(MGR.push_config.call_args).find(
-                "888\\tNon-Interactive Users")), 0)
+                "888\\tService Users")), 0)
         self.assertGreater(
             int(str(MGR.push_config.call_args).find(
                 "999\\tsf/g1")), 0)

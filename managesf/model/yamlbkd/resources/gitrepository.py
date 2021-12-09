@@ -42,7 +42,7 @@ from managesf.services.gerrit import utils
 # ###
 
 logger = logging.getLogger(__name__)
-DEFAULT_GROUPS = ('Non-Interactive Users',
+DEFAULT_GROUPS = ('Service Users',
                   'Administrators',
                   'Anonymous Users')
 

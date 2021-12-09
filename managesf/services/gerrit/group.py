@@ -57,7 +57,7 @@ class SFGerritGroupManager(base.GroupManager):
                     ret[groupname] = {
                         'description': details['description'],
                         'members': client.get_group_members(details['id'])}
-            for private in ("Administrators", "Non-Interactive Users"):
+            for private in ("Administrators", "Service Users"):
                 if private in ret:
                     del ret[private]
 

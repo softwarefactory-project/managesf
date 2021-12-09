@@ -241,8 +241,8 @@ class GroupOpsTest(TestCase):
                     'description': 'Gerrit Admin groups',
                     'group_id': 3,
                     },
-                'Non-Interactive Users': {
-                    'description': 'Gerrit Non-Interactive Users groups',
+                'Service Users': {
+                    'description': 'Gerrit Service Users groups',
                     'group_id': 4,
                     },
             }
