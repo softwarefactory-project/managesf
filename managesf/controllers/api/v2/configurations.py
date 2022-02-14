@@ -111,7 +111,8 @@ class ZuulTenantsLoad:
         self.default_tenant_name = default_tenant_name
         self.tenant_resources = None
         self.gateway_url = gateway_url
-        if utests:
+        self.utests = utests
+        if self.utests:
             # Skip this for unittests
             return
         if not os.path.isdir(self.cache_dir):
@@ -320,6 +321,17 @@ class ZuulTenantsLoad:
             final_data.append(data)
         return final_data
 
+    @staticmethod
+    def acl_to_zuul_admin_rule(acl_rule):
+        """Convert a resource ACL into a Zuul admin rule."""
+        admin_rule = {
+            'name': acl_rule['name'],
+            'conditions': [
+                {'groups': g} for g in acl_rule['groups']
+            ],
+        }
+        return admin_rule
+
     def start(self):
         """Generate a zuul main.yaml from managesf resources and flat files"""
 
@@ -328,6 +340,15 @@ class ZuulTenantsLoad:
         # projects_list is the list of projects used to check for conflicts
         projects_list = {}
         tenant_resources_cache = {}
+
+        # admin_rules hold the ACLs
+        gerrit_acl_rules = self.main_resources.get(
+            "resources", {}
+        ).get("acls", {}).values()
+        admin_rules = [
+            self.acl_to_zuul_admin_rule(acl_rule)
+            for acl_rule in gerrit_acl_rules
+        ]
 
         for tenant_name, tenant_conf in self.main_resources.get(
                 "resources", {}).get("tenants", {}).items():
@@ -371,16 +392,19 @@ class ZuulTenantsLoad:
 
             tenant_resources_cache[tenant_name] = tenant_resources
 
-            # Then we pull tenant config repository for legacy zuul flat files
-            path = self.fetch_git_repo(
-                tenant_name, tenant_resources["config-repo"], self.cache_dir)
-            tenants_dir = os.path.join(path, 'zuul')
-            if not os.path.isdir(tenants_dir):
-                continue
-            tenants_conf_files = self.discover_yaml_files(tenants_dir)
-            # And we load flat files
-            self.merge_tenant_from_files(
-                tenants, tenants_conf_files, tenant_name, projects_list)
+            if not self.utests:
+                # Then we pull tenant config repository for legacy zuul
+                # flat files
+                path = self.fetch_git_repo(
+                    tenant_name, tenant_resources["config-repo"],
+                    self.cache_dir)
+                tenants_dir = os.path.join(path, 'zuul')
+                if not os.path.isdir(tenants_dir):
+                    continue
+                tenants_conf_files = self.discover_yaml_files(tenants_dir)
+                # And we load flat files
+                self.merge_tenant_from_files(
+                    tenants, tenants_conf_files, tenant_name, projects_list)
 
             # We load project from the resources
             default_conn = tenant_conf["default-connection"]
@@ -420,7 +444,10 @@ class ZuulTenantsLoad:
 
             self.log.debug("]-- Finish processing %s" % tenant_name)
 
-        final_data = self.final_tenant_merge(tenants)
+        final_tenant_data = self.final_tenant_merge(tenants)
+        admin_rules_data = [
+            {'admin-rule': rule} for rule in admin_rules]
+        final_data = admin_rules_data + final_tenant_data
         return yaml.safe_dump(final_data)
 
 

@@ -306,6 +306,62 @@ class ZuulTenantsLoadTests(TestCase):
                 local_resources, 'gerrit')
         self.assertEqual(str(ctx.exception), "gerrit is an unknown connection")
 
+    def test_convert_acl_to_admin_rules(self):
+        ztl = ZuulTenantsLoad(utests=True)
+        resources = {
+            'config-repo': 'https://sftests.com/r/config',
+            'public-url': 'https://sftests.com/manage',
+            'resources': {
+                'tenants': {
+                    'local': {
+                        'url': 'https://sftests.com/manage',
+                        'default-connection': 'gerrit',
+                    },
+                },
+                'connections': {
+                    'gerrit': {
+                        'base-url': 'https://sftests.com/r',
+                        'type': 'gerrit'
+                    },
+                },
+                'groups': {
+                    'group1': {
+                        'description': '',
+                        'members': [
+                            'admin@sftests.com',
+                        ]
+                    },
+                    'group2': {
+                        'description': '',
+                        'members': [
+                            'admin@sftests.com',
+                        ]
+                    },
+                },
+                'acls': {
+                    'acl1': {
+                        'name': 'acl1',
+                        'file': '...',
+                        'groups': ['group1', 'group2']
+                    }
+                }
+            }
+        }
+        ztl.main_resources = resources
+        final_data = yaml.safe_load(ztl.start())
+        self.assertTrue('admin-rule' in final_data[0], final_data)
+        self.assertEqual(
+            'acl1',
+            final_data[0]['admin-rule']['name'],
+            final_data
+        )
+        self.assertTrue(
+            all(c in final_data[0]['admin-rule']['conditions']
+                for c in [{'groups': 'group1'},
+                          {'groups': 'group2'}]),
+            final_data
+        )
+
     def test_tenant_options_from_resources(self):
         tenants = {}
         ztl = ZuulTenantsLoad(utests=True)
