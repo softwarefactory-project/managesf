@@ -578,8 +578,10 @@ class HoundConf():
         if conn_type == 'gerrit':
             uri = base_url + '/%(name)s'
             gitweb = (
-                base_url + '/gitweb?p=%(name)s.git;a=blob;f={path}{anchor}')
-            anchor = '#l{line}'
+                base_url +
+                '/plugins/gitiles/%(name)s/+/' +
+                'refs/heads/%(branch)s/{path}{anchor}')
+            anchor = '#{line}'
             if 'https://review.gerrithub.io' in base_url:
                 gitweb = (
                     'http://github.com/%(name)s/blob/%(branch)s/{path}{anchor}'
