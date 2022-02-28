@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import copy
 import git
 import json
 import logging
@@ -47,15 +46,6 @@ class NodepoolConfigurationController(base.APIv2RestController):
         return NodepoolConf(via_web=True).start()
 
 
-class RepoXplorerConfigurationController(BaseConfigurationController):
-    @expose()
-    def get(self, **kwargs):
-        return RepoXplorerConf(
-            engine=self.engine,
-            default_tenant_name=conf.resources.get('tenant_name', 'local')
-            ).start()
-
-
 class HoundConfigurationController(BaseConfigurationController):
     @expose()
     def get(self, **kwargs):
@@ -82,7 +72,6 @@ class ConfigurationController:
 
         self.zuul = ZuulConfigurationController(self.engine)
         self.nodepool = NodepoolConfigurationController()
-        self.repoxplorer = RepoXplorerConfigurationController(self.engine)
         self.hound = HoundConfigurationController(self.engine)
         self.cauth = CauthConfigurationController(self.engine)
 
@@ -555,166 +544,6 @@ class NodepoolConf():
         return self.merge()
 
 
-class RepoXplorerConf():
-    log = logging.getLogger("managesf.RepoXplorerConf")
-
-    def __init__(self, engine=None,
-                 utests=False,
-                 master_sf_url=None,
-                 default_tenant_name='local'):
-        self.default_tenant_name = default_tenant_name
-        self.master_sf_url = master_sf_url
-        self.repos_cache = set()
-        self.default = {
-            'project-templates': {
-                'default': {
-                    'branches': ['master']
-                }
-            },
-            'projects': {},
-            'identities': {},
-            'groups': {},
-        }
-        if utests:
-            # Skip this for unittests
-            return
-        if engine is None:
-            # From cli uses api instead
-            self.main_resources = get_resources(
-                "http://localhost:20001/v2/resources")
-        else:
-            self.main_resources = engine.get(
-                conf.resources['master_repo'], 'master')
-
-    def compute_uri_gitweb(self, conn):
-        conn_type = self.main_resources['resources'][
-            'connections'][conn]['type']
-        base_url = self.main_resources['resources'][
-            'connections'][conn]['base-url'].rstrip('/')
-        if conn_type == 'gerrit':
-            uri = base_url + '/%(name)s'
-            if base_url == 'https://review.gerrithub.io':
-                gitweb = 'https://github.com/%(name)s/commit/%%(sha)s'
-            else:
-                gitweb = (base_url + '/gitweb?p=%(name)s.git' +
-                          ';a=commitdiff;h=%%(sha)s;ds=sidebyside')
-        elif conn_type == 'github':
-            uri = 'https://github.com/%(name)s'
-            gitweb = 'https://github.com/%(name)s/commit/%%(sha)s'
-        else:
-            uri = base_url + '/%(name)s'
-            gitweb = base_url + '/%(name)s' + '/commit/?id=%%(sha)s'
-        return uri, gitweb
-
-    def start(self):
-        for project, data in self.main_resources[
-                'resources']['projects'].items():
-            if 'repoxplorer/skip' in data.get('options', []):
-                continue
-            # Get the connection type to get the gitweb model
-            conn = data.get('connection')
-            if not conn:
-                tenant_name = data.get('tenant', self.default_tenant_name)
-                tenant = self.main_resources['resources'][
-                    'tenants'][tenant_name]
-                conn = tenant.get('default-connection')
-            conn_defined = self.main_resources['resources'].get(
-                'connections', {}).get(conn)
-            if conn and conn_defined:
-                uri, gitweb = self.compute_uri_gitweb(conn)
-                self.default['project-templates'][project] = copy.deepcopy(
-                    self.default['project-templates']['default'])
-                self.default['project-templates'][project]['uri'] = uri
-                self.default['project-templates'][project]['gitweb'] = gitweb
-
-            # Add the project
-            self.default['projects'][project] = {
-                'repos': {},
-                'description': data.get('description', '')
-            }
-
-            # Add repos in the project
-            for repo in data['source-repositories']:
-                reponame = list(repo.keys())[0]
-                if repo[reponame].get('private'):
-                    self.repos_cache.add(reponame)
-                    continue
-                if repo[reponame].get('repoxplorer/skip'):
-                    self.repos_cache.add(reponame)
-                    continue
-                _conn = repo[reponame].get('connection')
-                if _conn:
-                    if not self.main_resources['resources'].get(
-                            'connections', {}).get(_conn):
-                        # The conn is not defined. Skip it
-                        continue
-                    uri, gitweb = self.compute_uri_gitweb(_conn)
-                    tmpl_name = "%s/%s" % (project, reponame)
-                    self.default['project-templates'][
-                            tmpl_name] = copy.deepcopy(
-                        self.default['project-templates']['default'])
-                    self.default['project-templates'][
-                        tmpl_name]['uri'] = uri
-                    self.default['project-templates'][
-                        tmpl_name]['gitweb'] = gitweb
-                elif conn:
-                    tmpl_name = project
-                else:
-                    tmpl_name = None
-                if tmpl_name:
-                    self.default['projects'][project]['repos'][reponame] = {
-                        'template': tmpl_name}
-                    branches = repo[reponame].get('repoxplorer/branches')
-                    if branches and isinstance(branches, list):
-                        self.default['projects'][project]['repos'][
-                            reponame]['branches'] = branches
-                self.repos_cache.add(reponame)
-
-        # Add the groups
-        for group, data in self.main_resources[
-                'resources'].get('groups', {}).items():
-            grp = {}
-            grp['description'] = data.get('description', '')
-            grp['emails'] = dict((member, None) for
-                                 member in data.get('members', []))
-            # Only add groups with members
-            if grp['emails']:
-                self.default['groups'][group] = grp
-
-        # Add not associated repos
-        if self.main_resources['resources'].get('repos'):
-            repos = set(self.main_resources['resources']['repos'].keys())
-            missing_repos = repos - self.repos_cache
-        else:
-            missing_repos = None
-        if missing_repos:
-            tenant = self.main_resources['resources'][
-                'tenants'].get(self.default_tenant_name)
-            if tenant:
-                conn = tenant.get('default-connection')
-                conn_defined = self.main_resources['resources'].get(
-                    'connections', {}).get(conn)
-                if conn and conn_defined:
-                    uri, gitweb = self.compute_uri_gitweb(conn)
-                    self.default['project-templates'][
-                        'default']['uri'] = uri
-                    self.default['project-templates'][
-                        'default']['gitweb'] = gitweb
-                    default_project = 'extras'
-                    self.default['projects'][default_project] = {
-                        'repos': {},
-                        'description':
-                            'Repositories not associated to any projects'
-                    }
-                    for repo in missing_repos:
-                        self.default['projects'][default_project][
-                            'repos'][repo] = {'template': 'default'}
-        # Remove unneeded default template
-        if 'uri' not in self.default['project-templates']['default']:
-            del self.default['project-templates']['default']
-        return yaml.safe_dump(self.default)
-
-
 class HoundConf():
     log = logging.getLogger("managesf.HoundConf")
 
@@ -915,12 +744,6 @@ def cli():
             builder=args.builder,
             catchall=not args.extra_launcher,
             hostname=args.hostname)
-        conf = rpc.start()
-
-    if args.service == "repoxplorer":
-        rpc = RepoXplorerConf(
-            master_sf_url=args.master_sf_url,
-            default_tenant_name=args.default_tenant_name)
         conf = rpc.start()
 
     if args.service == "hound":
