@@ -715,9 +715,9 @@ class HoundConfTests(TestCase):
                      },
                     'url-pattern': {
                         'base-url': (
-                            'https://sftests.com/r/gitweb?p=repo2.git;'
-                            'a=blob;f={path}{anchor}'),
-                        'anchor': '#l{line}'
+                            'https://sftests.com/r/plugins/gitiles/repo2'
+                            '/+/refs/heads/master/{path}{anchor}'),
+                        'anchor': '#{line}'
                     }
                 },
                 'repo1': {
@@ -728,9 +728,9 @@ class HoundConfTests(TestCase):
                     },
                     'url-pattern': {
                         'base-url': (
-                            'https://sftests.com/r/gitweb?p=repo1.git;'
-                            'a=blob;f={path}{anchor}'),
-                        'anchor': '#l{line}'
+                            'https://sftests.com/r/plugins/gitiles/repo1'
+                            '/+/refs/heads/master/{path}{anchor}'),
+                        'anchor': '#{line}'
                     }
                 },
                 'repo6': {
@@ -741,9 +741,9 @@ class HoundConfTests(TestCase):
                     },
                     'url-pattern': {
                         'base-url': (
-                            'https://sftests.com/r/gitweb?p=repo6.git;'
-                            'a=blob;f={path}{anchor}'),
-                        'anchor': '#l{line}'
+                            'https://sftests.com/r/plugins/gitiles/repo6'
+                            '/+/refs/heads/master/{path}{anchor}'),
+                        'anchor': '#{line}'
                     }
                 },
                 'repo4': {
@@ -754,9 +754,9 @@ class HoundConfTests(TestCase):
                     },
                     'url-pattern': {
                         'base-url': (
-                            'https://sftests.com/r/gitweb?p=repo4.git;'
-                            'a=blob;f={path}{anchor}'),
-                        'anchor': '#l{line}'
+                            'https://sftests.com/r/plugins/gitiles/repo4'
+                            '/+/refs/heads/master/{path}{anchor}'),
+                        'anchor': '#{line}'
                     }
                 },
                 'repo8': {
