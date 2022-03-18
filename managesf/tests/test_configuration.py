@@ -72,6 +72,86 @@ class ZuulTenantsLoadTests(TestCase):
         self.assertDictEqual(final_tenants[0], expected)
         self.assertEqual(len(final_tenants), 1)
 
+    def test_merge_tenant_from_flat_files_with_admin_rules(self):
+        ztl = ZuulTenantsLoad(utests=True)
+        tenants_data = """
+        - tenant:
+            name: local
+            admin-rules:
+              - rule1
+              - rule2
+            source:
+              gerrit:
+                config-projects:
+                  - common-config
+        - tenant:
+            name: local
+            max-nodes-per-job: 5
+            source:
+              gerrit:
+                untrusted-projects:
+                  - repo1
+                  - repo2
+        - admin-rule:
+            name: rule1
+            conditions:
+              - iss: some_iss
+        - admin-rule:
+            name: rule2
+            conditions:
+              - email: some@email.com
+        """
+        final_tenants = {}
+        final_rules = {}
+        projects_list = {}
+        tenants = yaml.safe_load(tenants_data)
+        for data in tenants:
+            if 'tenant' in data.keys():
+                ztl.merge_tenant_from_data(
+                    final_tenants, data, '/data', 'local', projects_list)
+            else:
+                ztl.merge_admin_rule_from_data(
+                    final_rules, data)
+        projects_list_expected = {'local': ['common-config', 'repo1', 'repo2']}
+        self.assertItemsEqual(
+            projects_list['local'], projects_list_expected['local'])
+        final_tenants = ztl.final_tenant_merge(final_tenants)
+        final_rules = ztl.merge_admin_rules(final_rules)
+        expected = {
+            'tenant': {
+                'name': 'local',
+                'admin-rules': [
+                    'rule1',
+                    'rule2',
+                ],
+                'max-nodes-per-job': 5,
+                'source': {
+                    'gerrit': {
+                        'config-projects': ['common-config'],
+                        'untrusted-projects': ['repo1', 'repo2']
+                        }
+                    }
+                }
+            }
+        expected_rules = [
+            {'admin-rule': {
+                'name': 'rule1',
+                'conditions': [
+                    {'iss': 'some_iss'}
+                ]
+            }},
+            {'admin-rule': {
+                'name': 'rule2',
+                'conditions': [
+                    {'email': 'some@email.com'}
+                ]
+            }}
+        ]
+        self.assertDictEqual(final_tenants[0], expected)
+        self.assertTrue(
+            all(expected_rules[i] in final_rules for i in [0, 1])
+        )
+
     def test_merge_tenant_error_from_flat_files(self):
         ztl = ZuulTenantsLoad(utests=True)
         tenant_data = """

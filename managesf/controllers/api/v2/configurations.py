@@ -189,10 +189,6 @@ class ZuulTenantsLoad:
     def merge_tenant_from_data(
             self, tenants, tenant, path, tenant_name, projects_list):
         """Load legacy zuul data object into the tenants object"""
-        if not isinstance(tenant, dict) or not tenant.get('tenant'):
-            raise RuntimeError("%s: invalid tenant block: %s" % (
-                path, tenant
-            ))
         tenant = tenant.get('tenant')
         if tenant['name'] != tenant_name:
             return
@@ -214,8 +210,16 @@ class ZuulTenantsLoad:
                 tenant_conf[name] = value
         self.sanitize_projects_list(projects_list)
 
+    def merge_admin_rule_from_data(self, admin_rules, admin_rule):
+        admin_rule = admin_rule.get('admin-rule')
+        rule_name = admin_rule.get('name')
+        admin_rules[rule_name] = {
+            'conditions': admin_rule['conditions']
+        }
+
     def merge_tenant_from_files(
-            self, tenants, tenants_conf_files, tenant_name, projects_list):
+            self, tenants, admin_rules, tenants_conf_files,
+            tenant_name, projects_list):
         """Load legacy zuul yaml file into the tenants object"""
         self.log.debug('Merge tenant files for tenant %s' % tenant_name)
         for path in tenants_conf_files:
@@ -223,9 +227,23 @@ class ZuulTenantsLoad:
             if not data:
                 continue
             self.log.debug(" Merge tenant from data (%s)" % path)
-            for tenant in data:
-                self.merge_tenant_from_data(
-                    tenants, tenant, path, tenant_name, projects_list)
+            for data_block in data:
+                if not isinstance(data_block, dict):
+                    raise RuntimeError(
+                        "%s: invalid Zuul configuration block: %s" % (
+                            path, data_block))
+                if data_block.get('tenant'):
+                    tenant = data_block
+                    self.merge_tenant_from_data(
+                        tenants, tenant, path, tenant_name, projects_list)
+                elif data_block.get('admin-rule'):
+                    admin_rule = data_block
+                    self.merge_admin_rule_from_data(
+                        admin_rules, admin_rule)
+                else:
+                    raise RuntimeError(
+                        "%s: invalid Zuul configuration block: %s" % (
+                            path, data_block))
 
     # Zuul configuration loading directly from resources
     def merge_tenant_from_resources(
@@ -314,12 +332,19 @@ class ZuulTenantsLoad:
     def acl_to_zuul_admin_rule(acl_rule):
         """Convert a resource ACL into a Zuul admin rule."""
         admin_rule = {
-            'name': acl_rule['name'],
             'conditions': [
                 {'groups': g} for g in acl_rule['groups']
             ],
         }
-        return admin_rule
+        return acl_rule['name'], admin_rule
+
+    def merge_admin_rules(self, admin_rules):
+        final = []
+        for rule_name, rule in sorted(admin_rules.items()):
+            data = {'admin-rule': {'name': rule_name}}
+            data['admin-rule'].update(rule)
+            final.append(data)
+        return final
 
     def start(self):
         """Generate a zuul main.yaml from managesf resources and flat files"""
@@ -334,10 +359,11 @@ class ZuulTenantsLoad:
         gerrit_acl_rules = self.main_resources.get(
             "resources", {}
         ).get("acls", {}).values()
-        admin_rules = [
+        gerrit_admin_rules = dict(
             self.acl_to_zuul_admin_rule(acl_rule)
             for acl_rule in gerrit_acl_rules
-        ]
+        )
+        admin_rules = gerrit_admin_rules
 
         for tenant_name, tenant_conf in self.main_resources.get(
                 "resources", {}).get("tenants", {}).items():
@@ -393,7 +419,8 @@ class ZuulTenantsLoad:
                 tenants_conf_files = self.discover_yaml_files(tenants_dir)
                 # And we load flat files
                 self.merge_tenant_from_files(
-                    tenants, tenants_conf_files, tenant_name, projects_list)
+                    tenants, admin_rules, tenants_conf_files,
+                    tenant_name, projects_list)
 
             # We load project from the resources
             default_conn = tenant_conf["default-connection"]
@@ -434,8 +461,7 @@ class ZuulTenantsLoad:
             self.log.debug("]-- Finish processing %s" % tenant_name)
 
         final_tenant_data = self.final_tenant_merge(tenants)
-        admin_rules_data = [
-            {'admin-rule': rule} for rule in admin_rules]
+        admin_rules_data = self.merge_admin_rules(admin_rules)
         final_data = admin_rules_data + final_tenant_data
         return yaml.safe_dump(final_data)
 
