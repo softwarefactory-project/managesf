@@ -13,7 +13,7 @@
             nodeset:
               nodes:
                 - name: testrunner
-                  label: zuul-worker-ubi7
+                  label: zuul-worker-ubi8
             required-projects:
               - software-factory/pynotedb
         - tox-pep8:
@@ -27,7 +27,7 @@
             nodeset:
               nodes:
                 - name: testrunner
-                  label: zuul-worker-ubi7
+                  label: zuul-worker-ubi8
             required-projects:
               - software-factory/pynotedb
         - tox-pep8:
