@@ -59,6 +59,7 @@ class ZuulTenantsLoadTests(TestCase):
         final_tenants = ztl.final_tenant_merge(final_tenants)
         expected = {
             'tenant': {
+                'admin-rules': ['__SF_DEFAULT_ADMIN'],
                 'name': 'local',
                 'max-nodes-per-job': 5,
                 'source': {
@@ -92,11 +93,11 @@ class ZuulTenantsLoadTests(TestCase):
                 untrusted-projects:
                   - repo1
                   - repo2
-        - admin-rule:
+        - authorization-rule:
             name: rule1
             conditions:
               - iss: some_iss
-        - admin-rule:
+        - authorization-rule:
             name: rule2
             conditions:
               - email: some@email.com
@@ -110,19 +111,20 @@ class ZuulTenantsLoadTests(TestCase):
                 ztl.merge_tenant_from_data(
                     final_tenants, data, '/data', 'local', projects_list)
             else:
-                ztl.merge_admin_rule_from_data(
+                ztl.merge_auth_rule_from_data(
                     final_rules, data)
         projects_list_expected = {'local': ['common-config', 'repo1', 'repo2']}
         self.assertItemsEqual(
             projects_list['local'], projects_list_expected['local'])
         final_tenants = ztl.final_tenant_merge(final_tenants)
-        final_rules = ztl.merge_admin_rules(final_rules)
+        final_rules = ztl.merge_auth_rules(final_rules)
         expected = {
             'tenant': {
                 'name': 'local',
                 'admin-rules': [
                     'rule1',
                     'rule2',
+                    '__SF_DEFAULT_ADMIN'
                 ],
                 'max-nodes-per-job': 5,
                 'source': {
@@ -134,23 +136,95 @@ class ZuulTenantsLoadTests(TestCase):
                 }
             }
         expected_rules = [
-            {'admin-rule': {
+            {'authorization-rule': {
                 'name': 'rule1',
                 'conditions': [
                     {'iss': 'some_iss'}
                 ]
             }},
-            {'admin-rule': {
+            {'authorization-rule': {
                 'name': 'rule2',
                 'conditions': [
                     {'email': 'some@email.com'}
+                ]
+            }},
+            {'authorization-rule': {
+                'name': '__SF_DEFAULT_ADMIN',
+                'conditions': [
+                    {'username': 'admin'},
+                    {'roles': 'zuul_admin'},
                 ]
             }}
         ]
         self.assertDictEqual(final_tenants[0], expected)
         self.assertTrue(
-            all(expected_rules[i] in final_rules for i in [0, 1])
+            all(r in final_rules for r in expected_rules)
         )
+
+    def test_merge_tenant_from_flat_files_cannot_override_default_rule(self):
+        ztl = ZuulTenantsLoad(utests=True)
+        tenants_data = """
+        - tenant:
+            name: local
+            source:
+              gerrit:
+                config-projects:
+                  - common-config
+        - tenant:
+            name: local
+            max-nodes-per-job: 5
+            source:
+              gerrit:
+                untrusted-projects:
+                  - repo1
+                  - repo2
+        - authorization-rule:
+            name: __SF_DEFAULT_ADMIN
+            conditions:
+              - iss: some_iss
+        """
+        final_tenants = {}
+        final_rules = {}
+        projects_list = {}
+        tenants = yaml.safe_load(tenants_data)
+        for data in tenants:
+            if 'tenant' in data.keys():
+                ztl.merge_tenant_from_data(
+                    final_tenants, data, '/data', 'local', projects_list)
+            else:
+                ztl.merge_auth_rule_from_data(
+                    final_rules, data)
+        projects_list_expected = {'local': ['common-config', 'repo1', 'repo2']}
+        self.assertItemsEqual(
+            projects_list['local'], projects_list_expected['local'])
+        final_tenants = ztl.final_tenant_merge(final_tenants)
+        final_rules = ztl.merge_auth_rules(final_rules)
+        expected = {
+            'tenant': {
+                'name': 'local',
+                'admin-rules': [
+                    '__SF_DEFAULT_ADMIN'
+                ],
+                'max-nodes-per-job': 5,
+                'source': {
+                    'gerrit': {
+                        'config-projects': ['common-config'],
+                        'untrusted-projects': ['repo1', 'repo2']
+                        }
+                    }
+                }
+            }
+        expected_rules = [
+            {'authorization-rule': {
+                'name': '__SF_DEFAULT_ADMIN',
+                'conditions': [
+                    {'username': 'admin'},
+                    {'roles': 'zuul_admin'},
+                ]
+            }}
+        ]
+        self.assertDictEqual(final_tenants[0], expected)
+        self.assertTrue(expected_rules[0] in final_rules)
 
     def test_merge_tenant_error_from_flat_files(self):
         ztl = ZuulTenantsLoad(utests=True)
@@ -235,6 +309,7 @@ class ZuulTenantsLoadTests(TestCase):
         final_tenants = ztl.final_tenant_merge(final_tenants)
         expected_tenant_ansible_network = {
             'tenant': {
+                'admin-rules': ['__SF_DEFAULT_ADMIN'],
                 'max-nodes-per-job': 5,
                 'name': 'ansible-network',
                 'source': {
@@ -255,6 +330,7 @@ class ZuulTenantsLoadTests(TestCase):
         expected_tenant_local = {
             'tenant': {
                 'name': 'local',
+                'admin-rules': ['__SF_DEFAULT_ADMIN'],
                 'source': {
                     'gerrit': {
                         'config-projects': ['config']
@@ -266,6 +342,7 @@ class ZuulTenantsLoadTests(TestCase):
         expected_tenant_local2 = {
             'tenant': {
                 'name': 'local2',
+                'admin-rules': ['__SF_DEFAULT_ADMIN'],
                 'max-nodes-per-job': 5,
                 }
             }
@@ -384,62 +461,6 @@ class ZuulTenantsLoadTests(TestCase):
                 tenants, resources, 'ansible-network', {},
                 local_resources, 'gerrit')
         self.assertEqual(str(ctx.exception), "gerrit is an unknown connection")
-
-    def test_convert_acl_to_admin_rules(self):
-        ztl = ZuulTenantsLoad(utests=True)
-        resources = {
-            'config-repo': 'https://sftests.com/r/config',
-            'public-url': 'https://sftests.com/manage',
-            'resources': {
-                'tenants': {
-                    'local': {
-                        'url': 'https://sftests.com/manage',
-                        'default-connection': 'gerrit',
-                    },
-                },
-                'connections': {
-                    'gerrit': {
-                        'base-url': 'https://sftests.com/r',
-                        'type': 'gerrit'
-                    },
-                },
-                'groups': {
-                    'group1': {
-                        'description': '',
-                        'members': [
-                            'admin@sftests.com',
-                        ]
-                    },
-                    'group2': {
-                        'description': '',
-                        'members': [
-                            'admin@sftests.com',
-                        ]
-                    },
-                },
-                'acls': {
-                    'acl1': {
-                        'name': 'acl1',
-                        'file': '...',
-                        'groups': ['group1', 'group2']
-                    }
-                }
-            }
-        }
-        ztl.main_resources = resources
-        final_data = yaml.safe_load(ztl.start())
-        self.assertTrue('admin-rule' in final_data[0], final_data)
-        self.assertEqual(
-            'acl1',
-            final_data[0]['admin-rule']['name'],
-            final_data
-        )
-        self.assertTrue(
-            all(c in final_data[0]['admin-rule']['conditions']
-                for c in [{'groups': 'group1'},
-                          {'groups': 'group2'}]),
-            final_data
-        )
 
     def test_tenant_options_from_resources(self):
         tenants = {}

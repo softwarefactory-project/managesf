@@ -101,6 +101,7 @@ class ZuulTenantsLoad:
         self.tenant_resources = None
         self.gateway_url = gateway_url
         self.utests = utests
+        self.default_auth_rule_name = "__SF_DEFAULT_ADMIN"
         if self.utests:
             # Skip this for unittests
             return
@@ -210,15 +211,15 @@ class ZuulTenantsLoad:
                 tenant_conf[name] = value
         self.sanitize_projects_list(projects_list)
 
-    def merge_admin_rule_from_data(self, admin_rules, admin_rule):
-        admin_rule = admin_rule.get('admin-rule')
-        rule_name = admin_rule.get('name')
-        admin_rules[rule_name] = {
-            'conditions': admin_rule['conditions']
+    def merge_auth_rule_from_data(self, auth_rules, auth_rule):
+        auth_rule = auth_rule.get('authorization-rule')
+        rule_name = auth_rule.get('name')
+        auth_rules[rule_name] = {
+            'conditions': auth_rule['conditions']
         }
 
     def merge_tenant_from_files(
-            self, tenants, admin_rules, tenants_conf_files,
+            self, tenants, auth_rules, tenants_conf_files,
             tenant_name, projects_list):
         """Load legacy zuul yaml file into the tenants object"""
         self.log.debug('Merge tenant files for tenant %s' % tenant_name)
@@ -236,10 +237,10 @@ class ZuulTenantsLoad:
                     tenant = data_block
                     self.merge_tenant_from_data(
                         tenants, tenant, path, tenant_name, projects_list)
-                elif data_block.get('admin-rule'):
-                    admin_rule = data_block
-                    self.merge_admin_rule_from_data(
-                        admin_rules, admin_rule)
+                elif data_block.get('authorization-rule'):
+                    auth_rule = data_block
+                    self.merge_auth_rule_from_data(
+                        auth_rules, auth_rule)
                 else:
                     raise RuntimeError(
                         "%s: invalid Zuul configuration block: %s" % (
@@ -325,24 +326,29 @@ class ZuulTenantsLoad:
         for tenant, tenant_conf in sorted(tenants.items()):
             data = {'tenant': {'name': tenant}}
             data['tenant'].update(tenant_conf)
+            # if the default admin-rule is already set, do not add it
+            admin_rules = data['tenant'].get('admin-rules', [])
+            if self.default_auth_rule_name not in admin_rules:
+                admin_rules.append(self.default_auth_rule_name)
+            data['tenant']['admin-rules'] = admin_rules
             final_data.append(data)
         return final_data
 
-    @staticmethod
-    def acl_to_zuul_admin_rule(acl_rule):
-        """Convert a resource ACL into a Zuul admin rule."""
-        admin_rule = {
+    def merge_auth_rules(self, auth_rules):
+        default_auth_rule = {
+            'name': self.default_auth_rule_name,
             'conditions': [
-                {'groups': g} for g in acl_rule['groups']
-            ],
+                {'username': 'admin'},
+                {'roles': 'zuul_admin'}
+            ]
         }
-        return acl_rule['name'], admin_rule
-
-    def merge_admin_rules(self, admin_rules):
-        final = []
-        for rule_name, rule in sorted(admin_rules.items()):
-            data = {'admin-rule': {'name': rule_name}}
-            data['admin-rule'].update(rule)
+        final = [{'authorization-rule': default_auth_rule}, ]
+        for rule_name, rule in sorted(auth_rules.items()):
+            if rule_name == self.default_auth_rule_name:
+                # we do not allow overriding this rule
+                continue
+            data = {'authorization-rule': {'name': rule_name}}
+            data['authorization-rule'].update(rule)
             final.append(data)
         return final
 
@@ -355,15 +361,7 @@ class ZuulTenantsLoad:
         projects_list = {}
         tenant_resources_cache = {}
 
-        # admin_rules hold the ACLs
-        gerrit_acl_rules = self.main_resources.get(
-            "resources", {}
-        ).get("acls", {}).values()
-        gerrit_admin_rules = dict(
-            self.acl_to_zuul_admin_rule(acl_rule)
-            for acl_rule in gerrit_acl_rules
-        )
-        admin_rules = gerrit_admin_rules
+        auth_rules = {}
 
         for tenant_name, tenant_conf in self.main_resources.get(
                 "resources", {}).get("tenants", {}).items():
@@ -419,7 +417,7 @@ class ZuulTenantsLoad:
                 tenants_conf_files = self.discover_yaml_files(tenants_dir)
                 # And we load flat files
                 self.merge_tenant_from_files(
-                    tenants, admin_rules, tenants_conf_files,
+                    tenants, auth_rules, tenants_conf_files,
                     tenant_name, projects_list)
 
             # We load project from the resources
@@ -461,8 +459,8 @@ class ZuulTenantsLoad:
             self.log.debug("]-- Finish processing %s" % tenant_name)
 
         final_tenant_data = self.final_tenant_merge(tenants)
-        admin_rules_data = self.merge_admin_rules(admin_rules)
-        final_data = admin_rules_data + final_tenant_data
+        auth_rules_data = self.merge_auth_rules(auth_rules)
+        final_data = auth_rules_data + final_tenant_data
         return yaml.safe_dump(final_data)
 
 
