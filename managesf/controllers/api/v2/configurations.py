@@ -102,6 +102,20 @@ class ZuulTenantsLoad:
         self.gateway_url = gateway_url
         self.utests = utests
         self.default_auth_rule_name = "__SF_DEFAULT_ADMIN"
+        self.default_auth_rule = {
+            'name': self.default_auth_rule_name,
+            'conditions': [
+                {'username': 'admin'},
+                {'roles': 'zuul_admin'}
+            ]
+        }
+        self.default_tenant_rule_name = "__SF_TENANT_ZUUL_ADMIN"
+        self.default_tenant_rule = {
+            "name": self.default_tenant_rule_name,
+            'conditions': [
+                {'roles': '{tenant.name}_zuul_admin'}
+            ]
+        }
         if self.utests:
             # Skip this for unittests
             return
@@ -326,25 +340,28 @@ class ZuulTenantsLoad:
         for tenant, tenant_conf in sorted(tenants.items()):
             data = {'tenant': {'name': tenant}}
             data['tenant'].update(tenant_conf)
-            # if the default admin-rule is already set, do not add it
+            # if the default admin-rules are already set, do not add them
             admin_rules = data['tenant'].get('admin-rules', [])
-            if self.default_auth_rule_name not in admin_rules:
-                admin_rules.append(self.default_auth_rule_name)
+            for rule_name in [
+                self.default_auth_rule_name,
+                self.default_tenant_rule_name,
+            ]:
+                if rule_name not in admin_rules:
+                    admin_rules.append(rule_name)
             data['tenant']['admin-rules'] = admin_rules
             final_data.append(data)
         return final_data
 
     def merge_auth_rules(self, auth_rules):
-        default_auth_rule = {
-            'name': self.default_auth_rule_name,
-            'conditions': [
-                {'username': 'admin'},
-                {'roles': 'zuul_admin'}
-            ]
-        }
-        final = [{'authorization-rule': default_auth_rule}, ]
+        final = [
+            {'authorization-rule': self.default_auth_rule},
+            {'authorization-rule': self.default_tenant_rule},
+        ]
         for rule_name, rule in sorted(auth_rules.items()):
-            if rule_name == self.default_auth_rule_name:
+            if rule_name in [
+                self.default_auth_rule_name,
+                self.default_tenant_rule_name,
+            ]:
                 # we do not allow overriding this rule
                 continue
             data = {'authorization-rule': {'name': rule_name}}

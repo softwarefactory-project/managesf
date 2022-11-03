@@ -59,7 +59,10 @@ class ZuulTenantsLoadTests(TestCase):
         final_tenants = ztl.final_tenant_merge(final_tenants)
         expected = {
             'tenant': {
-                'admin-rules': ['__SF_DEFAULT_ADMIN'],
+                'admin-rules': [
+                    '__SF_DEFAULT_ADMIN',
+                    '__SF_TENANT_ZUUL_ADMIN',
+                ],
                 'name': 'local',
                 'max-nodes-per-job': 5,
                 'source': {
@@ -124,7 +127,8 @@ class ZuulTenantsLoadTests(TestCase):
                 'admin-rules': [
                     'rule1',
                     'rule2',
-                    '__SF_DEFAULT_ADMIN'
+                    '__SF_DEFAULT_ADMIN',
+                    '__SF_TENANT_ZUUL_ADMIN',
                 ],
                 'max-nodes-per-job': 5,
                 'source': {
@@ -154,7 +158,13 @@ class ZuulTenantsLoadTests(TestCase):
                     {'username': 'admin'},
                     {'roles': 'zuul_admin'},
                 ]
-            }}
+            }},
+            {'authorization-rule': {
+                'name': '__SF_TENANT_ZUUL_ADMIN',
+                'conditions': [
+                    {'roles': '{tenant.name}_zuul_admin'},
+                ]
+            }},
         ]
         self.assertDictEqual(final_tenants[0], expected)
         self.assertTrue(
@@ -203,7 +213,8 @@ class ZuulTenantsLoadTests(TestCase):
             'tenant': {
                 'name': 'local',
                 'admin-rules': [
-                    '__SF_DEFAULT_ADMIN'
+                    '__SF_DEFAULT_ADMIN',
+                    '__SF_TENANT_ZUUL_ADMIN',
                 ],
                 'max-nodes-per-job': 5,
                 'source': {
@@ -221,7 +232,13 @@ class ZuulTenantsLoadTests(TestCase):
                     {'username': 'admin'},
                     {'roles': 'zuul_admin'},
                 ]
-            }}
+            }},
+            {'authorization-rule': {
+                'name': '__SF_TENANT_ZUUL_ADMIN',
+                'conditions': [
+                    {'roles': '{tenant.name}_zuul_admin'},
+                ]
+            }},
         ]
         self.assertDictEqual(final_tenants[0], expected)
         self.assertTrue(expected_rules[0] in final_rules)
@@ -309,7 +326,10 @@ class ZuulTenantsLoadTests(TestCase):
         final_tenants = ztl.final_tenant_merge(final_tenants)
         expected_tenant_ansible_network = {
             'tenant': {
-                'admin-rules': ['__SF_DEFAULT_ADMIN'],
+                'admin-rules': [
+                    '__SF_DEFAULT_ADMIN',
+                    '__SF_TENANT_ZUUL_ADMIN'
+                ],
                 'max-nodes-per-job': 5,
                 'name': 'ansible-network',
                 'source': {
@@ -330,7 +350,10 @@ class ZuulTenantsLoadTests(TestCase):
         expected_tenant_local = {
             'tenant': {
                 'name': 'local',
-                'admin-rules': ['__SF_DEFAULT_ADMIN'],
+                'admin-rules': [
+                    '__SF_DEFAULT_ADMIN',
+                    '__SF_TENANT_ZUUL_ADMIN'
+                ],
                 'source': {
                     'gerrit': {
                         'config-projects': ['config']
@@ -342,7 +365,10 @@ class ZuulTenantsLoadTests(TestCase):
         expected_tenant_local2 = {
             'tenant': {
                 'name': 'local2',
-                'admin-rules': ['__SF_DEFAULT_ADMIN'],
+                'admin-rules': [
+                    '__SF_DEFAULT_ADMIN',
+                    '__SF_TENANT_ZUUL_ADMIN'
+                ],
                 'max-nodes-per-job': 5,
                 }
             }
