@@ -1,8 +1,8 @@
 %global         sum A python API used to centralize management of services deployed under Software Factory
 
 Name:           managesf
-Version:        0.23.0
-Release:        11%{?dist}
+Version:        0.28.0
+Release:        1%{?dist}
 Summary:        %{sum}
 
 License:        ASL 2.0
@@ -103,6 +103,9 @@ exit 0
 /usr/share/doc/managesf
 
 %changelog
+* Wed Nov 16 2022 Matthieu Huin <mhuin@redhat.com> - 0.28.0-1
+- bump to 0.28.0
+
 * Wed Feb 05 2020 Matthieu Huin <mhuin@redhat.com> - 0.21.0-11
 - Remove Storyboard support
 
