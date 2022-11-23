@@ -1,7 +1,7 @@
 %global         sum A python API used to centralize management of services deployed under Software Factory
 
 Name:           managesf
-Version:        0.28.0
+Version:        0.29.0
 Release:        1%{?dist}
 Summary:        %{sum}
 
@@ -20,7 +20,6 @@ Requires:       pynotedb
 Requires:       yaml-cpp
 Requires:       python3-pecan
 Requires:       python3-pbr
-Requires:       python3-passlib
 Requires:       python3-basicauth
 Requires:       python3-sqlalchemy
 Requires:       python3-urllib3

@@ -2,7 +2,6 @@ pbr
 pecan
 WebOb
 requests
-passlib
 basicauth==0.4.1
 sqlalchemy
 urllib3
