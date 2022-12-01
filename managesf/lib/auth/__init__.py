@@ -13,23 +13,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import logging
 
-from managesf.lib.auth.cauth import CAuthAuthenticator
 from managesf.lib.auth.keycloak import KeycloakAuthenticator
 
 
-log = logging.getLogger(__name__)
-
-
 def get_auth_engine(services):
-    try:
-        if 'keycloak' in services:
-            return KeycloakAuthenticator()
-        else:
-            return CAuthAuthenticator()
-    except Exception as e:
-        log.info(
-            'An exception occurred while getting '
-            'the authentication engine: "%s"; defaulting to cauth' % e)
-        return CAuthAuthenticator()
+    return KeycloakAuthenticator()

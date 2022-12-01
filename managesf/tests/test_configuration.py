@@ -19,7 +19,6 @@ from unittest import TestCase
 from managesf.controllers.api.v2.configurations import ZuulTenantsLoad
 from managesf.controllers.api.v2.configurations import NodepoolConf
 from managesf.controllers.api.v2.configurations import HoundConf
-from managesf.controllers.api.v2.configurations import CauthConf
 
 
 class ZuulTenantsLoadTests(TestCase):
@@ -636,93 +635,6 @@ class NodepoolConfTests(TestCase):
         ret = nc.merge()
         self.assertEqual(ret, yaml.safe_dump(expected_ret,
                                              default_flow_style=False))
-
-
-class CauthConfTests(TestCase):
-
-    def test_load(self):
-        rpc = CauthConf(utests=True)
-        resources = {
-            'resources': {
-                'tenants': {
-                    'local': {
-                        'url': 'https://sftests.com/manage',
-                        'default-connection': 'gerrit',
-                    },
-                    'tenant2': {
-                        'url': 'https://sftests.com/manage',
-                    }
-                },
-                'connections': {
-                    'gerrit': {
-                        'base-url': 'https://sftests.com/r',
-                        'type': 'gerrit'
-                    }
-                },
-                'projects': {
-                    'project1': {
-                        'tenant': 'local',
-                        'source-repositories': [
-                            {'repo1': {}},
-                        ]
-                    },
-                    'project2': {
-                        'tenant': 'tenant2',
-                        'source-repositories': [
-                            {'repo3': {}},
-                            {'repo4': {
-                                'connection': 'gerrit'
-                            }},
-                            {'repo5': {
-                                'private': True
-                            }},
-                        ]
-                    },
-                    'project3': {
-                        'tenant': 'local',
-                        'source-repositories': [
-                            {'repo6': {}},
-                            {'repo7': {
-                                'repoxplorer/skip': True,
-                            }},
-                        ]
-                    },
-                    'project4': {
-                        'tenant': 'local',
-                        'options': [
-                            'repoxplorer/skip',
-                        ],
-                        'source-repositories': [
-                            {'repo7': {}},
-                        ]
-                    },
-                },
-                'repos': {
-                    'repo2': {},
-                    'repo5': {},
-                },
-                'groups': {
-                    'group1': {
-                        'members': [
-                            'admin@sftests.com'
-                        ]
-                    }
-                }
-            }
-        }
-        rpc.main_resources = resources
-        ret = yaml.safe_load(rpc.start())
-        expected_ret = {
-            'groups': {
-                'group1': {
-                    'description': '',
-                    'members': [
-                        'admin@sftests.com',
-                    ]
-                }
-            },
-        }
-        self.assertDictEqual(ret, expected_ret)
 
 
 class HoundConfTests(TestCase):

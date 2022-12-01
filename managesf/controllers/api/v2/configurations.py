@@ -55,15 +55,6 @@ class HoundConfigurationController(BaseConfigurationController):
             ).start()
 
 
-class CauthConfigurationController(BaseConfigurationController):
-    @expose()
-    def get(self, **kwargs):
-        return CauthConf(
-            engine=self.engine,
-            default_tenant_name=conf.resources.get('tenant_name', 'local')
-            ).start()
-
-
 class ConfigurationController:
     def __init__(self):
         self.engine = SFResourceBackendEngine(
@@ -73,7 +64,6 @@ class ConfigurationController:
         self.zuul = ZuulConfigurationController(self.engine)
         self.nodepool = NodepoolConfigurationController()
         self.hound = HoundConfigurationController(self.engine)
-        self.cauth = CauthConfigurationController(self.engine)
 
 
 def get_resources(url):
@@ -732,44 +722,6 @@ class HoundConf():
         return json.dumps(self.config, indent=True, sort_keys=True)
 
 
-class CauthConf():
-    log = logging.getLogger("managesf.CauthConf")
-
-    def __init__(self, engine=None,
-                 utests=False,
-                 master_sf_url=None,
-                 default_tenant_name='local'):
-        self.default_tenant_name = default_tenant_name
-        self.master_sf_url = master_sf_url
-        self.repos_cache = set()
-        self.default = {
-            'groups': {},
-        }
-        if utests:
-            # Skip this for unittests
-            return
-        if engine is None:
-            # From cli uses api instead
-            self.main_resources = get_resources(
-                "http://localhost:20001/v2/resources")
-        else:
-            self.main_resources = engine.get(
-                conf.resources['master_repo'], 'master')
-
-    def start(self):
-        # Add the groups
-        for group, data in self.main_resources[
-                'resources'].get('groups', {}).items():
-            grp = {}
-            grp['description'] = data.get('description', '')
-            grp['members'] = data.get('members', [])
-            # Only add groups with members
-            if len(grp['members']) > 0:
-                self.default['groups'][group] = grp
-
-        return yaml.safe_dump(self.default)
-
-
 def cli():
     import argparse
 
@@ -818,12 +770,6 @@ def cli():
 
     if args.service == "hound":
         rpc = HoundConf(
-            master_sf_url=args.master_sf_url,
-            default_tenant_name=args.default_tenant_name)
-        conf = rpc.start()
-
-    if args.service == "cauth":
-        rpc = CauthConf(
             master_sf_url=args.master_sf_url,
             default_tenant_name=args.default_tenant_name)
         conf = rpc.start()
