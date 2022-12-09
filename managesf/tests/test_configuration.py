@@ -154,7 +154,7 @@ class ZuulTenantsLoadTests(TestCase):
             {'authorization-rule': {
                 'name': '__SF_DEFAULT_ADMIN',
                 'conditions': [
-                    {'username': 'admin'},
+                    {'preferred_username': 'admin'},
                     {'roles': 'zuul_admin'},
                 ]
             }},
@@ -228,7 +228,7 @@ class ZuulTenantsLoadTests(TestCase):
             {'authorization-rule': {
                 'name': '__SF_DEFAULT_ADMIN',
                 'conditions': [
-                    {'username': 'admin'},
+                    {'preferred_username': 'admin'},
                     {'roles': 'zuul_admin'},
                 ]
             }},

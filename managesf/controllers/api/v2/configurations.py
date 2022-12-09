@@ -95,7 +95,7 @@ class ZuulTenantsLoad:
         self.default_auth_rule = {
             'name': self.default_auth_rule_name,
             'conditions': [
-                {'username': 'admin'},
+                {'preferred_username': 'admin'},
                 {'roles': 'zuul_admin'}
             ]
         }
