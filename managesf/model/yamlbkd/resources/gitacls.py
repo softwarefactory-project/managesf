@@ -60,7 +60,6 @@ class ACLOps(object):
 
     def extra_validations(self, **kwargs):
         default_groups = ('Service Users',
-                          'Non-Interactive Users',
                           'Administrators',
                           'Registered Users',
                           'Anonymous Users')
