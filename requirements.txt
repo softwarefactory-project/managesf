@@ -3,7 +3,7 @@ pecan
 WebOb
 requests
 basicauth==0.4.1
-sqlalchemy
+sqlalchemy<=2.0.0
 urllib3
 sphinx
 PyYAML
