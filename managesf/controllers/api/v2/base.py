@@ -23,7 +23,6 @@ from pecan import request, response, abort, expose
 from pecan.rest import RestController
 
 from managesf.model.yamlbkd.engine import SFResourceBackendEngine
-from managesf import policy
 # TODO do it with v2
 from managesf.model import SFUserCRUD
 from git.exc import GitCommandError
@@ -53,10 +52,7 @@ def get_user_groups(username):
 def authorize(rule_name, target):
     if not request.remote_user:
         request.remote_user = request.headers.get('X-Remote-User')
-    credentials = {'username': request.remote_user, 'groups': []}
-    if request.remote_user:
-        credentials['groups'] = get_user_groups(request.remote_user)
-    return policy.authorize(rule_name, target, credentials)
+    return True
 
 
 class APIv2RestController(RestController):

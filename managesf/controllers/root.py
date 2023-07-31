@@ -21,7 +21,6 @@ from stevedore import driver
 
 from managesf.controllers import introspection
 from managesf.services import base
-from managesf import policy
 
 from managesf import DEFAULT_SERVICES
 from managesf.controllers.api.v2 import resources as v2_resources
@@ -84,25 +83,7 @@ def report_unhandled_error(exp):
 def authorize(rule_name, target):
     if not request.remote_user:
         request.remote_user = request.headers.get('X-Remote-User')
-    credentials = {'username': request.remote_user, 'groups': []}
-    # OpenID Connect authentication
-    if request.headers.get("OIDC_CLAIM_groups", None) is not None:
-        for group in request.headers.get('OIDC_CLAIM_groups').split(','):
-            # it seems like keycloak prefixes groups with /, remove it
-            if group.startswith('/'):
-                credentials['groups'].append(group[1:])
-            else:
-                credentials['groups'].append(group)
-    # gerrit based
-    else:
-        if request.remote_user:
-            code_reviews = [s for s in SF_SERVICES
-                            if isinstance(s, base.BaseCodeReviewServicePlugin)]
-            if code_reviews:
-                user_groups = code_reviews[0].project.get_user_groups(
-                    request.remote_user)
-                credentials['groups'] = [grp['name'] for grp in user_groups]
-    return policy.authorize(rule_name, target, credentials)
+    return True
 
 
 load_services()
